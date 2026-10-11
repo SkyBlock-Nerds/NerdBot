@@ -7,23 +7,26 @@ import net.aerh.imagegenerator.tools.pack.ResourcePackService;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Activity;
 import net.hypixel.nerdbot.app.activity.ActivityListener;
+import net.hypixel.nerdbot.app.badge.BadgeManager;
+import net.hypixel.nerdbot.app.channel.RestrictedChannelGroups;
+import net.hypixel.nerdbot.app.config.AlphaProjectConfigUpdater;
+import net.hypixel.nerdbot.app.config.GeneratorConfig;
+import net.hypixel.nerdbot.app.config.NerdBotConfig;
+import net.hypixel.nerdbot.app.drive.DrivePermissionService;
 import net.hypixel.nerdbot.app.feature.DrivePermissionSyncFeature;
 import net.hypixel.nerdbot.app.feature.RepositoryAutosaveFeature;
 import net.hypixel.nerdbot.app.feature.ResourcePackUpdateFeature;
 import net.hypixel.nerdbot.app.feature.RoleReconcileFeature;
-import net.hypixel.nerdbot.app.badge.BadgeManager;
-import net.hypixel.nerdbot.app.drive.DrivePermissionService;
-import net.hypixel.nerdbot.app.config.GeneratorConfig;
 import net.hypixel.nerdbot.app.generation.pack.PackConfigMapper;
-import net.hypixel.nerdbot.app.inject.BotComponent;
-import net.hypixel.nerdbot.app.inject.BotState;
-import net.hypixel.nerdbot.app.inject.DaggerBotComponent;
 import net.hypixel.nerdbot.app.generation.pack.update.HttpHypixelPackApiClient;
 import net.hypixel.nerdbot.app.generation.pack.update.PackBootResolver;
 import net.hypixel.nerdbot.app.generation.pack.update.PackCacheStore;
 import net.hypixel.nerdbot.app.generation.pack.update.PackDownloader;
 import net.hypixel.nerdbot.app.generation.pack.update.PackUpdateNotifier;
 import net.hypixel.nerdbot.app.generation.pack.update.PackUpdater;
+import net.hypixel.nerdbot.app.inject.BotComponent;
+import net.hypixel.nerdbot.app.inject.BotState;
+import net.hypixel.nerdbot.app.inject.DaggerBotComponent;
 import net.hypixel.nerdbot.app.listener.DrivePermissionListener;
 import net.hypixel.nerdbot.app.listener.FunListener;
 import net.hypixel.nerdbot.app.listener.MetricsListener;
@@ -35,19 +38,17 @@ import net.hypixel.nerdbot.app.listener.RoleSyncListener;
 import net.hypixel.nerdbot.app.listener.SuggestionListener;
 import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.app.sentry.SentryManager;
+import net.hypixel.nerdbot.app.suggestion.SuggestionCache;
 import net.hypixel.nerdbot.app.user.BirthdayAnnouncementFeature;
 import net.hypixel.nerdbot.discord.AbstractDiscordBot;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
 import net.hypixel.nerdbot.discord.api.feature.FeatureEventListener;
 import net.hypixel.nerdbot.discord.cache.MessageCache;
-import net.hypixel.nerdbot.app.suggestion.SuggestionCache;
-import net.hypixel.nerdbot.app.config.AlphaProjectConfigUpdater;
 import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
-import net.hypixel.nerdbot.app.config.NerdBotConfig;
-import net.hypixel.nerdbot.marmalade.storage.database.Database;
-import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
+import net.hypixel.nerdbot.marmalade.storage.database.Database;
+import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
@@ -80,6 +81,12 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot implements BotState {
 
     /** Null when no pack opts into auto-update or the cache directory is unusable. */
     private volatile PackUpdater packUpdater;
+
+    /** Empty until the bot is ready. */
+    public static Optional<RestrictedChannelGroups> restrictedChannelGroups() {
+        BotComponent current = ((SkyBlockNerdsBot) DiscordBotEnvironment.getBot()).component;
+        return current == null ? Optional.empty() : Optional.of(current.restrictedChannelGroups());
+    }
 
     /**
      * Static helper to get the MessageCache from the current bot instance.

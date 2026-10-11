@@ -16,30 +16,35 @@ import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.hypixel.nerdbot.discord.api.bot.DiscordBot;
 import net.hypixel.nerdbot.discord.api.bot.Environment;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
-import net.hypixel.nerdbot.discord.config.FeatureConfig;
 import net.hypixel.nerdbot.discord.api.feature.SchedulableFeature;
 import net.hypixel.nerdbot.discord.cache.ChannelCache;
 import net.hypixel.nerdbot.discord.cache.EmojiCache;
 import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
-import net.hypixel.nerdbot.marmalade.json.JsonUtils;
+import net.hypixel.nerdbot.discord.config.FeatureConfig;
 import net.hypixel.nerdbot.marmalade.json.DataSerialization;
+import net.hypixel.nerdbot.marmalade.json.JsonUtils;
 import net.hypixel.nerdbot.marmalade.storage.database.Database;
 import net.hypixel.nerdbot.marmalade.storage.repository.Repository;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.security.auth.login.LoginException;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.security.auth.login.LoginException;
 
 /**
  * Base implementation for Discord bots built on top of the NerdBot platform.
@@ -50,7 +55,7 @@ public abstract class AbstractDiscordBot implements DiscordBot {
 
     private final Database database;
     private JDA jda;
-    private DiscordBotConfig config;
+    private volatile DiscordBotConfig config;
     private long startTime;
     private List<BotFeature> features = Collections.emptyList();
     private final AtomicBoolean shuttingDown = new AtomicBoolean();
@@ -422,18 +427,16 @@ public abstract class AbstractDiscordBot implements DiscordBot {
         return DiscordBotConfig.class;
     }
 
-    @Override
-    public void loadConfig() {
-        String fileName;
-        if (System.getProperty("bot.config") != null) {
-            fileName = System.getProperty("bot.config");
-            log.info("Found config property: {}", fileName);
-        } else {
-            log.info("Config property not defined, using default path");
-            fileName = Environment.getEnvironment().name().toLowerCase() + ".config.json";
-        }
+    /** The config file: the {@code bot.config} system property, or {@code <environment>.config.json}. */
+    public Path configFile() {
+        String property = System.getProperty("bot.config");
+        return Path.of(property != null ? property : Environment.getEnvironment().name().toLowerCase(Locale.ROOT) + ".config.json");
+    }
 
-        File file = new File(fileName);
+    /** Replaces the live config with the file's. When the file can't be read or parsed the live config is left alone. */
+    @Override
+    public synchronized void loadConfig() {
+        File file = configFile().toFile();
         log.info("Loading config file from '{}'", file.getAbsolutePath());
 
         try {
@@ -453,22 +456,31 @@ public abstract class AbstractDiscordBot implements DiscordBot {
 
     @Override
     public boolean writeConfig(@NotNull DiscordBotConfig newConfig) {
-        String fileName;
-        if (System.getProperty("bot.config") != null) {
-            fileName = System.getProperty("bot.config");
-            log.info("Found config property: {}", fileName);
-        } else {
-            log.info("Config property not defined, using default path");
-            fileName = Environment.getEnvironment().name().toLowerCase() + ".config.json";
-        }
-
-        try (FileWriter writer = new FileWriter(fileName)) {
-            DataSerialization.PRETTY_GSON.toJson(newConfig, writer);
+        try {
+            saveConfig(newConfig);
             return true;
         } catch (IOException exception) {
             log.error("Could not save config file!", exception);
             return false;
         }
+    }
+
+    /**
+     * Writes {@code newConfig} to the config file and makes it the live config. The file is written
+     * next to the old one and moved over it, so a crash part way through can't leave half a config.
+     */
+    public synchronized void saveConfig(@NotNull DiscordBotConfig newConfig) throws IOException {
+        Path file = configFile().toAbsolutePath();
+        Path temporary = file.resolveSibling(file.getFileName() + ".tmp");
+        Files.writeString(temporary, DataSerialization.PRETTY_GSON.toJson(newConfig), StandardCharsets.UTF_8);
+
+        try {
+            Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        } catch (AtomicMoveNotSupportedException exception) {
+            Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING);
+        }
+
+        config = newConfig;
     }
 
     @Override

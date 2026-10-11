@@ -1,300 +1,57 @@
 package net.hypixel.nerdbot.app.listener;
 
 import lombok.extern.slf4j.Slf4j;
-import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.PermissionOverride;
-import net.dv8tion.jda.api.entities.channel.ChannelType;
-import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
-import net.dv8tion.jda.api.entities.channel.middleman.StandardGuildChannel;
 import net.dv8tion.jda.api.events.channel.ChannelCreateEvent;
 import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
 import net.dv8tion.jda.api.events.guild.override.PermissionOverrideCreateEvent;
 import net.dv8tion.jda.api.events.guild.override.PermissionOverrideDeleteEvent;
 import net.dv8tion.jda.api.events.guild.override.PermissionOverrideUpdateEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
-import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
-import net.hypixel.nerdbot.discord.config.objects.RoleRestrictedChannelGroup;
-import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
+import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
+import net.hypixel.nerdbot.app.channel.RestrictedChannelGroups;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.function.Consumer;
 
 @Slf4j
 public class RoleRestrictedChannelListener {
 
     @SubscribeEvent
     public void onChannelCreate(ChannelCreateEvent event) {
-        if (!event.isFromGuild()) {
-            return;
+        if (event.isFromGuild()) {
+            update(event.getChannel().asGuildChannel(), groups -> groups.refresh(event.getChannel().asGuildChannel()));
         }
-
-        GuildChannel channel = event.getChannel().asGuildChannel();
-
-        // Only handle text, voice, and forum channels
-        if (!isTrackableChannelType(channel)) {
-            return;
-        }
-
-        log.debug("Channel created: {} ({}), checking for role-restricted access", channel.getName(), channel.getId());
-        updateChannelGroupMembership(channel, true);
     }
 
     @SubscribeEvent
     public void onChannelDelete(ChannelDeleteEvent event) {
-        if (!event.isFromGuild()) {
-            return;
+        if (event.isFromGuild()) {
+            update(event.getChannel().asGuildChannel(), groups -> groups.forget(event.getChannel().asGuildChannel()));
         }
-
-        GuildChannel channel = event.getChannel().asGuildChannel();
-
-        // Only handle text, voice, and forum channels
-        if (!isTrackableChannelType(channel)) {
-            return;
-        }
-
-        log.debug("Channel deleted: {} ({}), removing from role-restricted groups", channel.getName(), channel.getId());
-        updateChannelGroupMembership(channel, false);
     }
 
     @SubscribeEvent
     public void onPermissionOverrideCreate(PermissionOverrideCreateEvent event) {
-        handlePermissionChange(event.getChannel());
+        update(event.getChannel(), groups -> groups.refresh(event.getChannel()));
     }
 
     @SubscribeEvent
     public void onPermissionOverrideUpdate(PermissionOverrideUpdateEvent event) {
-        handlePermissionChange(event.getChannel());
+        update(event.getChannel(), groups -> groups.refresh(event.getChannel()));
     }
 
     @SubscribeEvent
     public void onPermissionOverrideDelete(PermissionOverrideDeleteEvent event) {
-        handlePermissionChange(event.getChannel());
+        update(event.getChannel(), groups -> groups.refresh(event.getChannel()));
     }
 
-    private void handlePermissionChange(GuildChannel channel) {
-        if (!isTrackableChannelType(channel)) {
+    private static void update(GuildChannel channel, Consumer<RestrictedChannelGroups> change) {
+        if (!RestrictedChannelGroups.isTracked(channel)) {
             return;
         }
 
-        log.debug("Permission override changed for channel: {} ({}), updating role-restricted groups", channel.getName(), channel.getId());
-
-        updateChannelGroupMembership(channel, false);
-        updateChannelGroupMembership(channel, true);
-    }
-
-    private boolean isTrackableChannelType(GuildChannel channel) {
-        return channel.getType() == ChannelType.TEXT ||
-            channel.getType() == ChannelType.VOICE ||
-            channel.getType() == ChannelType.FORUM;
-    }
-
-    /**
-     * Update channel group membership based on role permissions
-     *
-     * @param channel  The channel to check
-     * @param isAdding True if adding to groups, false if removing from groups
-     */
-    public void updateChannelGroupMembership(GuildChannel channel, boolean isAdding) {
-        DiscordBotConfig botConfig = DiscordBotEnvironment.getBot().getConfig();
-        net.dv8tion.jda.api.entities.Guild guild = channel.getGuild();
-
-        if (!botConfig.getChannelConfig().isAutoManageRoleRestrictedChannels()) {
-            log.debug("Auto-management is disabled, skipping channel group update");
-            return;
-        }
-
-        boolean configChanged = false;
-
-        if (isAdding) {
-            Set<String> channelRoleIds = getChannelRestrictedRoles(channel);
-
-            if (channelRoleIds.isEmpty()) {
-                log.debug("Channel {} (ID: {}) has no role restrictions, skipping", channel.getName(), channel.getId());
-                return;
-            }
-
-            RoleRestrictedChannelGroup targetGroup = findOrCreateRoleRestrictedGroup(botConfig, guild, channelRoleIds);
-            if (!Arrays.asList(targetGroup.getChannelIds()).contains(channel.getId())) {
-                String[] newChannelIds = Arrays.copyOf(targetGroup.getChannelIds(), targetGroup.getChannelIds().length + 1);
-                newChannelIds[newChannelIds.length - 1] = channel.getId();
-                targetGroup.setChannelIds(newChannelIds);
-                configChanged = true;
-
-                log.info("Added channel {} ({}) to role-restricted group '{}'", channel.getName(), channel.getId(), targetGroup.getDisplayName());
-            }
-        } else {
-            List<RoleRestrictedChannelGroup> groups = new ArrayList<>(botConfig.getChannelConfig().getRoleRestrictedChannelGroups());
-
-            for (RoleRestrictedChannelGroup group : groups) {
-                List<String> channelList = Arrays.stream(group.getChannelIds())
-                    .filter(id -> !id.equals(channel.getId()))
-                    .toList();
-
-                if (channelList.size() != group.getChannelIds().length) {
-                    group.setChannelIds(channelList.toArray(new String[0]));
-                    configChanged = true;
-
-                    log.info("Removed channel {} ({}) from role-restricted group '{}'",
-                        channel.getName(), channel.getId(), group.getDisplayName());
-                }
-            }
-
-            // Remove empty groups
-            if (removeEmptyRoleRestrictedGroups(botConfig)) {
-                configChanged = true;
-            }
-        }
-
-        if (configChanged) {
-            log.info("Role-restricted channel configuration updated, writing to file");
-            DiscordBotEnvironment.getBot().writeConfig(botConfig);
-        }
-    }
-
-    /**
-     * Get the roles that have exclusive access to this channel
-     *
-     * @param channel The channel to analyze
-     *
-     * @return Set of role IDs that have VIEW_CHANNEL permission while @everyone is denied
-     */
-    private Set<String> getChannelRestrictedRoles(GuildChannel channel) {
-        Set<String> restrictedRoles = new HashSet<>();
-
-        // Check if @everyone is denied VIEW_CHANNEL permission
-        PermissionOverride everyoneOverride = channel.getPermissionContainer().getPermissionOverride(channel.getGuild().getPublicRole());
-        if (everyoneOverride == null || !everyoneOverride.getDenied().contains(Permission.VIEW_CHANNEL)) {
-            return restrictedRoles;
-        }
-
-        // Check for roles that are specifically allowed VIEW_CHANNEL permission
-        for (PermissionOverride override : channel.getPermissionContainer().getPermissionOverrides()) {
-            if (override.isRoleOverride() && override.getAllowed().contains(Permission.VIEW_CHANNEL)) {
-                restrictedRoles.add(override.getRole().getId());
-            }
-        }
-
-        // Also check parent category permissions if channel inherits them
-        if (channel instanceof StandardGuildChannel standardGuildChannel) {
-            Category parent = standardGuildChannel.getParentCategory();
-            if (parent != null) {
-                PermissionOverride parentEveryoneOverride = parent.getPermissionOverride(parent.getGuild().getPublicRole());
-
-                if (parentEveryoneOverride != null && parentEveryoneOverride.getDenied().contains(Permission.VIEW_CHANNEL)) {
-                    for (PermissionOverride override : parent.getPermissionOverrides()) {
-                        if (override.isRoleOverride() && override.getAllowed().contains(Permission.VIEW_CHANNEL)) {
-                            restrictedRoles.add(override.getRole().getId());
-                        }
-                    }
-                }
-            }
-        }
-
-        return restrictedRoles;
-    }
-
-    private RoleRestrictedChannelGroup findOrCreateRoleRestrictedGroup(DiscordBotConfig botConfig, Guild guild, Set<String> roleIds) {
-        List<RoleRestrictedChannelGroup> groups = new ArrayList<>(botConfig.getChannelConfig().getRoleRestrictedChannelGroups());
-
-        for (RoleRestrictedChannelGroup group : groups) {
-            Set<String> groupRoleIds = Set.of(group.getRequiredRoleIds());
-            if (groupRoleIds.equals(roleIds)) {
-                return group;
-            }
-        }
-
-        List<String> roleNames = roleIds.stream()
-            .map(guild::getRoleById)
-            .filter(Objects::nonNull)
-            .map(net.dv8tion.jda.api.entities.Role::getName)
-            .toList();
-
-        String identifier = formatGroupIdentifier(roleNames, roleIds);
-        String displayName = formatGroupDisplayName(roleNames);
-
-        RoleRestrictedChannelGroup newGroup = new RoleRestrictedChannelGroup(
-            identifier,
-            displayName,
-            new String[0],
-            roleIds.toArray(new String[0]),
-            botConfig.getChannelConfig().getDefaultMinimumMessagesForActivity(),
-            botConfig.getChannelConfig().getDefaultMinimumVotesForActivity(),
-            botConfig.getChannelConfig().getDefaultMinimumCommentsForActivity(),
-            botConfig.getChannelConfig().getDefaultActivityCheckDays(),
-            true
-        );
-
-        groups.add(newGroup);
-        botConfig.getChannelConfig().setRoleRestrictedChannelGroups(groups);
-
-        return newGroup;
-    }
-
-    private boolean removeEmptyRoleRestrictedGroups(DiscordBotConfig botConfig) {
-        List<RoleRestrictedChannelGroup> groups = new ArrayList<>(botConfig.getChannelConfig().getRoleRestrictedChannelGroups());
-        int originalSize = groups.size();
-
-        groups.removeIf(group -> group.getChannelIds().length == 0);
-
-        if (groups.size() != originalSize) {
-            botConfig.getChannelConfig().setRoleRestrictedChannelGroups(groups);
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * Build the stable identifier for a role-restricted group from its roles' names. Names are
-     * lowercased and stripped to {@code [a-z0-9]}, sorted for determinism, and joined with hyphens.
-     * When no role names resolve, the role IDs are used as a fallback.
-     *
-     * @param roleNames      the resolved role display names (unsorted, may be empty)
-     * @param fallbackRoleIds the role IDs to fall back to when no names resolve
-     *
-     * @return the group identifier, e.g. {@code "admin-mod-channels"}
-     */
-    static String formatGroupIdentifier(List<String> roleNames, Set<String> fallbackRoleIds) {
-        List<String> sanitized = roleNames.stream()
-            .map(name -> name.toLowerCase().replaceAll("[^a-z0-9]", ""))
-            .sorted()
-            .toList();
-
-        if (sanitized.isEmpty()) {
-            return String.join("-", fallbackRoleIds) + "-channels";
-        }
-
-        return String.join("-", sanitized) + "-channels";
-    }
-
-    /**
-     * Build the human-readable display name for a role-restricted group from its roles' names. Names
-     * are sorted, then joined as "A Channels", "A & B Channels", or "A, B & C Channels".
-     *
-     * @param roleNames the resolved role display names (unsorted, may be empty)
-     *
-     * @return the group display name
-     */
-    static String formatGroupDisplayName(List<String> roleNames) {
-        List<String> sorted = roleNames.stream().sorted().toList();
-
-        if (sorted.isEmpty()) {
-            return "Unknown Role Channels";
-        }
-
-        if (sorted.size() == 1) {
-            return sorted.getFirst() + " Channels";
-        } else if (sorted.size() == 2) {
-            return sorted.get(0) + " & " + sorted.get(1) + " Channels";
-        } else {
-            return String.join(", ", sorted.subList(0, sorted.size() - 1)) +
-                " & " + sorted.getLast() + " Channels";
-        }
+        // Channel events can arrive before the bot has finished starting
+        SkyBlockNerdsBot.restrictedChannelGroups().ifPresentOrElse(change,
+            () -> log.debug("Skipped a role-restricted group update for {} because the bot isn't ready", channel.getId()));
     }
 }

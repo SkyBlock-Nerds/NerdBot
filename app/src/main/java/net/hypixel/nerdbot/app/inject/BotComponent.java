@@ -5,6 +5,7 @@ import dagger.Component;
 import jakarta.inject.Singleton;
 import net.aerh.imagegenerator.tools.pack.ResourcePackService;
 import net.dv8tion.jda.api.JDA;
+import net.hypixel.nerdbot.app.channel.RestrictedChannelGroups;
 import net.hypixel.nerdbot.app.reminder.ReminderScheduler;
 import net.hypixel.nerdbot.app.suggestion.SuggestionCache;
 import net.hypixel.nerdbot.marmalade.storage.database.Database;
@@ -27,6 +28,8 @@ public interface BotComponent {
     ReminderScheduler reminderScheduler();
 
     SuggestionCache suggestionCache();
+
+    RestrictedChannelGroups restrictedChannelGroups();
 
     ScheduledExecutorService scheduler();
 

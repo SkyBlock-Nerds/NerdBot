@@ -8,10 +8,15 @@ import net.hypixel.nerdbot.app.badge.BadgeCatalog;
 import net.hypixel.nerdbot.app.badge.ConfiguredBadgeCatalog;
 import net.hypixel.nerdbot.app.channel.DiscordLogChannel;
 import net.hypixel.nerdbot.app.channel.LogChannel;
+import net.hypixel.nerdbot.app.config.ConfigStore;
 import net.hypixel.nerdbot.app.config.NerdBotConfig;
 import net.hypixel.nerdbot.app.drive.DrivePermissionService;
 import net.hypixel.nerdbot.app.drive.DriveSyncSweep;
 import net.hypixel.nerdbot.app.generation.pack.update.PackUpdater;
+import net.hypixel.nerdbot.app.metrics.MetricsServer;
+import net.hypixel.nerdbot.app.metrics.PrometheusMetricsServer;
+import net.hypixel.nerdbot.app.nomination.NominationSweeps;
+import net.hypixel.nerdbot.app.nomination.ServiceNominationSweeps;
 import net.hypixel.nerdbot.app.profile.HttpMinecraftAccounts;
 import net.hypixel.nerdbot.app.profile.MinecraftAccounts;
 import net.hypixel.nerdbot.app.reminder.DiscordReminderSender;
@@ -45,6 +50,15 @@ public interface BotModule {
 
     @Binds
     MinecraftAccounts minecraftAccounts(HttpMinecraftAccounts accounts);
+
+    @Binds
+    ConfigStore configStore(BotConfigStore store);
+
+    @Binds
+    MetricsServer metricsServer(PrometheusMetricsServer server);
+
+    @Binds
+    NominationSweeps nominationSweeps(ServiceNominationSweeps sweeps);
 
     @Provides
     static Clock clock() {
