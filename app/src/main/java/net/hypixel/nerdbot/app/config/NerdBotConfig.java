@@ -4,9 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
-import net.hypixel.nerdbot.discord.config.FeatureConfig;
 
-import java.util.List;
 
 /**
  * NerdBot-specific configuration extending the base Discord bot framework config.
@@ -98,9 +96,4 @@ public class NerdBotConfig extends DiscordBotConfig {
      */
     private int inactivityMessages = 10;
 
-    /**
-     * Feature configuration. If present and not empty,
-     * the bot will instantiate and start the listed features in order.
-     */
-    private List<FeatureConfig> features;
 }
