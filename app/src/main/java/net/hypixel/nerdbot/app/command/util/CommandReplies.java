@@ -58,6 +58,19 @@ public final class CommandReplies {
     }
 
     /**
+     * As {@link #finish}, but a failure is sent as a private follow-up and the original message is
+     * left alone. For buttons on a message that has to stay as it is, such as a review request.
+     */
+    public static <T> CompletableFuture<Void> finishWithFollowUp(CompletableFuture<T> work, InteractionHook hook, String action,
+                                                                 String failureMessage, Consumer<T> onSuccess) {
+        return work.thenAccept(onSuccess).exceptionally(error -> {
+            log.error("Failed to {}", action, error);
+            hook.sendMessage(failureMessage).setEphemeral(true).queue();
+            return null;
+        });
+    }
+
+    /**
      * Runs {@code onSuccess} with the result. If the work fails, or {@code onSuccess} throws, the
      * error is logged against {@code action} and the deferred reply is replaced with
      * {@code failureMessage}.

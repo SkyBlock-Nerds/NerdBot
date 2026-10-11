@@ -38,7 +38,7 @@ public class SuggestionListener {
 
         if (isInSuggestionChannel(event)) {
             ThreadChannel thread = event.getChannel().asThreadChannel();
-            SkyBlockNerdsBot.suggestionCache().addSuggestion(thread);
+            SkyBlockNerdsBot.suggestionCache().requestUpdate(thread);
 
             // Apply auto-tag if configured for this forum
             applyAutoTag(thread);
@@ -86,7 +86,7 @@ public class SuggestionListener {
         }
 
         if (isInSuggestionChannel(event)) {
-            SkyBlockNerdsBot.suggestionCache().removeSuggestion(event.getChannel().asThreadChannel());
+            SkyBlockNerdsBot.suggestionCache().remove(event.getChannel().getId());
         }
     }
 

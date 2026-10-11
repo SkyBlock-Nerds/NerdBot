@@ -7,6 +7,7 @@ import net.hypixel.nerdbot.marmalade.storage.database.repository.GreenlitMessage
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
 public class RepositoryGreenlitStore implements GreenlitStore {
 
@@ -19,12 +20,21 @@ public class RepositoryGreenlitStore implements GreenlitStore {
 
     @Override
     public CompletableFuture<List<GreenlitMessage>> loadAll() {
+        return withRepository(GreenlitMessageRepository::getAllDocumentsAsync);
+    }
+
+    @Override
+    public CompletableFuture<Void> save(GreenlitMessage message) {
+        return withRepository(greenlit -> greenlit.cacheAndSaveAsync(message).thenApply(result -> null));
+    }
+
+    private <T> CompletableFuture<T> withRepository(Function<GreenlitMessageRepository, CompletableFuture<T>> action) {
         GreenlitMessageRepository greenlit;
         try {
             greenlit = repository.get();
         } catch (IllegalStateException notRegistered) {
             return CompletableFuture.failedFuture(notRegistered);
         }
-        return greenlit.getAllDocumentsAsync();
+        return action.apply(greenlit);
     }
 }

@@ -24,6 +24,7 @@ import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
+import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import net.hypixel.nerdbot.app.command.util.CommandReplies;
 import net.hypixel.nerdbot.app.command.util.SuggestionCommandUtils;
 import net.hypixel.nerdbot.app.badge.BadgeManager;
@@ -36,6 +37,7 @@ import net.hypixel.nerdbot.marmalade.json.HypixelPlayerResponse;
 import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.cache.ChannelCache;
 import net.hypixel.nerdbot.app.suggestion.Suggestion;
+import net.hypixel.nerdbot.app.suggestion.SuggestionCache;
 import net.hypixel.nerdbot.discord.config.RoleConfig;
 import net.hypixel.nerdbot.discord.config.objects.RoleRestrictedChannelGroup;
 import net.hypixel.nerdbot.marmalade.storage.badge.Badge;
@@ -800,27 +802,19 @@ public class ProfileCommands {
                     return;
                 }
 
-                List<Suggestion> suggestions = SuggestionCommandUtils.getSuggestions(event.getMember(), event.getMember().getIdLong(), tags, title, finalType);
-                SuggestionStats stats = SuggestionCommandUtils.buildSuggestionStats(suggestions, event.getMember());
+                SuggestionCache cache = SkyBlockNerdsBot.suggestionCache();
+                List<Suggestion> suggestions = SuggestionCommandUtils.filterSuggestions(event.getJDA(), cache.all(), event.getMember(), event.getMember().getIdLong(), tags, title, finalType);
+                SuggestionStats stats = SuggestionCommandUtils.buildSuggestionStats(event.getJDA(), suggestions, event.getMember());
 
                 if (suggestions.isEmpty()) {
                     event.getHook().editOriginal("No suggestions found matching that filter!").queue();
                     return;
                 }
 
-                PaginatedResponse<Suggestion> pagination = SuggestionCommandUtils.createSuggestionsPagination(
-                    event.getMember(),
-                    suggestions,
-                    stats,
-                    tags,
-                    title,
-                    finalType,
-                    false,
-                    true,
-                    "profile-page",
-                    event.getMember().getEffectiveName(),
-                    event.getMember().getEffectiveAvatarUrl()
-                );
+                SuggestionCommandUtils.Listing listing = new SuggestionCommandUtils.Listing(event.getMember(), tags, title, finalType,
+                    false, true, event.getMember().getEffectiveName(), event.getMember().getEffectiveAvatarUrl(),
+                    !cache.isInitialized(), event.getJDA());
+                PaginatedResponse<Suggestion> pagination = SuggestionCommandUtils.createSuggestionsPagination(suggestions, stats, listing, "profile-page");
 
                 pagination.sendMessage(event);
 

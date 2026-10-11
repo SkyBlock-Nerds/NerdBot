@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Delayed;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -124,7 +125,7 @@ public final class ManualScheduledExecutor extends AbstractExecutorService imple
 
     private void rejectIfShutdown() {
         if (shutdown) {
-            throw new IllegalStateException("ManualScheduledExecutor has been shut down");
+            throw new RejectedExecutionException("ManualScheduledExecutor has been shut down");
         }
     }
 

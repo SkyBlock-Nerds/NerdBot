@@ -9,4 +9,7 @@ public interface GreenlitStore {
 
     /** Every greenlit suggestion; fails, rather than throwing, when the database isn't available. */
     CompletableFuture<List<GreenlitMessage>> loadAll();
+
+    /** Caches and writes the message straight away; fails, rather than throwing, when the database isn't available. */
+    CompletableFuture<Void> save(GreenlitMessage message);
 }

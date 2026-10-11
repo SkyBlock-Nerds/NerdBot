@@ -1,2 +1,1 @@
-Constructor <net.hypixel.nerdbot.app.suggestion.SuggestionCache.<init>()> calls constructor <java.util.Timer.<init>()> in (SuggestionCache.java:28)
 Method <net.hypixel.nerdbot.app.command.util.ProgressUpdates.every(java.time.Duration, java.lang.String, java.lang.Runnable)> calls constructor <java.util.Timer.<init>(java.lang.String, boolean)> in (ProgressUpdates.java:27)

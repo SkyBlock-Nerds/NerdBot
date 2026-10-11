@@ -5,6 +5,7 @@ import dagger.Component;
 import jakarta.inject.Singleton;
 import net.dv8tion.jda.api.JDA;
 import net.hypixel.nerdbot.app.reminder.ReminderScheduler;
+import net.hypixel.nerdbot.app.suggestion.SuggestionCache;
 import net.hypixel.nerdbot.marmalade.storage.database.Database;
 
 import java.util.Set;
@@ -23,6 +24,8 @@ public interface BotComponent {
     Set<Object> slashCommands();
 
     ReminderScheduler reminderScheduler();
+
+    SuggestionCache suggestionCache();
 
     ScheduledExecutorService scheduler();
 

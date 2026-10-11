@@ -1,264 +1,116 @@
 package net.hypixel.nerdbot.app.command;
 
-import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.Scheduler;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import lombok.extern.slf4j.Slf4j;
 import net.aerh.slashcommands.api.annotations.SlashAutocompleteHandler;
 import net.aerh.slashcommands.api.annotations.SlashCommand;
 import net.aerh.slashcommands.api.annotations.SlashComponentHandler;
 import net.aerh.slashcommands.api.annotations.SlashOption;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
+import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.components.buttons.ButtonInteraction;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
+import net.hypixel.nerdbot.app.command.util.CommandReplies;
+import net.hypixel.nerdbot.app.command.util.PanelId;
 import net.hypixel.nerdbot.app.command.util.SuggestionCommandUtils;
+import net.hypixel.nerdbot.app.config.NerdBotConfig;
+import net.hypixel.nerdbot.app.config.ReviewRequestConfig;
+import net.hypixel.nerdbot.app.config.SuggestionConfig;
 import net.hypixel.nerdbot.app.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
-import net.hypixel.nerdbot.discord.BotEnvironment;
+import net.hypixel.nerdbot.app.storage.GreenlitStore;
 import net.hypixel.nerdbot.app.suggestion.Suggestion;
+import net.hypixel.nerdbot.app.suggestion.SuggestionCache;
+import net.hypixel.nerdbot.app.suggestion.SuggestionFactory;
 import net.hypixel.nerdbot.discord.config.EmojiConfig;
-import net.hypixel.nerdbot.app.config.SuggestionConfig;
-import net.hypixel.nerdbot.marmalade.format.DiscordTimestamp;
-import net.hypixel.nerdbot.marmalade.storage.database.model.greenlit.GreenlitMessage;
-import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.marmalade.storage.database.repository.GreenlitMessageRepository;
-import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
 import net.hypixel.nerdbot.discord.util.pagination.PaginatedResponse;
 import net.hypixel.nerdbot.discord.util.pagination.PaginationManager;
-import org.apache.commons.lang.StringUtils;
-import org.jetbrains.annotations.NotNull;
+import net.hypixel.nerdbot.marmalade.format.DiscordTimestamp;
+import org.jetbrains.annotations.Nullable;
 
-import java.awt.*;
+import java.awt.Color;
+import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 @Slf4j
 public class SuggestionCommands {
 
-    private final Cache<@NotNull String, Long> lastReviewRequestCache = Caffeine.newBuilder()
-        .expireAfterWrite(1, TimeUnit.HOURS)
-        .scheduler(Scheduler.systemScheduler())
-        .removalListener((o, o2, removalCause) -> log.info("Removed {} from last review request cache", o))
+    static final String REVIEW_PREFIX = "suggestion-review";
+    /** Review buttons aren't tied to one user, so only {@link PanelId#parse} is used. */
+    static final PanelId REVIEW = PanelId.of(REVIEW_PREFIX, 2, 0);
+    static final Duration REVIEW_COOLDOWN = Duration.ofHours(1);
+    static final String SENT_FOR_REVIEW = "This suggestion has been sent for review!";
+    static final String GREENLIT_MESSAGE = "This suggestion has been greenlit.";
+    static final String DENIED_MESSAGE = "Your recent review request has been denied. We recommend you review your suggestion and make any necessary changes before requesting another review. Thank you!";
+    static final String LOCKED_MESSAGE = "We have reviewed your recent request and have decided to lock this suggestion. If you believe this to be a mistake or would like more information, please contact us through Mod Mail.";
+
+    /** Which suggestions a /suggestions command lists, and how. */
+    record ListingRequest(@Nullable Long ownerId, @Nullable String ownerName, @Nullable String ownerAvatar,
+                          boolean showNames, boolean showRatio) {
+    }
+
+    private final SuggestionCache suggestions;
+    private final SuggestionFactory factory;
+    private final Provider<NerdBotConfig> config;
+    private final JDA jda;
+    private final GreenlitStore greenlit;
+    private final Executor backgroundWork;
+    private final Clock clock;
+    private final Cache<String, Long> lastReviewRequests = Caffeine.newBuilder()
+        .expireAfterWrite(REVIEW_COOLDOWN)
         .build();
 
-
+    @Inject
+    public SuggestionCommands(SuggestionCache suggestions, SuggestionFactory factory, Provider<NerdBotConfig> config, JDA jda,
+                              GreenlitStore greenlit, Executor backgroundWork, Clock clock) {
+        this.suggestions = suggestions;
+        this.factory = factory;
+        this.config = config;
+        this.jda = jda;
+        this.greenlit = greenlit;
+        this.backgroundWork = backgroundWork;
+        this.clock = clock;
+    }
 
     @SlashCommand(name = "request-review", description = "Request a greenlit review of your suggestion.", guildOnly = true)
     public void requestSuggestionReview(SlashCommandInteractionEvent event) {
-        event.deferReply(true).complete();
-
-        if (!SkyBlockNerdsBot.config().getSuggestionConfig().getReviewRequestConfig().isEnabled()) {
-            event.getHook().editOriginal("Review requests are currently disabled!").queue();
-            return;
-        }
-
-        DiscordUserRepository repository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-
-        repository.findOrCreateByIdAsync(event.getMember().getId())
-            .thenAccept(discordUser -> {
-                if (event.getChannel().getType() != net.dv8tion.jda.api.entities.channel.ChannelType.GUILD_PUBLIC_THREAD) {
-                    event.getHook().editOriginal("This command cannot be used here!").queue();
-                    return;
-                }
-
-                processReviewRequest(event, discordUser);
-            })
-            .exceptionally(throwable -> {
-                log.error("Error loading user for review request", throwable);
-                event.getHook().editOriginal("Failed to load user data").queue();
-                return null;
-            });
+        requestReview(event, event.getChannel());
     }
 
-    private void processReviewRequest(SlashCommandInteractionEvent event, DiscordUser discordUser) {
-        SuggestionConfig suggestionConfig = SkyBlockNerdsBot.config().getSuggestionConfig();
-        EmojiConfig emojiConfig = DiscordBotEnvironment.getBot().getConfig().getEmojiConfig();
-        String forumChannelId = event.getChannel().asThreadChannel().getParentChannel().getId();
-
-        // Handle Non-Suggestion Channels
-        if (!forumChannelId.equals(suggestionConfig.getForumChannelId())) {
-            event.getHook().editOriginal("You cannot send threads in non-suggestion channels for review!").queue();
-            return;
-        }
-
-        if (lastReviewRequestCache.getIfPresent(event.getChannel().getId()) != null) {
-            event.getHook().editOriginal("You cannot request another review on this thread yet!").queue();
-            return;
-        }
-
-        Suggestion suggestion = SkyBlockNerdsBot.suggestionCache().getSuggestion(event.getChannel().getId());
-
-        // Handle Missing Suggestion
-        if (suggestion == null) {
-            event.getHook().editOriginal("Couldn't find that suggestion in the cache! Please try again later!").queue();
-            return;
-        }
-
-        // Handle User Deleted Posts
-        java.util.Optional<Message> firstMessage = suggestion.getFirstMessage();
-        if (firstMessage.isEmpty()) {
-            event.getHook().editOriginal("The original message for this suggestion was deleted!").queue();
-            return;
-        }
-
-        // No Friends Allowed
-        if (firstMessage.get().getAuthor().getIdLong() != event.getUser().getIdLong()) {
-            event.getHook().editOriginal("You cannot request a review on a thread you did not create!").queue();
-            return;
-        }
-
-        // Handle Already Greenlit
-        if (suggestion.isGreenlit()) {
-            event.getHook().editOriginal("You can only request reviews on threads that are not greenlit!").queue();
-            return;
-        }
-
-        // Handle Minimum Agrees
-        if (suggestion.getAgrees() < suggestionConfig.getReviewRequestConfig().getThreshold()) {
-            event.getHook().editOriginal(String.format("You need at least %d agrees to request a review!", suggestionConfig.getReviewRequestConfig().getThreshold())).queue();
-            return;
-        }
-
-        // Make sure the suggestion is old enough
-        if (System.currentTimeMillis() - firstMessage.get().getTimeCreated().toInstant().toEpochMilli() < suggestionConfig.getReviewRequestConfig().getMinimumSuggestionAge()) {
-            event.getHook().editOriginal("This suggestion is too new to request a review!").queue();
-            return;
-        }
-
-        // Handle Greenlit Ratio
-        if (suggestionConfig.getReviewRequestConfig().isEnforceGreenlitRatio() && suggestion.getRatio() <= suggestionConfig.getGreenlitRatio()) {
-            event.getHook().editOriginal(String.format("You need at least a %d%% agree ratio to request a review!", suggestionConfig.getGreenlitRatio())).queue();
-            return;
-        }
-
-        // Send Request Review Message
-        SuggestionCommandUtils.getRequestedReviewChannel().ifPresentOrElse(textChannel -> {
-            textChannel.sendMessageEmbeds(
-                    new EmbedBuilder()
-                        .setAuthor(String.format("Greenlit Review Request from %s", event.getUser().getEffectiveName()))
-                        .setTitle(
-                            suggestion.getThreadName(),
-                            firstMessage.map(Message::getJumpUrl)
-                                .orElse(suggestion.getJumpUrl())
-                        )
-                        .setDescription(
-                            firstMessage.map(Message::getContentRaw)
-                                .orElse("*Main message missing!*")
-                        )
-                        .setColor(Color.GRAY)
-                        .setFooter(String.format(
-                            "ID: %s",
-                            suggestion.getThreadId()
-                        ))
-                        .addField(
-                            "Agrees",
-                            String.valueOf(suggestion.getAgrees()),
-                            true
-                        )
-                        .addField(
-                            "Disagrees",
-                            String.valueOf(suggestion.getDisagrees()),
-                            true
-                        )
-                        .addField(
-                            "Neutrals",
-                            String.valueOf(suggestion.getNeutrals()),
-                            true
-                        )
-                        .addField(
-                            "Tags",
-                            suggestion.getAppliedTags()
-                                .stream()
-                                .map(ForumTag::getName)
-                                .collect(Collectors.joining(", ")),
-                            false
-                        )
-                        .addField(
-                            "Created",
-                            firstMessage.map(Message::getTimeCreated)
-                                .map(date -> DiscordTimestamp.toRelativeTimestamp(date.toInstant().toEpochMilli()))
-                                .orElse("???"),
-                            false
-                        )
-                        .build()
-                )
-                .addActionRow(
-                    Button.of(
-                        ButtonStyle.SUCCESS,
-                        String.format(
-                            "suggestion-review-accept-%s",
-                            suggestion.getThreadId()
-                        ),
-                        "Greenlit",
-                        java.util.Optional.ofNullable(emojiConfig.getGreenlitEmojiId())
-                            .map(StringUtils::stripToNull)
-                            .map(emojiId -> Emoji.fromCustom(
-                                "greenlit",
-                                Long.parseLong(emojiId),
-                                false
-                            ))
-                            .orElse(null)
-                    ),
-                    Button.of(
-                        ButtonStyle.DANGER,
-                        String.format(
-                            "suggestion-review-deny-%s",
-                            suggestion.getThreadId()
-                        ),
-                        "Deny w/o Locking",
-                        java.util.Optional.ofNullable(emojiConfig.getDisagreeEmojiId())
-                            .map(StringUtils::stripToNull)
-                            .map(emojiId -> Emoji.fromCustom(
-                                "disagree",
-                                Long.parseLong(emojiId),
-                                false
-                            ))
-                            .orElse(null)
-                    ),
-                    Button.of(
-                        ButtonStyle.SECONDARY,
-                        String.format(
-                            "suggestion-review-lock-%s",
-                            suggestion.getThreadId()
-                        ),
-                        "Lock",
-                        Emoji.fromUnicode("🔒")
-                    )
-                )
-                .queue();
-        }, () -> log.warn("Review request channel not found!"));
-
-        lastReviewRequestCache.put(event.getChannel().getId(), System.currentTimeMillis());
-        event.getHook().deleteOriginal().complete();
-        event.getChannel().sendMessage("This suggestion has been sent for review!").queue();
-    }
-
-    @SlashCommand(
-        name = "suggestions",
-        subcommand = "by-id",
-        description = "View user suggestions.",
-        guildOnly = true
-    )
+    @SlashCommand(name = "suggestions", subcommand = "by-id", description = "View user suggestions.", guildOnly = true)
     public void viewMemberSuggestions(
         SlashCommandInteractionEvent event,
         @SlashOption(description = "User ID to view.") String userId,
@@ -266,55 +118,22 @@ public class SuggestionCommands {
         @SlashOption(description = "Words to filter title for.", required = false) String title,
         @SlashOption(description = "Show suggestions from a specific category.", autocompleteId = "suggestion-types", required = false) String channelType
     ) {
-        event.deferReply(true).complete();
-        Suggestion.ChannelType channelTypeEnum = (channelType == null || channelType.isEmpty() ? Suggestion.ChannelType.NORMAL : Suggestion.ChannelType.getType(channelType));
-
-        if (channelTypeEnum == Suggestion.ChannelType.UNKNOWN) {
-            event.getHook().editOriginal("Invalid channel type provided!").queue();
+        long ownerId;
+        try {
+            ownerId = Long.parseLong(userId.trim());
+        } catch (NumberFormatException exception) {
+            CommandReplies.replyPrivately(event, "Invalid user ID!");
             return;
         }
 
-        try {
-            long userIdLong = Long.parseLong(userId);
-            User searchUser = DiscordBotEnvironment.getBot().getJDA().getUserById(userIdLong);
-            boolean showRatio = userIdLong == event.getMember().getIdLong() || event.getMember().hasPermission(Permission.MANAGE_PERMISSIONS);
-            List<Suggestion> suggestions = SuggestionCommandUtils.getSuggestions(event.getMember(), userIdLong, tags, title, channelTypeEnum);
-            SuggestionStats stats = SuggestionCommandUtils.buildSuggestionStats(suggestions, event.getMember());
-
-            if (suggestions.isEmpty()) {
-                event.getHook().editOriginal("No suggestions found matching that filter!").queue();
-                return;
-            }
-
-            PaginatedResponse<Suggestion> pagination = SuggestionCommandUtils.createSuggestionsPagination(
-                event.getMember(),
-                suggestions,
-                stats,
-                tags,
-                title,
-                channelTypeEnum,
-                false,
-                showRatio,
-                "suggestions-page",
-                searchUser != null ? searchUser.getName() : userId,
-                searchUser != null ? searchUser.getEffectiveAvatarUrl() : null
-            );
-
-            pagination.sendMessage(event);
-            event.getHook().retrieveOriginal().queue(message ->
-                PaginationManager.registerPagination(message.getId(), pagination)
-            );
-        } catch (NumberFormatException exception) {
-            event.getHook().editOriginal("Invalid user ID!").queue();
-        }
+        User owner = jda.getUserById(ownerId);
+        showSuggestions(event, new ListingRequest(ownerId,
+            owner != null ? owner.getName() : userId.trim(),
+            owner != null ? owner.getEffectiveAvatarUrl() : null,
+            false, canSeeRatio(event.getMember(), ownerId)), tags, title, channelType);
     }
 
-    @SlashCommand(
-        name = "suggestions",
-        subcommand = "by-member",
-        description = "View user suggestions.",
-        guildOnly = true
-    )
+    @SlashCommand(name = "suggestions", subcommand = "by-member", description = "View user suggestions.", guildOnly = true)
     public void viewMemberSuggestions(
         SlashCommandInteractionEvent event,
         @SlashOption(description = "Member to view.") Member member,
@@ -322,90 +141,18 @@ public class SuggestionCommands {
         @SlashOption(description = "Words to filter title for.", required = false) String title,
         @SlashOption(description = "Show suggestions from a specific category.", autocompleteId = "suggestion-types", required = false) String type
     ) {
-        event.deferReply(true).complete();
-        Suggestion.ChannelType typeEnum = (type == null || type.isEmpty() ? Suggestion.ChannelType.NORMAL : Suggestion.ChannelType.getType(type));
-
-        if (typeEnum == Suggestion.ChannelType.UNKNOWN) {
-            event.getHook().editOriginal("Invalid channel type provided!").queue();
-            return;
-        }
-
-        boolean showRatio = member.getIdLong() == event.getMember().getIdLong() || event.getMember().hasPermission(Permission.MANAGE_PERMISSIONS);
-
-        List<Suggestion> suggestions = SuggestionCommandUtils.getSuggestions(event.getMember(), member.getIdLong(), tags, title, typeEnum);
-        SuggestionStats stats = SuggestionCommandUtils.buildSuggestionStats(suggestions, event.getMember());
-
-        if (suggestions.isEmpty()) {
-            event.getHook().editOriginal("No suggestions found matching that filter!").queue();
-            return;
-        }
-
-        PaginatedResponse<Suggestion> pagination = SuggestionCommandUtils.createSuggestionsPagination(
-            member,
-            suggestions,
-            stats,
-            tags,
-            title,
-            typeEnum,
-            false,
-            showRatio,
-            "suggestions-page",
-            member.getEffectiveName(),
-            member.getEffectiveAvatarUrl()
-        );
-
-        pagination.sendMessage(event);
-        event.getHook().retrieveOriginal().queue(message ->
-            PaginationManager.registerPagination(message.getId(), pagination)
-        );
+        showSuggestions(event, new ListingRequest(member.getIdLong(), member.getEffectiveName(), member.getEffectiveAvatarUrl(),
+            false, canSeeRatio(event.getMember(), member.getIdLong())), tags, title, type);
     }
 
-    @SlashCommand(
-        name = "suggestions",
-        subcommand = "by-everyone",
-        description = "View all suggestions.",
-        guildOnly = true
-    )
+    @SlashCommand(name = "suggestions", subcommand = "by-everyone", description = "View all suggestions.", guildOnly = true)
     public void viewAllSuggestions(
         SlashCommandInteractionEvent event,
         @SlashOption(description = "Tags to filter for (comma separated).", required = false) String tags,
         @SlashOption(description = "Words to filter title for.", required = false) String title,
         @SlashOption(description = "Show suggestions from a specific category.", autocompleteId = "suggestion-types", required = false) String type
     ) {
-        event.deferReply(true).complete();
-        Suggestion.ChannelType typeEnum = (type == null || type.isEmpty() ? Suggestion.ChannelType.NORMAL : Suggestion.ChannelType.getType(type));
-
-        if (typeEnum == Suggestion.ChannelType.UNKNOWN) {
-            event.getHook().editOriginal("Invalid channel type provided!").queue();
-            return;
-        }
-
-        List<Suggestion> suggestions = SuggestionCommandUtils.getSuggestions(event.getMember(), null, tags, title, typeEnum);
-        SuggestionStats stats = SuggestionCommandUtils.buildSuggestionStats(suggestions, event.getMember());
-
-        if (suggestions.isEmpty()) {
-            event.getHook().editOriginal("No suggestions found matching that filter!").queue();
-            return;
-        }
-
-        PaginatedResponse<Suggestion> pagination = SuggestionCommandUtils.createSuggestionsPagination(
-            event.getMember(),
-            suggestions,
-            stats,
-            tags,
-            title,
-            typeEnum,
-            true,
-            true,
-            "suggestions-page",
-            null,
-            null
-        );
-
-        pagination.sendMessage(event);
-        event.getHook().retrieveOriginal().queue(message ->
-            PaginationManager.registerPagination(message.getId(), pagination)
-        );
+        showSuggestions(event, new ListingRequest(null, null, null, true, true), tags, title, type);
     }
 
     @SlashAutocompleteHandler(id = "suggestion-types")
@@ -415,129 +162,320 @@ public class SuggestionCommands {
             .toList();
     }
 
-    @SlashComponentHandler(id = "suggestion-review", patterns = {"suggestion-review-*"})
+    @SlashComponentHandler(id = REVIEW_PREFIX, patterns = {REVIEW_PREFIX + "-*"})
     public void handleSuggestionReview(ButtonInteractionEvent event) {
-        event.deferEdit().queue();
-
-        DiscordUserRepository userRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        userRepository.findByIdAsync(event.getUser().getId()).thenAccept(user -> {
-            if (user == null) return;
-
-            String[] parts = event.getComponentId().split("-");
-            String action = parts[2];
-            String threadId = parts[3];
-
-            ThreadChannel thread = DiscordBotEnvironment.getBot().getJDA().getThreadChannelById(threadId);
-            if (thread == null) {
-                event.getHook().editOriginal("Could not find thread with ID " + threadId + "!").queue();
-                return;
-            }
-
-            SuggestionConfig suggestionConfig = SkyBlockNerdsBot.config().getSuggestionConfig();
-            ForumChannel forum = thread.getParentChannel().asForumChannel();
-
-            if (!DiscordUtils.hasTagByName(forum, suggestionConfig.getGreenlitTag())) {
-                event.getHook().editOriginal("This thread does not have the greenlit tag!").queue();
-                return;
-            }
-
-            Suggestion suggestion = SkyBlockNerdsBot.suggestionCache().getSuggestion(thread.getId());
-            if (suggestion == null) {
-                event.getHook().editOriginal("Could not find this suggestion in the cache! Please try again later.").queue();
-                return;
-            }
-
-            java.util.Optional<Message> firstMessage = suggestion.getFirstMessage();
-            if (firstMessage.isEmpty()) {
-                event.getHook().editOriginal("Could not find the first message in this thread!").queue();
-                return;
-            }
-
-            boolean accepted = switch (action) {
-                case "accept" -> {
-                    if (DiscordUtils.hasTagByName(thread, suggestionConfig.getGreenlitTag()) ||
-                        DiscordUtils.hasTagByName(thread, suggestionConfig.getReviewedTag())) {
-                        event.getHook().editOriginal("This suggestion has already been greenlit or reviewed!").queue();
-                        yield false;
-                    }
-
-                    List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
-                    tags.add(DiscordUtils.getTagByName(forum, suggestionConfig.getGreenlitTag()));
-
-                    applyThreadChanges(thread, tags, suggestionConfig);
-
-                    GreenlitMessage greenlitMessage = ForumChannelCurator.createGreenlitMessage(
-                        firstMessage.get(), thread, suggestion.getAgrees(), suggestion.getNeutrals(), suggestion.getDisagrees());
-                    BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(GreenlitMessageRepository.class).cacheObject(greenlitMessage);
-                    SkyBlockNerdsBot.suggestionCache().updateSuggestion(thread);
-
-                    thread.sendMessage("This suggestion has been greenlit.").queue();
-                    yield true;
-                }
-                case "deny" -> {
-                    thread.sendMessage("Your recent review request has been denied. We recommend you review your suggestion and make any necessary changes before requesting another review. Thank you!").queue();
-                    yield false;
-                }
-                case "lock" -> {
-                    thread.getManager().setLocked(true).queue(
-                        unused -> {
-                            event.getHook().sendMessage("Thread locked!").setEphemeral(true).queue();
-                            thread.sendMessage("We have reviewed your recent request and have decided to lock this suggestion. If you believe this to be a mistake or would like more information, please contact us through Mod Mail.").queue();
-                        },
-                        throwable -> event.getHook().sendMessage("Unable to lock thread: " + throwable.getMessage()).setEphemeral(true).queue()
-                    );
-                    yield false;
-                }
-                default -> {
-                    event.getHook().sendMessage("Invalid action!").setEphemeral(true).queue();
-                    yield false;
-                }
-            };
-
-            event.getHook().editOriginalComponents(ActionRow.of(
-                (accepted ? Button.success("suggestion-review-completed", "Greenlit")
-                    : Button.danger("suggestion-review-completed", "Denied")).asDisabled()
-            )).queue();
-
-            PrometheusMetrics.REVIEW_REQUESTS.labels(action).inc();
-        });
-    }
-
-    private void applyThreadChanges(ThreadChannel thread, List<ForumTag> tags, SuggestionConfig suggestionConfig) {
-        ThreadChannelManager threadManager = thread.getManager();
-        boolean wasArchived = thread.isArchived();
-
-        if (wasArchived) {
-            threadManager = threadManager.setArchived(false);
-        }
-
-        threadManager = threadManager.setAppliedTags(tags);
-
-        if (wasArchived || suggestionConfig.isArchiveOnGreenlit()) {
-            threadManager = threadManager.setArchived(true);
-        }
-
-        if (suggestionConfig.isLockOnGreenlit()) {
-            threadManager = threadManager.setLocked(true);
-        }
-
-        threadManager.complete();
+        review(event);
     }
 
     @SlashComponentHandler(id = "suggestions-pagination", patterns = {"suggestions-page:*"})
     public void handleSuggestionsPagination(ButtonInteractionEvent event) {
-        try {
-            event.deferEdit().queue();
+        event.deferEdit().queue();
 
-            boolean handled = PaginationManager.handleButtonInteraction(event);
+        if (!PaginationManager.handleButtonInteraction(event)) {
+            log.warn("Could not find pagination for message ID: {}", event.getMessageId());
+            event.getHook().editOriginal("This pagination has expired. Please run the command again.").queue();
+        }
+    }
 
-            if (!handled) {
-                log.warn("Could not find pagination for message ID: {}", event.getMessageId());
-                event.getHook().editOriginal("This pagination has expired. Please run the command again.").queue();
+    void showSuggestions(IReplyCallback interaction, ListingRequest request, @Nullable String tags, @Nullable String title, @Nullable String type) {
+        InteractionHook hook = CommandReplies.deferPrivately(interaction);
+        Member viewer = interaction.getMember();
+        if (viewer == null) {
+            hook.editOriginal("This command can only be used in a server!").queue();
+            return;
+        }
+
+        Suggestion.ChannelType channelType = type == null || type.isBlank() ? Suggestion.ChannelType.NORMAL : Suggestion.ChannelType.getType(type);
+        if (channelType == Suggestion.ChannelType.UNKNOWN) {
+            hook.editOriginal("Invalid channel type provided!").queue();
+            return;
+        }
+
+        List<Suggestion> matching = SuggestionCommandUtils.filterSuggestions(jda, suggestions.all(), viewer, request.ownerId(), tags, title, channelType);
+        if (matching.isEmpty()) {
+            hook.editOriginal(suggestions.isInitialized()
+                ? "No suggestions found matching that filter!"
+                : "Suggestions are still loading, please try again in a minute.").queue();
+            return;
+        }
+
+        SuggestionCommandUtils.Listing listing = new SuggestionCommandUtils.Listing(viewer, tags, title, channelType,
+            request.showNames(), request.showRatio(), request.ownerName(), request.ownerAvatar(), !suggestions.isInitialized(), jda);
+        PaginatedResponse<Suggestion> pagination = SuggestionCommandUtils.createSuggestionsPagination(
+            matching, SuggestionCommandUtils.buildSuggestionStats(jda, matching, viewer), listing, "suggestions-page");
+
+        pagination.sendMessage(interaction);
+        hook.retrieveOriginal().queue(message -> PaginationManager.registerPagination(message.getId(), pagination));
+    }
+
+    void requestReview(IReplyCallback interaction, @Nullable MessageChannelUnion channel) {
+        InteractionHook hook = CommandReplies.deferPrivately(interaction);
+        SuggestionConfig suggestionConfig = config.get().getSuggestionConfig();
+        ReviewRequestConfig reviewConfig = suggestionConfig.getReviewRequestConfig();
+
+        // The section is optional in the config, and missing means off
+        if (reviewConfig == null || !reviewConfig.isEnabled()) {
+            hook.editOriginal("Review requests are currently disabled!").queue();
+            return;
+        }
+
+        if (channel == null || channel.getType() != ChannelType.GUILD_PUBLIC_THREAD) {
+            hook.editOriginal("This command cannot be used here!").queue();
+            return;
+        }
+
+        ThreadChannel thread = channel.asThreadChannel();
+        if (!thread.getParentChannel().getId().equals(suggestionConfig.getForumChannelId())) {
+            hook.editOriginal("You cannot send threads in non-suggestion channels for review!").queue();
+            return;
+        }
+
+        if (lastReviewRequests.getIfPresent(thread.getId()) != null) {
+            hook.editOriginal("You cannot request another review on this thread yet!").queue();
+            return;
+        }
+
+        Optional<Suggestion> suggestion = suggestions.find(thread.getId());
+        if (suggestion.isEmpty()) {
+            hook.editOriginal("Couldn't find that suggestion in the cache! Please try again later!").queue();
+            return;
+        }
+
+        long requesterId = interaction.getUser().getIdLong();
+        String requesterName = interaction.getUser().getEffectiveName();
+
+        CommandReplies.finish(factory.firstMessage(thread), hook, "check the review request for " + thread.getId(),
+            "Couldn't check that suggestion. Please try again later.", firstMessage -> {
+                Optional<String> problem = reviewProblem(suggestion.get(), firstMessage, requesterId, suggestionConfig.getGreenlitRatio(), reviewConfig, clock.millis());
+                if (problem.isPresent()) {
+                    hook.editOriginal(problem.get()).queue();
+                    return;
+                }
+
+                Optional<TextChannel> reviewChannel = reviewChannel(reviewConfig);
+                if (reviewChannel.isEmpty()) {
+                    log.warn("A review was requested for {} but the review request channel '{}' doesn't exist", thread.getId(),
+                        reviewConfig.getChannelId());
+                    hook.editOriginal("Review requests aren't set up right now. Please let a moderator know.").queue();
+                    return;
+                }
+
+                reviewChannel.get()
+                    .sendMessageEmbeds(reviewEmbed(suggestion.get(), firstMessage.get(), thread, requesterName))
+                    .addActionRow(reviewButtons(suggestion.get().getThreadId(), config.get().getEmojiConfig()))
+                    .queue(sent -> {
+                        lastReviewRequests.put(thread.getId(), clock.millis());
+                        hook.deleteOriginal().queue();
+                        thread.sendMessage(SENT_FOR_REVIEW).queue();
+                    }, failure -> CommandReplies.fail(hook, "Couldn't send the review request. Please try again later.", failure));
+            });
+    }
+
+    /** Why this request can't go to review, checked in the order members are most likely to hit them. */
+    static Optional<String> reviewProblem(Suggestion suggestion, Optional<Message> firstMessage, long requesterId,
+                                          double greenlitRatio, ReviewRequestConfig reviewConfig, long nowMillis) {
+        if (firstMessage.isEmpty()) {
+            return Optional.of("The original message for this suggestion was deleted!");
+        }
+
+        if (firstMessage.get().getAuthor().getIdLong() != requesterId) {
+            return Optional.of("You cannot request a review on a thread you did not create!");
+        }
+
+        if (suggestion.isGreenlit()) {
+            return Optional.of("You can only request reviews on threads that are not greenlit!");
+        }
+
+        int threshold = reviewConfig.getThreshold();
+        if (suggestion.getAgrees() < threshold) {
+            return Optional.of(String.format("You need at least %d agrees to request a review!", threshold));
+        }
+
+        long age = nowMillis - firstMessage.get().getTimeCreated().toInstant().toEpochMilli();
+        if (age < reviewConfig.getMinimumSuggestionAge()) {
+            return Optional.of("This suggestion is too new to request a review!");
+        }
+
+        if (reviewConfig.isEnforceGreenlitRatio() && suggestion.getRatio() <= greenlitRatio) {
+            // The ratio is a double in the config, so %d would throw; 75.0 shows as 75 and 72.5 as 72.5
+            String ratio = BigDecimal.valueOf(greenlitRatio).stripTrailingZeros().toPlainString();
+            return Optional.of("You need at least a " + ratio + "% agree ratio to request a review!");
+        }
+
+        return Optional.empty();
+    }
+
+    void review(ButtonInteraction interaction) {
+        Optional<List<String>> parts = REVIEW.parse(interaction.getComponentId());
+        if (parts.isEmpty()) {
+            CommandReplies.replyPrivately(interaction, PanelId.OUTDATED);
+            return;
+        }
+        String action = parts.get().get(0);
+        String threadId = parts.get().get(1);
+
+        interaction.deferEdit().queue();
+        InteractionHook hook = interaction.getHook();
+
+        ThreadChannel thread = threadById(threadId);
+        if (thread == null) {
+            followUp(hook, "Could not find thread with ID " + threadId + "!");
+            return;
+        }
+
+        SuggestionConfig suggestionConfig = config.get().getSuggestionConfig();
+        ForumChannel forum = thread.getParentChannel().asForumChannel();
+        Optional<ForumTag> greenlitTag = DiscordUtils.findTagByName(forum, suggestionConfig.getGreenlitTag());
+        if (greenlitTag.isEmpty()) {
+            followUp(hook, "The suggestion forum has no tag named `" + suggestionConfig.getGreenlitTag() + "`!");
+            return;
+        }
+
+        switch (action) {
+            case "accept" -> accept(hook, thread, greenlitTag.get(), suggestionConfig);
+            case "deny" -> {
+                thread.sendMessage(DENIED_MESSAGE).queue();
+                markReviewed(hook, false, action);
             }
-        } catch (Exception e) {
-            log.error("Error handling suggestions pagination button interaction", e);
-            event.getHook().editOriginal("An error occurred while navigating pages.").queue();
+            case "lock" -> thread.getManager().setLocked(true).queue(locked -> {
+                followUp(hook, "Thread locked!");
+                thread.sendMessage(LOCKED_MESSAGE).queue();
+                markReviewed(hook, false, action);
+            }, failure -> {
+                CommandReplies.logFailure("Failed to lock suggestion " + threadId + " from a review request", failure);
+                followUp(hook, "Unable to lock the thread. Please check my permissions and try again.");
+            });
+            default -> followUp(hook, "Invalid action!");
+        }
+    }
+
+    private void accept(InteractionHook hook, ThreadChannel thread, ForumTag greenlitTag, SuggestionConfig suggestionConfig) {
+        if (DiscordUtils.hasTagByName(thread, suggestionConfig.getGreenlitTag()) || DiscordUtils.hasTagByName(thread, suggestionConfig.getReviewedTag())) {
+            followUp(hook, "This suggestion has already been greenlit or reviewed!");
+            return;
+        }
+
+        Optional<Suggestion> suggestion = suggestions.find(thread.getId());
+        if (suggestion.isEmpty()) {
+            followUp(hook, "Could not find this suggestion in the cache! Please try again later.");
+            return;
+        }
+
+        EmojiConfig emojiConfig = config.get().getEmojiConfig();
+        CommandReplies.finishWithFollowUp(factory.firstMessage(thread), hook, "load suggestion " + thread.getId() + " to greenlight it",
+            "Couldn't greenlight the suggestion. Please try again.", firstMessage -> {
+                if (firstMessage.isEmpty()) {
+                    followUp(hook, "Could not find the first message in this thread!");
+                    return;
+                }
+
+                // Fetching every voter can take a while on a popular suggestion, so it runs off JDA's threads
+                CompletableFuture<Void> greenlighting = CompletableFuture.supplyAsync(() -> ForumChannelCurator.createGreenlitMessage(
+                        firstMessage.get(), thread, suggestion.get().getAgrees(), suggestion.get().getNeutrals(), suggestion.get().getDisagrees(), emojiConfig),
+                        backgroundWork)
+                    .thenCompose(greenlitMessage -> applyGreenlit(thread, greenlitTag, suggestionConfig)
+                        .thenCompose(applied -> greenlit.save(greenlitMessage)));
+
+                CommandReplies.finishWithFollowUp(greenlighting, hook, "greenlight suggestion " + thread.getId(),
+                    "Couldn't greenlight the suggestion. Please try again.", done -> {
+                        suggestions.requestUpdate(thread);
+                        thread.sendMessage(GREENLIT_MESSAGE).queue();
+                        markReviewed(hook, true, "accept");
+                    });
+            });
+    }
+
+    private CompletableFuture<Void> applyGreenlit(ThreadChannel thread, ForumTag greenlitTag, SuggestionConfig suggestionConfig) {
+        List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
+        tags.add(greenlitTag);
+
+        // Discord won't edit an archived thread, so it's unarchived for the change and archived again after
+        boolean wasArchived = thread.isArchived();
+        ThreadChannelManager manager = thread.getManager();
+        if (wasArchived) {
+            manager = manager.setArchived(false);
+        }
+        manager = manager.setAppliedTags(tags);
+        if (wasArchived || suggestionConfig.isArchiveOnGreenlit()) {
+            manager = manager.setArchived(true);
+        }
+        if (suggestionConfig.isLockOnGreenlit()) {
+            manager = manager.setLocked(true);
+        }
+
+        return manager.submit().thenApply(ignored -> null);
+    }
+
+    private void markReviewed(InteractionHook hook, boolean greenlit, String action) {
+        hook.editOriginalComponents(ActionRow.of(
+            (greenlit ? Button.success(REVIEW_PREFIX + "-completed", "Greenlit") : Button.danger(REVIEW_PREFIX + "-completed", "Denied")).asDisabled()
+        )).queue();
+        PrometheusMetrics.REVIEW_REQUESTS.labels(action).inc();
+    }
+
+    private static void followUp(InteractionHook hook, String message) {
+        hook.sendMessage(message).setEphemeral(true).queue();
+    }
+
+    private static MessageEmbed reviewEmbed(Suggestion suggestion, Message firstMessage, ThreadChannel thread, String requesterName) {
+        return new EmbedBuilder()
+            .setAuthor(String.format("Greenlit Review Request from %s", requesterName))
+            .setTitle(suggestion.getThreadName(), firstMessage.getJumpUrl())
+            .setDescription(firstMessage.getContentRaw())
+            .setColor(Color.GRAY)
+            .setFooter(String.format("ID: %s", suggestion.getThreadId()))
+            .addField("Agrees", String.valueOf(suggestion.getAgrees()), true)
+            .addField("Disagrees", String.valueOf(suggestion.getDisagrees()), true)
+            .addField("Neutrals", String.valueOf(suggestion.getNeutrals()), true)
+            .addField("Tags", thread.getAppliedTags().stream().map(ForumTag::getName).collect(Collectors.joining(", ")), false)
+            .addField("Created", DiscordTimestamp.toRelativeTimestamp(firstMessage.getTimeCreated().toInstant().toEpochMilli()), false)
+            .build();
+    }
+
+    static List<Button> reviewButtons(String threadId, EmojiConfig emojiConfig) {
+        return List.of(
+            Button.of(ButtonStyle.SUCCESS, REVIEW.build("accept", threadId), "Greenlit", customEmoji("greenlit", emojiConfig.getGreenlitEmojiId())),
+            Button.of(ButtonStyle.DANGER, REVIEW.build("deny", threadId), "Deny w/o Locking", customEmoji("disagree", emojiConfig.getDisagreeEmojiId())),
+            Button.of(ButtonStyle.SECONDARY, REVIEW.build("lock", threadId), "Lock", Emoji.fromUnicode("🔒"))
+        );
+    }
+
+    /** Null, so the button just has no emoji, when the config has no id or a malformed one. */
+    @Nullable
+    static Emoji customEmoji(String name, @Nullable String emojiId) {
+        if (emojiId == null || emojiId.isBlank()) {
+            return null;
+        }
+        try {
+            return Emoji.fromCustom(name, Long.parseLong(emojiId.trim()), false);
+        } catch (NumberFormatException malformed) {
+            log.warn("Emoji id '{}' for {} in the config is not a valid id", emojiId, name);
+            return null;
+        }
+    }
+
+    private static boolean canSeeRatio(@Nullable Member viewer, long ownerId) {
+        return viewer != null && (viewer.getIdLong() == ownerId || viewer.hasPermission(Permission.MANAGE_PERMISSIONS));
+    }
+
+    private Optional<TextChannel> reviewChannel(ReviewRequestConfig reviewConfig) {
+        String channelId = reviewConfig.getChannelId();
+        if (channelId == null || channelId.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.ofNullable(jda.getTextChannelById(channelId));
+        } catch (NumberFormatException malformed) {
+            return Optional.empty();
+        }
+    }
+
+    @Nullable
+    private ThreadChannel threadById(String threadId) {
+        try {
+            return jda.getThreadChannelById(threadId);
+        } catch (NumberFormatException malformed) {
+            return null;
         }
     }
 }
