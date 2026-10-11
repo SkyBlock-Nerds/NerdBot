@@ -1,7 +1,7 @@
 package net.hypixel.nerdbot.app.punishment;
 
 import net.hypixel.nerdbot.app.testsupport.FakePunishmentStore;
-import net.hypixel.nerdbot.app.testsupport.FakePunishmentStore.WriteOutcome;
+import net.hypixel.nerdbot.app.testsupport.WriteOutcome;
 import net.hypixel.nerdbot.marmalade.storage.database.model.punishment.Punishment;
 import net.hypixel.nerdbot.marmalade.storage.database.model.punishment.PunishmentType;
 import org.junit.jupiter.api.Test;

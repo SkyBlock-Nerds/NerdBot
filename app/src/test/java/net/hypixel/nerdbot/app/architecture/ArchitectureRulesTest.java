@@ -39,10 +39,11 @@ class ArchitectureRulesTest {
      * Code that gets what it needs through its constructor. Add to these as more of the bot moves
      * over; nothing in them may go back to looking things up through the global bot.
      */
-    private static final String[] INJECTED_PACKAGES = {"..app.inject..", "..app.punishment.."};
+    private static final String[] INJECTED_PACKAGES = {"..app.inject..", "..app.punishment..", "..app.reminder.."};
     private static final String[] INJECTED_CLASSES = {
         "net.hypixel.nerdbot.app.command.PunishmentCommands",
-        "net.hypixel.nerdbot.app.command.PunishmentComponentIds"
+        "net.hypixel.nerdbot.app.command.ReminderCommands",
+        "net.hypixel.nerdbot.app.command.util.PanelId"
     };
 
     @Test

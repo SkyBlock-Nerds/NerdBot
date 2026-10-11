@@ -1,499 +1,229 @@
 package net.hypixel.nerdbot.app.command;
 
-import com.joestelmach.natty.DateGroup;
-import com.joestelmach.natty.Parser;
-import com.mongodb.client.result.DeleteResult;
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.aerh.slashcommands.api.annotations.SlashCommand;
 import net.aerh.slashcommands.api.annotations.SlashComponentHandler;
 import net.aerh.slashcommands.api.annotations.SlashModalHandler;
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
-import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.callbacks.IModalCallback;
+import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.components.buttons.ButtonInteraction;
+import net.dv8tion.jda.api.interactions.components.selections.StringSelectInteraction;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import net.dv8tion.jda.api.interactions.modals.Modal;
-import net.hypixel.nerdbot.app.reminder.ReminderDispatcher;
-import net.hypixel.nerdbot.discord.BotEnvironment;
-import net.hypixel.nerdbot.marmalade.format.DiscordTimestamp;
-import net.hypixel.nerdbot.marmalade.storage.database.model.reminder.Reminder;
-import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.marmalade.storage.database.repository.ReminderRepository;
+import net.dv8tion.jda.api.interactions.modals.ModalInteraction;
+import net.dv8tion.jda.api.interactions.modals.ModalMapping;
+import net.hypixel.nerdbot.app.command.util.PanelId;
+import net.hypixel.nerdbot.app.reminder.ReminderService;
+import net.hypixel.nerdbot.app.reminder.ReminderService.CreateResult;
 import net.hypixel.nerdbot.discord.util.StringUtils;
-import net.hypixel.nerdbot.marmalade.discord.EmbedFactory;
+import net.hypixel.nerdbot.marmalade.format.DiscordTimestamp;
 import net.hypixel.nerdbot.marmalade.format.TimeUtils;
+import net.hypixel.nerdbot.marmalade.storage.database.model.reminder.Reminder;
+import org.jetbrains.annotations.Nullable;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
-import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Locale;
+import java.util.Optional;
 
+/**
+ * The {@code /reminders} commands and the panel they open. Each handler hands its event to a method
+ * that takes the matching JDA interface, so tests can drive them with fakes.
+ */
 @Slf4j
 public class ReminderCommands {
 
-    private static final Pattern DURATION = Pattern.compile("((\\d+)w)?((\\d+)d)?((\\d+)h)?((\\d+)m)?((\\d+)s)?");
+    static final int REMINDERS_PER_PAGE = 25;
+    static final String NOT_YOUR_PANEL = "You can only use your own reminder interface!";
 
-    // Readable date format used in the reminder selection menu - e.g. "Apr 02, 2026 at 3:45 PM UTC"
-    private static final DateTimeFormatter REMINDER_DATE_FORMAT = DateTimeFormatter.ofPattern("MMM dd, yyyy 'at' h:mm a z")
+    static final String NAV_PREFIX = "reminder-nav";
+    static final String MANAGE_PREFIX = "reminder-manage";
+    static final String DETAIL_PREFIX = "reminder-detail";
+    static final String CREATE_PREFIX = "reminder-create";
+    static final String MODAL_PREFIX = "reminder-modal";
+
+    static final PanelId NAV = PanelId.of(NAV_PREFIX, 3, 2);
+    static final PanelId MANAGE = PanelId.of(MANAGE_PREFIX, 1, 0);
+    static final PanelId DETAIL = new PanelId(DETAIL_PREFIX, 3, 2, 1);
+    static final PanelId CREATE = PanelId.of(CREATE_PREFIX, 1, 0);
+    static final PanelId MODAL = PanelId.of(MODAL_PREFIX, 1, 0);
+
+    // Plain text because select menu options can't render Discord timestamps, e.g. "Apr 02, 2026 at 3:45 PM UTC".
+    // The locale is fixed so the server's own locale can't change it (en_GB would print "pm").
+    private static final DateTimeFormatter MENU_DATE_FORMAT = DateTimeFormatter.ofPattern("MMM dd, yyyy 'at' h:mm a z", Locale.US)
         .withZone(ZoneId.of("UTC"));
 
-    /**
-     * Parse a {@code 1w2d3h4m5s}-style duration string into a {@link Duration}.
-     *
-     * <p>Every unit is optional and an empty string yields {@link Duration#ZERO}; weeks are expanded
-     * to seven days. Extracted from {@link #parseCustomFormat} so the deterministic parsing can be
-     * unit-tested without depending on the current time.
-     *
-     * @param time The duration string, e.g. {@code 1w2d3h4m5s}
-     *
-     * @return The parsed {@link Duration}
-     *
-     * @throws DateTimeParseException If the string does not match the expected format
-     */
-    static Duration parseDuration(String time) throws DateTimeParseException {
-        Matcher matcher = DURATION.matcher(time);
+    private final ReminderService reminders;
 
-        if (!matcher.matches()) {
-            throw new DateTimeParseException("Could not parse date: " + time, time, 0);
-        }
-
-        Duration duration = Duration.ZERO;
-        if (matcher.group(2) != null) {
-            duration = duration.plusDays(Long.parseLong(matcher.group(2)) * 7);
-        }
-
-        if (matcher.group(4) != null) {
-            duration = duration.plusDays(Long.parseLong(matcher.group(4)));
-        }
-
-        if (matcher.group(6) != null) {
-            duration = duration.plusHours(Long.parseLong(matcher.group(6)));
-        }
-
-        if (matcher.group(8) != null) {
-            duration = duration.plusMinutes(Long.parseLong(matcher.group(8)));
-        }
-
-        if (matcher.group(10) != null) {
-            duration = duration.plusSeconds(Long.parseLong(matcher.group(10)));
-        }
-
-        return duration;
-    }
-
-    /**
-     * Parse a time string in the format of {@code 1w2d3h4m5s} into a Date
-     *
-     * @param time The time string to parse
-     *
-     * @return The parsed string as a Date
-     *
-     * @throws DateTimeParseException If the string could not be parsed
-     */
-    public static Date parseCustomFormat(String time) throws DateTimeParseException {
-        return Date.from(Instant.now().plus(parseDuration(time)));
-    }
-
-    private Date parseLong(String time) throws NumberFormatException {
-        return new Date(Long.parseLong(time));
-    }
-
-    private Date parseWithNatty(String time) {
-        try {
-            Parser parser = new Parser();
-            List<DateGroup> groups = parser.parse(time);
-            DateGroup group = groups.get(0);
-            List<Date> dates = group.getDates();
-            return dates.get(0);
-        } catch (IndexOutOfBoundsException e) {
-            // If Natty parsing fails, try custom format
-            return parseCustomFormat(time);
-        } catch (NumberFormatException exception) {
-            throw new DateTimeParseException("Could not parse date: " + time, time, 0);
-        }
+    @Inject
+    public ReminderCommands(ReminderService reminders) {
+        this.reminders = reminders;
     }
 
     @SlashCommand(name = "reminders", subcommand = "view", description = "Create, view, and delete reminders", guildOnly = true)
     public void reminders(SlashCommandInteractionEvent event) {
-        event.deferReply(true).complete();
-        createReminderPanel(event.getHook(), event.getUser().getId(), 1);
+        showPanel(event);
     }
 
     @SlashCommand(name = "reminders", subcommand = "create", description = "Quick shortcut to create a new reminder", guildOnly = true)
     public void remindersCreate(SlashCommandInteractionEvent event) {
-        String userId = event.getUser().getId();
-        Modal modal = createReminderModal(userId);
-        event.replyModal(modal).queue();
+        openCreateModal(event, event.getUser().getId());
     }
 
-    @SlashComponentHandler(id = "reminder-nav", patterns = {"reminder-nav-*"})
+    @SlashComponentHandler(id = NAV_PREFIX, patterns = {NAV_PREFIX + "-*"})
     public void handleReminderNavigation(ButtonInteractionEvent event) {
-        String[] parts = event.getComponentId().split("-");
-        String action = parts[2]; // "prev", "next"
-        int page = Integer.parseInt(parts[3]);
-        String userId = parts[4];
+        navigate(event);
+    }
 
-        if (!event.getUser().getId().equals(userId)) {
-            event.reply("You can only use your own reminder interface!").setEphemeral(true).queue();
+    @SlashComponentHandler(id = MANAGE_PREFIX, patterns = {MANAGE_PREFIX + "-*"})
+    public void handleReminderManage(StringSelectInteractionEvent event) {
+        selectReminder(event);
+    }
+
+    @SlashComponentHandler(id = DETAIL_PREFIX, patterns = {DETAIL_PREFIX + "-*"})
+    public void handleReminderDetail(ButtonInteractionEvent event) {
+        detailAction(event);
+    }
+
+    @SlashComponentHandler(id = CREATE_PREFIX, patterns = {CREATE_PREFIX + "-*"})
+    public void handleReminderCreate(ButtonInteractionEvent event) {
+        createButton(event);
+    }
+
+    @SlashModalHandler(id = MODAL_PREFIX, patterns = {MODAL_PREFIX + "-*"})
+    public void handleReminderModal(ModalInteractionEvent event) {
+        submit(event);
+    }
+
+    void showPanel(IReplyCallback interaction) {
+        interaction.deferReply(true).queue();
+        renderPanel(interaction.getHook(), interaction.getUser().getId(), 1, null);
+    }
+
+    void navigate(ButtonInteraction interaction) {
+        Optional<List<String>> parts = NAV.parseFor(interaction, interaction.getComponentId(), NOT_YOUR_PANEL);
+        if (parts.isEmpty()) {
             return;
         }
 
-        event.deferEdit().queue();
+        int page;
+        try {
+            page = Integer.parseInt(parts.get().get(1));
+        } catch (NumberFormatException exception) {
+            interaction.reply(PanelId.OUTDATED).setEphemeral(true).queue();
+            return;
+        }
 
-        int newPage = switch (action) {
-            case "prev" -> Math.max(1, page - 1);
+        int newPage = switch (parts.get().get(0)) {
+            case "prev" -> page - 1;
             case "next" -> page + 1;
             default -> page;
         };
 
-        createReminderPanel(event.getHook(), userId, newPage);
+        interaction.deferEdit().queue();
+        renderPanel(interaction.getHook(), parts.get().get(2), newPage, null);
     }
 
-    @SlashComponentHandler(id = "reminder-manage", patterns = {"reminder-manage-*"})
-    public void handleReminderManage(StringSelectInteractionEvent event) {
-        String userId = event.getComponentId().split("-")[2];
-        if (!event.getUser().getId().equals(userId)) {
-            event.reply("You can only use your own reminder interface!").setEphemeral(true).queue();
+    void selectReminder(StringSelectInteraction interaction) {
+        Optional<List<String>> parts = MANAGE.parseFor(interaction, interaction.getComponentId(), NOT_YOUR_PANEL);
+        if (parts.isEmpty() || interaction.getValues().isEmpty()) {
             return;
         }
 
-        event.deferEdit().queue();
-
-        String reminderUuid = event.getValues().get(0);
-        showReminderDetail(event.getHook(), userId, reminderUuid);
+        interaction.deferEdit().queue();
+        renderDetail(interaction.getHook(), parts.get().getFirst(), interaction.getValues().getFirst());
     }
 
-    @SlashComponentHandler(id = "reminder-detail", patterns = {"reminder-detail-*"})
-    public void handleReminderDetail(ButtonInteractionEvent event) {
-        String componentId = event.getComponentId();
+    void detailAction(ButtonInteraction interaction) {
+        Optional<List<String>> parts = DETAIL.parseFor(interaction, interaction.getComponentId(), NOT_YOUR_PANEL);
+        if (parts.isEmpty()) {
+            return;
+        }
+        String action = parts.get().get(0);
+        String reminderId = parts.get().get(1);
+        String userId = parts.get().get(2);
 
-        // Parse: reminder-detail-{action}-{uuid}-{userId}
-        // We need to be careful because UUIDs contain dashes
-        String[] parts = componentId.split("-");
-        if (parts.length < 8) { // reminder-detail-action + 5 UUID parts + userId = 8
-            event.reply("Invalid component ID format!").setEphemeral(true).queue();
+        interaction.deferEdit().queue();
+
+        if (!action.equals("delete")) {
+            renderPanel(interaction.getHook(), userId, 1, null);
             return;
         }
 
-        String action = parts[2]; // "delete", "back"
-
-        // UUID is parts[3] to parts[7]
-        String reminderUuid = String.join("-", parts[3], parts[4], parts[5], parts[6], parts[7]);
-
-        // userId is the last part
-        String userId = parts[parts.length - 1];
-
-        if (!event.getUser().getId().equals(userId)) {
-            event.reply("You can only use your own reminder interface!").setEphemeral(true).queue();
-            return;
-        }
-
-        event.deferEdit().queue();
-
-        switch (action) {
-            case "delete" -> {
-                try {
-                    UUID parsed = UUID.fromString(reminderUuid);
-                    ReminderRepository reminderRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(ReminderRepository.class);
-                    Reminder reminder = reminderRepository.findById(parsed.toString()).orElse(null);
-
-                    if (reminder == null || !reminder.getUserId().equalsIgnoreCase(userId)) {
-                        createReminderPanel(event.getHook(), userId, 1, "❌ Reminder not found!");
-                        return;
-                    }
-
-                    DeleteResult result = reminderRepository.deleteFromDatabase(reminder.getUuid().toString());
-
-                    if (result != null && result.wasAcknowledged()) {
-                        if (reminder.getTimer() != null) {
-                            reminder.getTimer().cancel();
-                        }
-                        createReminderPanel(event.getHook(), userId, 1, "✅ Successfully deleted reminder!");
-                        log.info("Deleted reminder: {} for user: {}", reminderUuid, userId);
-                    } else {
-                        createReminderPanel(event.getHook(), userId, 1, "❌ Failed to delete reminder. Please try again!");
-                        log.error("Could not delete reminder {} for user: {} ({})", reminderUuid, userId, result);
-                    }
-                } catch (IllegalArgumentException exception) {
-                    createReminderPanel(event.getHook(), userId, 1, "❌ Invalid reminder ID!");
-                }
+        switch (reminders.delete(userId, reminderId)) {
+            case DELETED -> {
+                log.info("Deleted reminder {} for user {}", reminderId, userId);
+                renderPanel(interaction.getHook(), userId, 1, "✅ Successfully deleted reminder!");
             }
-            case "back" -> createReminderPanel(event.getHook(), userId, 1);
+            case NOT_FOUND -> renderPanel(interaction.getHook(), userId, 1, "❌ Reminder not found!");
         }
     }
 
-    @SlashComponentHandler(id = "reminder-create", patterns = {"reminder-create-*"})
-    public void handleReminderCreate(ButtonInteractionEvent event) {
-        String userId = event.getComponentId().split("-")[2];
-        if (!event.getUser().getId().equals(userId)) {
-            event.reply("You can only use your own reminder interface!").setEphemeral(true).queue();
-            return;
+    void createButton(ButtonInteraction interaction) {
+        Optional<List<String>> parts = CREATE.parseFor(interaction, interaction.getComponentId(), NOT_YOUR_PANEL);
+        if (parts.isPresent()) {
+            openCreateModal(interaction, parts.get().getFirst());
         }
-
-        // Create and show the modal
-        Modal modal = createReminderModal(userId);
-        event.replyModal(modal).queue();
     }
 
-    @SlashModalHandler(id = "reminder-modal", patterns = {"reminder-modal-*"})
-    public void handleReminderModal(ModalInteractionEvent event) {
-        String userId = event.getModalId().split("-")[2];
-        if (!event.getUser().getId().equals(userId)) {
-            event.reply("You can only use your own reminder interface!").setEphemeral(true).queue();
+    void submit(ModalInteraction interaction) {
+        Optional<List<String>> parts = MODAL.parseFor(interaction, interaction.getModalId(), NOT_YOUR_PANEL);
+        if (parts.isEmpty()) {
+            return;
+        }
+        String userId = parts.get().getFirst();
+
+        interaction.deferReply(true).queue();
+        InteractionHook hook = interaction.getHook();
+
+        String timeInput = modalText(interaction, "time");
+        String description = modalText(interaction, "description");
+        if (timeInput == null || description == null) {
+            hook.editOriginal("❌ Missing required fields! Please fill out all fields.").queue();
             return;
         }
 
-        event.deferReply(true).queue();
-
-        if (event.getValues().isEmpty()) {
-            event.getHook().editOriginal("❌ No input provided! Please try again.").queue();
+        Optional<String> problem = sendingProblem(interaction.getGuild(), interaction.getChannel());
+        if (problem.isPresent()) {
+            hook.editOriginal(problem.get()).queue();
             return;
         }
 
-        if (event.getValues().size() < 2) {
-            event.getHook().editOriginal("❌ Missing required fields! Please fill out all fields.").queue();
-            return;
-        }
-
-        String timeInput = event.getValue("time").getAsString();
-        String descriptionInput = event.getValue("description").getAsString();
-
-        createReminderFromModalReply(event.getHook(), userId, timeInput, descriptionInput, event.getGuild(), event.getChannel(), event.getMember());
-    }
-
-    private void createReminderFromModalReply(InteractionHook hook, String userId, String timeInput, String descriptionInput, Guild guild, MessageChannelUnion channel, Member member) {
-        DiscordUserRepository userRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-
-        userRepository.findByIdAsync(userId)
-            .thenAccept(user -> {
-                if (user == null) {
-                    hook.editOriginal("❌ User not found!").queue();
-                    return;
-                }
-
-                if (!guild.getSelfMember().hasPermission(channel.asGuildMessageChannel(), Permission.MESSAGE_SEND)) {
-                    hook.editOriginal("❌ I don't have permission to send messages in this channel!").queue();
-                    return;
-                }
-
-                if (channel instanceof ThreadChannel && !guild.getSelfMember().hasPermission(channel.asGuildMessageChannel(), Permission.MESSAGE_SEND_IN_THREADS)) {
-                    hook.editOriginal("❌ I don't have permission to send messages in threads!").queue();
-                    return;
-                }
-
-                if (descriptionInput == null || descriptionInput.trim().isEmpty()) {
-                    hook.editOriginal("❌ You need to provide a description for the reminder!").queue();
-                    return;
-                }
-
-                if (descriptionInput.length() > 4_000) {
-                    hook.editOriginal("❌ Description is too long! Please keep it under 4,000 characters.").queue();
-                    return;
-                }
-
-                Date date;
-                try {
-                    date = parseLong(timeInput);
-                } catch (NumberFormatException numberFormatException) {
-                    try {
-                        date = parseWithNatty(timeInput);
-                    } catch (DateTimeParseException | NumberFormatException exception) {
-                        hook.editOriginal("❌ I could not parse that date/time format! Please try again.").queue();
-                        return;
-                    }
-                }
-
-                // Check if the provided time is in the past
-                if (date.before(new Date())) {
-                    hook.editOriginal("❌ You cannot set a reminder in the past!").queue();
-                    return;
-                }
-
-                ReminderRepository reminderRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(ReminderRepository.class);
-                Reminder reminder = new Reminder(descriptionInput, date, channel.getId(), userId);
-
-                final Date finalDate = date;
-                final String finalDescription = descriptionInput;
-
-                reminderRepository.cacheAndSaveAsync(reminder)
-                    .thenAccept(result -> {
-                        if (result != null && result.wasAcknowledged() && result.getUpsertedId() != null) {
-                            ReminderDispatcher.schedule(reminder);
-
-                            // Send confirmation DM
-                            try {
-                                PrivateChannel privateChannel = member.getUser().openPrivateChannel().complete();
-                                EmbedBuilder embedBuilder = EmbedFactory.success(null, finalDescription)
-                                    .setFooter(reminder.getUuid().toString());
-
-                                privateChannel.sendMessage("Reminder set for: " + DiscordTimestamp.toLongDateTime(finalDate.getTime()))
-                                    .addEmbeds(embedBuilder.build())
-                                    .setSuppressedNotifications(true)
-                                    .queue();
-                            } catch (Exception e) {
-                                log.error("Failed to send reminder DM to user: {}", userId, e);
-                            }
-
-                            hook.editOriginal("✅ Successfully created reminder for " + DiscordTimestamp.toLongDateTime(finalDate.getTime()) + "!\n\n" +
-                                "📱 Use `/reminders view` to view and manage all your reminders.").queue();
-                        } else {
-                            hook.editOriginal("❌ An error occurred while saving the reminder! Please try again.").queue();
-                            log.error("Could not save reminder: {} for user: {} ({})", reminder, userId, result);
-                        }
-                    });
-            });
-    }
-
-    private void showReminderDetail(InteractionHook hook, String userId, String reminderUuid) {
-        try {
-            UUID parsed = UUID.fromString(reminderUuid);
-            ReminderRepository reminderRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(ReminderRepository.class);
-            Reminder reminder = reminderRepository.findById(parsed.toString()).orElse(null);
-
-            if (reminder == null || !reminder.getUserId().equalsIgnoreCase(userId)) {
-                createReminderPanel(hook, userId, 1, "❌ Reminder not found!");
+        reminders.create(userId, interaction.getChannel().getId(), timeInput, description).whenComplete((result, error) -> {
+            if (error != null) {
+                log.error("Could not save reminder for user {}", userId, error);
+                hook.editOriginal("❌ An error occurred while saving the reminder! Please try again.").queue();
                 return;
             }
 
-            String content = "📋 **Reminder Details**\n\n" +
-                "🕐 **Time:** " + DiscordTimestamp.toLongDateTime(reminder.getTime()) + "\n" +
-                "⏰ **Relative:** " + DiscordTimestamp.toRelativeTimestamp(reminder.getTime()) + "\n\n" +
-                "📝 **Description:**\n" + reminder.getDescription() + "\n\n" +
-                "📍 **Channel:** <#" + reminder.getChannelId() + ">";
-
-            ActionRow actionRow = ActionRow.of(
-                Button.danger("reminder-detail-delete-" + reminderUuid + "-" + userId, "🗑️ Delete Reminder"),
-                Button.secondary("reminder-detail-back-" + reminderUuid + "-" + userId, "⬅️ Back to List")
-            );
-
-            hook.editOriginal(content)
-                .setComponents(actionRow)
-                .queue();
-        } catch (IllegalArgumentException exception) {
-            createReminderPanel(hook, userId, 1, "❌ Invalid reminder ID!");
-        }
+            switch (result) {
+                case CreateResult.Created created -> hook.editOriginal("✅ Successfully created reminder for "
+                    + DiscordTimestamp.toLongDateTime(created.reminder().getTime()) + "!\n\n"
+                    + "📱 Use `/reminders view` to view and manage all your reminders.").queue();
+                case CreateResult.Rejected rejected -> hook.editOriginal(rejected.reason()).queue();
+            }
+        });
     }
 
-    private void createReminderPanel(InteractionHook hook, String userId, int page) {
-        createReminderPanel(hook, userId, page, null);
-    }
-
-    private void createReminderPanel(InteractionHook hook, String userId, int page, String message) {
-        DiscordUserRepository userRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUser user = userRepository.findById(userId).orElse(null);
-
-        if (user == null) {
-            hook.editOriginal("❌ User not found!").queue();
-            return;
-        }
-
-        ReminderRepository reminderRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(ReminderRepository.class);
-        List<Reminder> allReminders = new ArrayList<>(reminderRepository
-            .filter(reminder -> reminder.getUserId().equalsIgnoreCase(userId))
-            .stream()
-            .sorted(Comparator.comparingLong(Reminder::getTime))
-            .toList());
-
-        if (allReminders.isEmpty()) {
-            String content = "⏰ **Your Reminders**\n\n" +
-                (message != null ? message + "\n\n" : "") +
-                "You don't have any reminders set!\n\n";
-
-            ActionRow createButton = ActionRow.of(
-                Button.primary("reminder-create-" + userId, "Create New Reminder")
-            );
-
-            hook.editOriginal(content).setComponents(createButton).queue();
-            return;
-        }
-
-        // Pagination
-        int remindersPerPage = 25;
-        int totalPages = (int) Math.ceil((double) allReminders.size() / remindersPerPage);
-        page = Math.min(Math.max(1, page), totalPages);
-
-        List<Reminder> pageReminders = allReminders.stream()
-            .skip((long) (page - 1) * remindersPerPage)
-            .limit(remindersPerPage)
-            .toList();
-
-        StringBuilder content = new StringBuilder();
-        content.append("⏰ **Your Reminders**\n\n");
-
-        if (message != null) {
-            content.append(message).append("\n\n");
-        }
-
-        content.append("📊 **Total:** ").append(allReminders.size()).append(" reminders");
-        if (totalPages > 1) {
-            content.append(" (Page ").append(page).append("/").append(totalPages).append(")");
-        }
-        content.append("\n\n");
-        content.append("Use the dropdown below to select a reminder to view details and manage it.");
-
-        // Build action rows
-        List<ActionRow> actionRows = new ArrayList<>();
-
-        // Add reminder management dropdown
-        StringSelectMenu.Builder selectBuilder = StringSelectMenu.create("reminder-manage-" + userId)
-            .setPlaceholder("Select a reminder to manage...")
-            .setRequiredRange(1, 1);
-
-        for (int i = 0; i < pageReminders.size(); i++) {
-            Reminder reminder = pageReminders.get(i);
-            int globalIndex = (page - 1) * remindersPerPage + i + 1;
-
-            // Use plain text date format instead of Discord timestamp for selection menu
-            String readableDate = TimeUtils.format(Instant.ofEpochMilli(reminder.getTime()), REMINDER_DATE_FORMAT);
-
-            String optionLabel = "#" + globalIndex + " - " + readableDate;
-            String optionDescription = StringUtils.truncate(reminder.getDescription(), 50);
-
-            selectBuilder.addOption(optionLabel, reminder.getUuid().toString(), optionDescription);
-        }
-
-        actionRows.add(ActionRow.of(selectBuilder.build()));
-
-        // Add navigation and create buttons
-        List<Button> navButtons = new ArrayList<>();
-
-        if (totalPages > 1) {
-            navButtons.add(Button.secondary("reminder-nav-prev-" + page + "-" + userId, "◀️ Previous")
-                .withDisabled(page <= 1));
-            navButtons.add(Button.secondary("reminder-nav-next-" + page + "-" + userId, "Next ▶️")
-                .withDisabled(page >= totalPages));
-        }
-
-        navButtons.add(Button.primary("reminder-create-" + userId, "Create New Reminder"));
-        actionRows.add(ActionRow.of(navButtons));
-
-        hook.editOriginal(content.toString())
-            .setComponents(actionRows)
-            .queue();
-    }
-
-    private Modal createReminderModal(String userId) {
+    private static void openCreateModal(IModalCallback interaction, String userId) {
         TextInput timeInput = TextInput.create("time", "Time", TextInputStyle.SHORT)
             .setPlaceholder("e.g., \"in 1 hour\", \"1w3d7h\", \"tomorrow at 3pm\"")
             .setRequiredRange(1, 100)
@@ -501,11 +231,108 @@ public class ReminderCommands {
 
         TextInput descriptionInput = TextInput.create("description", "Description", TextInputStyle.PARAGRAPH)
             .setPlaceholder("What should I remind you about?")
-            .setRequiredRange(1, 4_000)
+            .setRequiredRange(1, ReminderService.MAX_DESCRIPTION_LENGTH)
             .build();
 
-        return Modal.create("reminder-modal-" + userId, "⏰ Create New Reminder")
+        Modal modal = Modal.create(MODAL.build(userId), "⏰ Create New Reminder")
             .addComponents(ActionRow.of(timeInput), ActionRow.of(descriptionInput))
             .build();
+
+        interaction.replyModal(modal).queue();
+    }
+
+    /**
+     * Why the bot couldn't post in this channel, if it couldn't. Reminders arrive by DM, but the
+     * channel is stored with them, so creating one still needs a channel the bot can use.
+     */
+    static Optional<String> sendingProblem(@Nullable Guild guild, @Nullable MessageChannelUnion channel) {
+        if (guild == null || channel == null || !channel.getType().isGuild() || !channel.getType().isMessage()) {
+            return Optional.of("❌ Reminders can only be created from a server channel!");
+        }
+
+        GuildMessageChannel target = channel.asGuildMessageChannel();
+        Member self = guild.getSelfMember();
+        if (!self.hasPermission(target, Permission.MESSAGE_SEND)) {
+            return Optional.of("❌ I don't have permission to send messages in this channel!");
+        }
+
+        if (channel.getType().isThread() && !self.hasPermission(target, Permission.MESSAGE_SEND_IN_THREADS)) {
+            return Optional.of("❌ I don't have permission to send messages in threads!");
+        }
+
+        return Optional.empty();
+    }
+
+    @Nullable
+    private static String modalText(ModalInteraction interaction, String inputId) {
+        ModalMapping mapping = interaction.getValue(inputId);
+        return mapping == null ? null : mapping.getAsString();
+    }
+
+    private void renderDetail(InteractionHook hook, String userId, String reminderId) {
+        Optional<Reminder> found = reminders.find(userId, reminderId);
+        if (found.isEmpty()) {
+            renderPanel(hook, userId, 1, "❌ Reminder not found!");
+            return;
+        }
+
+        Reminder reminder = found.get();
+        String content = "📋 **Reminder Details**\n\n" +
+            "🕐 **Time:** " + DiscordTimestamp.toLongDateTime(reminder.getTime()) + "\n" +
+            "⏰ **Relative:** " + DiscordTimestamp.toRelativeTimestamp(reminder.getTime()) + "\n\n" +
+            "📝 **Description:**\n" + reminder.getDescription() + "\n\n" +
+            "📍 **Channel:** <#" + reminder.getChannelId() + ">";
+
+        String uuid = reminder.getUuid().toString();
+        ActionRow actionRow = ActionRow.of(
+            Button.danger(DETAIL.build("delete", uuid, userId), "🗑️ Delete Reminder"),
+            Button.secondary(DETAIL.build("back", uuid, userId), "⬅️ Back to List")
+        );
+
+        hook.editOriginal(content).setComponents(actionRow).queue();
+    }
+
+    private void renderPanel(InteractionHook hook, String userId, int page, @Nullable String message) {
+        List<Reminder> all = reminders.remindersFor(userId);
+        String header = "⏰ **Your Reminders**\n\n" + (message != null ? message + "\n\n" : "");
+        Button createButton = Button.primary(CREATE.build(userId), "Create New Reminder");
+
+        if (all.isEmpty()) {
+            hook.editOriginal(header + "You don't have any reminders set!\n\n").setComponents(ActionRow.of(createButton)).queue();
+            return;
+        }
+
+        int totalPages = (all.size() + REMINDERS_PER_PAGE - 1) / REMINDERS_PER_PAGE;
+        int shownPage = Math.clamp(page, 1, totalPages);
+        int firstIndex = (shownPage - 1) * REMINDERS_PER_PAGE;
+        List<Reminder> pageItems = all.subList(firstIndex, Math.min(firstIndex + REMINDERS_PER_PAGE, all.size()));
+
+        StringBuilder content = new StringBuilder(header)
+            .append("📊 **Total:** ").append(all.size()).append(" reminders");
+        if (totalPages > 1) {
+            content.append(" (Page ").append(shownPage).append("/").append(totalPages).append(")");
+        }
+        content.append("\n\nUse the dropdown below to select a reminder to view details and manage it.");
+
+        StringSelectMenu.Builder selectBuilder = StringSelectMenu.create(MANAGE.build(userId))
+            .setPlaceholder("Select a reminder to manage...")
+            .setRequiredRange(1, 1);
+
+        for (int i = 0; i < pageItems.size(); i++) {
+            Reminder reminder = pageItems.get(i);
+            String label = "#" + (firstIndex + i + 1) + " - " + TimeUtils.format(Instant.ofEpochMilli(reminder.getTime()), MENU_DATE_FORMAT);
+            selectBuilder.addOption(label, reminder.getUuid().toString(), StringUtils.truncate(reminder.getDescription(), 50));
+        }
+
+        List<Button> buttons = new ArrayList<>();
+        if (totalPages > 1) {
+            buttons.add(Button.secondary(NAV.build("prev", shownPage, userId), "◀️ Previous").withDisabled(shownPage <= 1));
+            buttons.add(Button.secondary(NAV.build("next", shownPage, userId), "Next ▶️").withDisabled(shownPage >= totalPages));
+        }
+        buttons.add(createButton);
+
+        hook.editOriginal(content.toString())
+            .setComponents(ActionRow.of(selectBuilder.build()), ActionRow.of(buttons))
+            .queue();
     }
 }

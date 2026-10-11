@@ -2,7 +2,6 @@ package net.hypixel.nerdbot.app.command;
 
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
@@ -13,10 +12,11 @@ import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.interactions.modals.Modal;
 import net.dv8tion.jda.api.interactions.modals.ModalInteraction;
 import net.dv8tion.jda.api.interactions.modals.ModalMapping;
-import net.dv8tion.jda.api.utils.data.DataObject;
+import net.hypixel.nerdbot.app.command.util.PanelId;
 import net.hypixel.nerdbot.app.punishment.PunishmentService;
+import net.hypixel.nerdbot.app.testsupport.DiscordFakes;
 import net.hypixel.nerdbot.app.testsupport.FakePunishmentStore;
-import net.hypixel.nerdbot.app.testsupport.FakePunishmentStore.WriteOutcome;
+import net.hypixel.nerdbot.app.testsupport.WriteOutcome;
 import net.hypixel.nerdbot.discord.testsupport.CallRecorder;
 import net.hypixel.nerdbot.discord.testsupport.Fakes;
 import net.hypixel.nerdbot.marmalade.storage.database.model.punishment.Punishment;
@@ -30,12 +30,14 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
+import static net.hypixel.nerdbot.app.testsupport.DiscordFakes.modalValue;
+import static net.hypixel.nerdbot.app.testsupport.DiscordFakes.selectMenu;
+import static net.hypixel.nerdbot.app.testsupport.DiscordFakes.user;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -57,6 +59,22 @@ class PunishmentCommandsTest {
     @AfterEach
     void neverBlocksOnARestAction() {
         assertFalse(recorder.called("complete"), "handlers must queue, not complete");
+    }
+
+    @Test
+    void idsKeepTheFormatOfButtonsAlreadyPosted() {
+        String uuid = "0f8fad5b-d9cb-469f-a165-70867728950e";
+
+        assertEquals("punish-type-1-2", PunishmentCommands.TYPE.build("1", "2"));
+        assertEquals("punish-modal-1-2-BAN", PunishmentCommands.MODAL.build("1", "2", "BAN"));
+        assertEquals("punish-detail-1-2", PunishmentCommands.DETAIL.build("1", "2"));
+        assertEquals("punish-nav-next-3-1-2", PunishmentCommands.NAV.build("next", 3, "1", "2"));
+        assertEquals("punish-delete-1-" + uuid, PunishmentCommands.DELETE.build("1", uuid));
+        assertEquals("punish-confirm-yes-1-" + uuid, PunishmentCommands.CONFIRM_YES.build("1", uuid));
+        assertEquals("punish-confirm-no-1-" + uuid, PunishmentCommands.CONFIRM_NO.build("1", uuid));
+        assertEquals("punish-back-1-2", PunishmentCommands.BACK.build("1", "2"));
+        assertEquals(List.of("1", uuid), PunishmentCommands.CONFIRM_YES.parse("punish-confirm-yes-1-" + uuid).orElseThrow());
+        assertTrue(PunishmentCommands.CONFIRM_YES.parse("punish-confirm-no-1-" + uuid).isEmpty());
     }
 
     @Nested
@@ -94,7 +112,7 @@ class PunishmentCommandsTest {
         void malformedPanelIdIsRejected() {
             commands.chooseType(select(MOD, "punish-type-" + MOD, "BAN"));
 
-            assertRepliedEphemerally(PunishmentCommands.OUTDATED_PANEL);
+            assertRepliedEphemerally(PanelId.OUTDATED);
             assertFalse(recorder.called("replyModal"));
         }
 
@@ -146,7 +164,7 @@ class PunishmentCommandsTest {
         void unknownTypeInTheModalIdSavesNothing() {
             commands.submit(modal(MOD, "punish-modal-" + MOD + "-" + TARGET + "-SMITE", "spamming", null));
 
-            assertEquals(PunishmentCommands.OUTDATED_PANEL, lastEditText());
+            assertEquals(PanelId.OUTDATED, lastEditText());
             assertTrue(store.getAll().isEmpty());
         }
 
@@ -332,7 +350,7 @@ class PunishmentCommandsTest {
         void nonNumericPageIsRejected() {
             commands.navigate(button(MOD, "punish-nav-next-two-" + MOD + "-" + TARGET));
 
-            assertRepliedEphemerally(PunishmentCommands.OUTDATED_PANEL);
+            assertRepliedEphemerally(PanelId.OUTDATED);
             assertFalse(recorder.called("editOriginal"));
         }
 
@@ -460,10 +478,6 @@ class PunishmentCommandsTest {
         IntStream.range(0, count).forEach(i -> store.seed(new Punishment(TARGET, MOD, PunishmentType.WARNING, "reason " + i, null)));
     }
 
-    private static User user(String id) {
-        return Fakes.of(User.class, Map.of("getId", id));
-    }
-
     private static Member member(String id) {
         return Fakes.of(Member.class, Map.of(
             "getId", id,
@@ -472,15 +486,15 @@ class PunishmentCommandsTest {
     }
 
     private SlashCommandInteraction slash(String userId) {
-        return recorder.fake(SlashCommandInteraction.class, Map.of("getUser", user(userId)));
+        return DiscordFakes.slash(recorder, userId);
     }
 
     private ButtonInteraction button(String userId, String componentId) {
-        return recorder.fake(ButtonInteraction.class, Map.of("getUser", user(userId), "getComponentId", componentId));
+        return DiscordFakes.button(recorder, userId, componentId);
     }
 
     private StringSelectInteraction select(String userId, String componentId, String value) {
-        return recorder.fake(StringSelectInteraction.class, Map.of("getUser", user(userId), "getComponentId", componentId, "getValues", List.of(value)));
+        return DiscordFakes.select(recorder, userId, componentId, value);
     }
 
     private ModalInteraction modal(String userId, String modalId, String reason, String notes) {
@@ -497,10 +511,6 @@ class PunishmentCommandsTest {
         return recorder.fake(ModalInteraction.class, answers);
     }
 
-    private static ModalMapping modalValue(String id, String value) {
-        return new ModalMapping(DataObject.empty().put("custom_id", id).put("value", value).put("type", 4));
-    }
-
     private void assertDeferredEphemerally() {
         assertTrue(recorder.called("deferReply"));
         assertEquals(true, recorder.last("setEphemeral").arg(0));
@@ -512,35 +522,19 @@ class PunishmentCommandsTest {
     }
 
     private String lastEditText() {
-        return (String) recorder.last("editOriginal").arg(0);
+        return DiscordFakes.lastEditText(recorder);
     }
 
     private List<MessageEmbed> lastEditEmbeds() {
-        return lastCallItems("editOriginalEmbeds", MessageEmbed.class);
+        return DiscordFakes.lastEmbeds(recorder, "editOriginalEmbeds");
     }
 
     private MessageEmbed lastEmbedSet() {
-        return lastCallItems("setEmbeds", MessageEmbed.class).getFirst();
+        return DiscordFakes.lastEmbeds(recorder, "setEmbeds").getFirst();
     }
 
     private List<ActionRow> componentsOfLastEdit() {
-        return lastCallItems("setComponents", ActionRow.class);
-    }
-
-    /**
-     * The items passed to the last call of {@code method}, whether as varargs or as one collection;
-     * JDA's varargs overloads hand on to the collection ones.
-     */
-    private <T> List<T> lastCallItems(String method, Class<T> type) {
-        List<Object> args = recorder.last(method).args();
-        if (args.size() == 1 && args.getFirst() instanceof Collection<?> items) {
-            return items.stream().map(type::cast).toList();
-        }
-        return args.stream().map(type::cast).toList();
-    }
-
-    private static StringSelectMenu selectMenu(ActionRow row) {
-        return (StringSelectMenu) row.getActionComponents().getFirst();
+        return DiscordFakes.lastComponents(recorder);
     }
 
     private static List<String> fieldNames(MessageEmbed embed) {

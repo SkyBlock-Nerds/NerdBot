@@ -7,18 +7,23 @@ import net.aerh.slashcommands.api.annotations.SlashAutocompleteHandler;
 import net.aerh.slashcommands.api.annotations.SlashCommand;
 import net.aerh.slashcommands.api.annotations.SlashComponentHandler;
 import net.aerh.slashcommands.api.annotations.SlashModalHandler;
+import net.dv8tion.jda.api.JDA;
+import net.hypixel.nerdbot.discord.testsupport.Fakes;
 import net.hypixel.nerdbot.marmalade.storage.database.Database;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.PunishmentRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class BotComponentTest {
@@ -27,7 +32,7 @@ class BotComponentTest {
         SlashCommand.class, SlashComponentHandler.class, SlashModalHandler.class, SlashAutocompleteHandler.class);
 
     // No URI, so no connection and no repositories registered
-    private final BotComponent component = DaggerBotComponent.factory().create(new Database(null, null));
+    private final BotComponent component = DaggerBotComponent.factory().create(Fakes.of(JDA.class, Map.of()), new Database(null, null));
 
     @Test
     void registersEveryClassWithSlashHandlersExactlyOnce() {
@@ -41,6 +46,12 @@ class BotComponentTest {
     @Test
     void commandsBuildWithoutADatabase() {
         assertEquals(commandClasses().size(), component.slashCommands().size());
+    }
+
+    @Test
+    void theSchedulerIsSharedAcrossTheComponent() {
+        assertSame(component.scheduler(), component.scheduler());
+        assertSame(component.reminderScheduler(), component.reminderScheduler());
     }
 
     @Test
@@ -63,5 +74,10 @@ class BotComponentTest {
 
     private static boolean isHandler(Method method) {
         return HANDLER_ANNOTATIONS.stream().anyMatch(method::isAnnotationPresent);
+    }
+
+    @AfterEach
+    void stopScheduler() {
+        component.scheduler().shutdownNow();
     }
 }

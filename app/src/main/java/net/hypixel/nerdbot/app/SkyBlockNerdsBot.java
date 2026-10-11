@@ -35,7 +35,6 @@ import net.hypixel.nerdbot.app.listener.SuggestionListener;
 import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.app.sentry.SentryManager;
 import net.hypixel.nerdbot.app.user.BirthdayAnnouncementFeature;
-import net.hypixel.nerdbot.app.reminder.ReminderDispatcher;
 import net.hypixel.nerdbot.discord.AbstractDiscordBot;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
 import net.hypixel.nerdbot.discord.api.feature.FeatureEventListener;
@@ -46,7 +45,6 @@ import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
 import net.hypixel.nerdbot.app.config.NerdBotConfig;
 import net.hypixel.nerdbot.marmalade.storage.database.Database;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.marmalade.storage.database.repository.ReminderRepository;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
 import org.jetbrains.annotations.NotNull;
@@ -201,7 +199,7 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
     protected void onReady(@NotNull JDA jda) {
         super.onReady(jda);
 
-        component = DaggerBotComponent.factory().create(getDatabase());
+        component = DaggerBotComponent.factory().create(jda, getDatabase());
 
         messageCache = new MessageCache();
         suggestionCache = new SuggestionCache();
@@ -268,7 +266,7 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
                 });
         }
 
-        loadRemindersFromDatabase();
+        restoreReminders();
 
         // Initialize member count metric
         DiscordUtils.getMainGuild().loadMembers()
@@ -286,48 +284,23 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
 
     @Override
     protected void onShutdown() {
+        if (component != null) {
+            component.scheduler().shutdownNow();
+        }
         PrometheusMetrics.setMetricsEnabled(false);
         SentryManager.close();
     }
 
-    private void loadRemindersFromDatabase() {
+    private void restoreReminders() {
         if (!getDatabase().isConnected()) {
             log.error("Failed to load reminders from database, database is not connected!");
             return;
         }
 
-        log.info("Loading all reminders from database...");
-
-        ReminderRepository reminderRepository = getDatabase()
-            .getRepositoryManager()
-            .getRepository(ReminderRepository.class);
-
-        if (reminderRepository == null) {
-            log.error("Failed to load reminders from database, repository is null!");
-            return;
-        }
-
-        reminderRepository.loadAllDocumentsIntoCacheAsync()
-            .thenRun(() -> {
-                reminderRepository.forEach(reminder -> {
-                    long now = System.currentTimeMillis();
-
-                    if (now > reminder.getTime()) {
-                        ReminderDispatcher.sendIfStillPending(reminder, true);
-                        log.info("Reminder {} came due while the bot was offline, sending it now", reminder);
-                        return;
-                    }
-
-                    ReminderDispatcher.schedule(reminder);
-                    log.info("Loaded reminder: {}", reminder);
-                });
-
-                log.info("Loaded {} reminders!", reminderRepository.getCache().estimatedSize());
-            })
-            .exceptionally(throwable -> {
-                log.error("Failed to load reminders from database", throwable);
-                return null;
-            });
+        component.reminderScheduler().restoreAll().exceptionally(throwable -> {
+            log.error("Failed to load reminders from database", throwable);
+            return null;
+        });
     }
 
     /**
