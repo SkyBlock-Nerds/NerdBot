@@ -864,7 +864,8 @@ public class ProfileCommands {
     private static void replyWithBirthdayOutcome(SlashCommandInteractionEvent event,
                                                  Function<BirthdayService, BirthdayService.Outcome> action,
                                                  String failureMessage) {
-        event.deferReply(true).complete();
+        // The hook holds edits until the deferral is acknowledged, so there's no need to block on it
+        event.deferReply(true).queue();
 
         if (!BotEnvironment.getBot().getDatabase().isConnected()) {
             event.getHook().editOriginal("Could not connect to database!").queue();
