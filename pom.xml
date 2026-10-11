@@ -15,6 +15,7 @@
         <dagger.version>2.60.1</dagger.version>
         <sentry.version>8.59.0</sentry.version>
         <imagegenerator.version>master-SNAPSHOT</imagegenerator.version>
+        <slf4j.version>2.0.20</slf4j.version>
         <editorconfig.encoding>UTF-8</editorconfig.encoding>
         <maven.compiler.release>${java.version}</maven.compiler.release>
     </properties>
@@ -25,6 +26,12 @@
                 <groupId>com.github.Aerhhh</groupId>
                 <artifactId>MinecraftImageGenerator</artifactId>
                 <version>${imagegenerator.version}</version>
+            </dependency>
+            <!-- natty pulls in slf4j-api 1.7, which can't find logback 1.6 and silently drops every log line -->
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
