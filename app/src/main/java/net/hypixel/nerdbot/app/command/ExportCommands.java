@@ -24,6 +24,7 @@ import net.hypixel.nerdbot.app.suggestion.Suggestion;
 import net.hypixel.nerdbot.marmalade.storage.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.stats.ChannelActivityEntry;
+import net.hypixel.nerdbot.discord.util.DiscordUtils;
 import net.hypixel.nerdbot.discord.util.StringUtils;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.stats.MojangProfile;
@@ -395,7 +396,7 @@ public class ExportCommands {
             long userIdLong = Long.parseLong(userId);
 
             List<Suggestion> userSuggestions = SkyBlockNerdsBot.suggestionCache()
-                .getSuggestions()
+                .all()
                 .stream()
                 .filter(suggestion -> suggestion.getOwnerIdLong() == userIdLong)
                 .filter(Suggestion::notDeleted)
@@ -432,7 +433,7 @@ public class ExportCommands {
                     StringUtils.truncate(suggestion.getThreadName(), 53)
                 )).queue();
 
-                String content = suggestion.getFirstMessage()
+                String content = DiscordUtils.getFirstMessage(suggestion.getThreadId())
                     .map(Message::getContentRaw)
                     .orElse("Content not available");
 
@@ -449,7 +450,7 @@ public class ExportCommands {
                     String.valueOf(suggestion.getNeutrals()),
                     String.format("%.1f%%", suggestion.getRatio()),
                     suggestion.isGreenlit() ? "YES" : "NO",
-                    "\"" + suggestion.getAppliedTags().stream()
+                    "\"" + suggestion.getAppliedTags(event.getJDA()).stream()
                         .map(BaseForumTag::getName)
                         .reduce((a, b) -> a + ", " + b)
                         .orElse("") + "\""

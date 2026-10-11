@@ -39,6 +39,11 @@ public interface CommandsModule {
     @Binds
     @IntoSet
     @SlashCommandHandlers
+    Object suggestionCommands(SuggestionCommands commands);
+
+    @Binds
+    @IntoSet
+    @SlashCommandHandlers
     Object infoCommands(InfoCommands commands);
 
     @Binds
@@ -97,12 +102,5 @@ public interface CommandsModule {
     @SlashCommandHandlers
     static Object profileCommands() {
         return new ProfileCommands();
-    }
-
-    @Provides
-    @IntoSet
-    @SlashCommandHandlers
-    static Object suggestionCommands() {
-        return new SuggestionCommands();
     }
 }

@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -92,6 +93,6 @@ class ManualScheduledExecutorTest {
         executor.schedule(() -> ran.add("task"), 1, TimeUnit.MINUTES);
 
         assertEquals(1, executor.shutdownNow().size());
-        assertThrows(IllegalStateException.class, () -> executor.schedule(() -> { }, 1, TimeUnit.MINUTES));
+        assertThrows(RejectedExecutionException.class, () -> executor.schedule(() -> { }, 1, TimeUnit.MINUTES));
     }
 }

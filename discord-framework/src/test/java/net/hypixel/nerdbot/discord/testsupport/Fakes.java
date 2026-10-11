@@ -8,9 +8,10 @@ import java.util.Set;
 /**
  * JDK-proxy fakes for JDA interfaces, so tests don't need a mocking library.
  *
- * <p>Methods named in {@code answers} return the given value. Anything else returns an empty
- * collection, zero or false, or null for other object types, which keeps a fake small when the
- * code under test only touches a few methods.
+ * <p>Methods named in {@code answers} return the given value, or run it when it's a
+ * {@link CallRecorder.Answer}. Anything else returns an empty collection, zero or false, or null
+ * for other object types, which keeps a fake small when the code under test only touches a few
+ * methods.
  */
 public final class Fakes {
 
@@ -31,7 +32,8 @@ public final class Fakes {
     public static <T> T of(Class<T> type, Map<String, Object> answers) {
         Object proxy = Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[]{type}, (self, method, args) -> {
             if (answers.containsKey(method.getName())) {
-                return answers.get(method.getName());
+                Object answer = answers.get(method.getName());
+                return answer instanceof CallRecorder.Answer function ? function.answer(args == null ? new Object[0] : args) : answer;
             }
 
             return switch (method.getName()) {

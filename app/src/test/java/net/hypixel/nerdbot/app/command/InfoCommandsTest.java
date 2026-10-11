@@ -8,6 +8,7 @@ import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 import net.hypixel.nerdbot.app.config.NerdBotConfig;
 import net.hypixel.nerdbot.app.role.SpecialRoles;
 import net.hypixel.nerdbot.app.testsupport.DiscordFakes;
+import net.hypixel.nerdbot.app.testsupport.FakeGreenlitStore;
 import net.hypixel.nerdbot.discord.testsupport.CallRecorder;
 import net.hypixel.nerdbot.discord.testsupport.Fakes;
 import net.hypixel.nerdbot.marmalade.storage.database.model.greenlit.GreenlitMessage;
@@ -27,8 +28,8 @@ class InfoCommandsTest {
     private final CallRecorder recorder = new CallRecorder();
     private final NerdBotConfig config = new NerdBotConfig();
     private final JDA jda = Fakes.of(JDA.class, Map.of("getSelfUser", Fakes.of(SelfUser.class, Map.of("getName", "NerdBot", "getId", "1"))));
-    private CompletableFuture<List<GreenlitMessage>> greenlit = CompletableFuture.completedFuture(List.of());
-    private final InfoCommands commands = new InfoCommands(jda, () -> config, () -> greenlit);
+    private final FakeGreenlitStore greenlit = new FakeGreenlitStore();
+    private final InfoCommands commands = new InfoCommands(jda, () -> config, greenlit);
 
     @Test
     void botInfoNamesTheBotPrivately() {
@@ -47,7 +48,7 @@ class InfoCommandsTest {
 
     @Test
     void aGreenlitFailureDoesNotShowTheExceptionText() {
-        greenlit = CompletableFuture.failedFuture(new IllegalStateException("GreenlitMessageRepository is not registered; is the database connected?"));
+        greenlit.loads(CompletableFuture.failedFuture(new IllegalStateException("GreenlitMessageRepository is not registered; is the database connected?")));
 
         commands.showGreenlit(DiscordFakes.slash(recorder, "1"));
 

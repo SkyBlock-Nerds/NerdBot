@@ -44,6 +44,14 @@ public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
     }
 
     public static GreenlitMessage createGreenlitMessage(Message message, ThreadChannel thread, int agree, int neutral, int disagree) {
+        return createGreenlitMessage(message, thread, agree, neutral, disagree, DiscordBotEnvironment.getBot().getConfig().getEmojiConfig());
+    }
+
+    /**
+     * Fetches every agree voter, page by page, so this blocks for a while on popular suggestions; call
+     * it off JDA's threads.
+     */
+    public static GreenlitMessage createGreenlitMessage(Message message, ThreadChannel thread, int agree, int neutral, int disagree, EmojiConfig emojiConfig) {
         return GreenlitMessage.builder()
             .agrees(agree)
             .neutrals(neutral)
@@ -57,11 +65,9 @@ public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
             .tags(thread.getAppliedTags().stream().map(BaseForumTag::getName).toList())
             .positiveVoterIds(
                 message.getReactions().stream()
-                    .filter(reaction -> EmojiConfigUtils.isReactionEquals(DiscordBotEnvironment.getBot().getConfig().getEmojiConfig(), reaction, EmojiConfig::getAgreeEmojiId))
-                    .flatMap(reaction -> reaction.retrieveUsers()
-                        .complete()
-                        .stream()
-                    )
+                    .filter(reaction -> EmojiConfigUtils.isReactionEquals(emojiConfig, reaction, EmojiConfig::getAgreeEmojiId))
+                    // complete() would only return the first page, at most 100 voters; stream() fetches them all
+                    .flatMap(reaction -> reaction.retrieveUsers().stream())
                     .map(User::getId)
                     .toList()
             )
@@ -240,7 +246,7 @@ public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
 
                     log.info("Thread '{}' (ID: {}) has been greenlit!", thread.getName(), thread.getId());
                     GreenlitMessage greenlitMessage = createGreenlitMessage(message, thread, agree, neutral, disagree);
-                    SkyBlockNerdsBot.suggestionCache().updateSuggestion(thread); // Update Suggestion
+                    SkyBlockNerdsBot.suggestionCache().requestUpdate(thread);
                     output.add(greenlitMessage);
                 } catch (Exception exception) {
                     log.error("Failed to curate thread '{}' (ID: {})!", thread.getName(), thread.getId(), exception);

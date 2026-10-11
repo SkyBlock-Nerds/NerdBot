@@ -67,7 +67,6 @@ import java.util.Optional;
 public class SkyBlockNerdsBot extends AbstractDiscordBot implements BotState {
 
     private MessageCache messageCache;
-    private SuggestionCache suggestionCache;
 
     /**
      * Constructed eagerly (dependency-free) so it is never null on the interaction threads that
@@ -77,7 +76,7 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot implements BotState {
 
     private volatile DrivePermissionService drivePermissionService;
 
-    private BotComponent component;
+    private volatile BotComponent component;
 
     /** Null when no pack opts into auto-update or the cache directory is unusable. */
     private volatile PackUpdater packUpdater;
@@ -117,7 +116,7 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot implements BotState {
      * Static helper to get the SuggestionCache from the current bot instance.
      */
     public static SuggestionCache suggestionCache() {
-        return ((SkyBlockNerdsBot) DiscordBotEnvironment.getBot()).suggestionCache;
+        return ((SkyBlockNerdsBot) DiscordBotEnvironment.getBot()).component.suggestionCache();
     }
 
     @Override
@@ -219,7 +218,7 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot implements BotState {
         component = DaggerBotComponent.factory().create(jda, getDatabase(), this);
 
         messageCache = new MessageCache();
-        suggestionCache = new SuggestionCache();
+        component.suggestionCache().start();
 
         NerdBotConfig config = getConfig();
 

@@ -63,12 +63,17 @@ class ArchitectureRulesTest {
         "net.hypixel.nerdbot.app.command.PunishmentCommands",
         "net.hypixel.nerdbot.app.command.ReminderCommands",
         "net.hypixel.nerdbot.app.command.RoleCommands",
+        "net.hypixel.nerdbot.app.command.SuggestionCommands",
+        "net.hypixel.nerdbot.app.command.util.SuggestionCommandUtils",
         "net.hypixel.nerdbot.app.command.util.CommandReplies",
         "net.hypixel.nerdbot.app.command.util.PanelId",
         "net.hypixel.nerdbot.app.nomination.ActivityRequirements",
         "net.hypixel.nerdbot.app.storage.GreenlitStore",
         "net.hypixel.nerdbot.app.storage.RepositoryDiscordUserStore",
-        "net.hypixel.nerdbot.app.storage.RepositoryGreenlitStore"
+        "net.hypixel.nerdbot.app.storage.RepositoryGreenlitStore",
+        "net.hypixel.nerdbot.app.suggestion.SuggestionAutoArchiver",
+        "net.hypixel.nerdbot.app.suggestion.SuggestionCache",
+        "net.hypixel.nerdbot.app.suggestion.SuggestionFactory"
     };
 
     @Test

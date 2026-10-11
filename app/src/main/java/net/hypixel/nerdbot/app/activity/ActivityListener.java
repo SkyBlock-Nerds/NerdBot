@@ -351,7 +351,7 @@ public class ActivityListener {
             // New Suggestion Voting
             if (forumChannelId.equals(SkyBlockNerdsBot.config().getSuggestionConfig().getForumChannelId())) {
                 discordUser.getLastActivity().getSuggestionVoteHistoryMap().putIfAbsent(threadChannel.getId(), time);
-                SkyBlockNerdsBot.suggestionCache().updateSuggestion(threadChannel);
+                SkyBlockNerdsBot.suggestionCache().requestUpdate(threadChannel);
                 log.debug("Updating suggestion voting activity date for {} (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
             }
 
@@ -359,14 +359,14 @@ public class ActivityListener {
             AlphaProjectConfig alphaProjectConfig = SkyBlockNerdsBot.config().getAlphaProjectConfig();
             if (ArrayUtils.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                 discordUser.getLastActivity().getAlphaSuggestionVoteHistoryMap().putIfAbsent(threadChannel.getId(), time);
-                SkyBlockNerdsBot.suggestionCache().updateSuggestion(threadChannel);
+                SkyBlockNerdsBot.suggestionCache().requestUpdate(threadChannel);
                 log.debug("Updating alpha suggestion voting activity date for {} (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
             }
 
             // New Project Suggestion Voting
             if (ArrayUtils.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
                 discordUser.getLastActivity().getProjectSuggestionVoteHistoryMap().putIfAbsent(threadChannel.getId(), time);
-                SkyBlockNerdsBot.suggestionCache().updateSuggestion(threadChannel);
+                SkyBlockNerdsBot.suggestionCache().requestUpdate(threadChannel);
                 log.debug("Updating project suggestion voting activity date for {} (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
             }
         }
