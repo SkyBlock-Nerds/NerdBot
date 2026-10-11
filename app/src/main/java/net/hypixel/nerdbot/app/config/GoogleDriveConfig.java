@@ -18,8 +18,6 @@ import java.util.List;
 @Setter
 @ToString
 public class GoogleDriveConfig {
-
-    @ExampleValue("false")
     private boolean enabled = false;
 
     private List<DriveFolderMapping> folderMappings = new ArrayList<>();
@@ -28,7 +26,6 @@ public class GoogleDriveConfig {
      * Whether Google sends its share-notification email when the bot grants
      * folder access. Revokes never notify; that is a Drive limitation.
      */
-    @ExampleValue("true")
     private boolean sendNotificationEmails = true;
 
     /**
@@ -37,6 +34,5 @@ public class GoogleDriveConfig {
      * sender name. Blank uses Google's default wording; ignored entirely when
      * sendNotificationEmails is off.
      */
-    @ExampleValue("This folder was shared automatically by the SkyBlock Nerds bot based on your Discord roles.")
     private String notificationEmailMessage = "This folder was shared automatically by the SkyBlock Nerds bot based on your Discord roles.";
 }
