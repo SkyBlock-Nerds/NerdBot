@@ -89,14 +89,6 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot implements BotState {
     }
 
     /**
-     * Static helper to get the ResourcePackService from the current bot instance. Never null,
-     * though it holds no packs until the bot's ready sequence has run.
-     */
-    public static ResourcePackService resourcePackService() {
-        return ((SkyBlockNerdsBot) DiscordBotEnvironment.getBot()).resourcePackService;
-    }
-
-    /**
      * Static helper for the Drive permission service. Empty whenever the feature
      * is disabled in config or its secrets are absent; callers no-op in that case.
      */
@@ -215,7 +207,7 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot implements BotState {
     protected void onReady(@NotNull JDA jda) {
         super.onReady(jda);
 
-        component = DaggerBotComponent.factory().create(jda, getDatabase(), this);
+        component = DaggerBotComponent.factory().create(jda, getDatabase(), this, resourcePackService);
 
         messageCache = new MessageCache();
         component.suggestionCache().start();
@@ -303,6 +295,7 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot implements BotState {
         if (component != null) {
             component.scheduler().shutdownNow();
             component.backgroundWorkPool().shutdownNow();
+            component.imageRenderingPool().shutdownNow();
         }
         PrometheusMetrics.setMetricsEnabled(false);
         SentryManager.close();

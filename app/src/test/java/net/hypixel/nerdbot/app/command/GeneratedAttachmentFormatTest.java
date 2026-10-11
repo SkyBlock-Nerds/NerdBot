@@ -4,6 +4,7 @@ import net.aerh.imagegenerator.item.GeneratedObject;
 import net.dv8tion.jda.api.utils.FileUpload;
 import org.junit.jupiter.api.Test;
 
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.List;
@@ -18,10 +19,13 @@ class GeneratedAttachmentFormatTest {
 
     @Test
     void staticRenderIsUploadedAsPng() throws IOException {
-        GeneratedObject staticObject = new GeneratedObject(new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB));
+        GeneratedObject staticObject = new GeneratedObject(new BufferedImage(3, 2, BufferedImage.TYPE_INT_ARGB));
 
         try (FileUpload upload = GeneratorCommands.renderAttachment(staticObject, "item")) {
             assertEquals("item.png", upload.getName());
+            BufferedImage decoded = ImageIO.read(upload.getData());
+            assertEquals(3, decoded.getWidth());
+            assertEquals(2, decoded.getHeight());
         }
     }
 
