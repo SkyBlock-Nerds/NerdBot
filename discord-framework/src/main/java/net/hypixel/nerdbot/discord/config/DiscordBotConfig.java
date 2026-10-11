@@ -55,6 +55,12 @@ public class DiscordBotConfig {
      */
     private String activity = "with a default message!";
 
+    /**
+     * Features to load by class name, in order. Only classes under {@code net.hypixel.nerdbot.} are
+     * loaded; see {@link net.hypixel.nerdbot.discord.AbstractDiscordBot#createConfiguredFeatures()}.
+     */
+    private List<FeatureConfig> features;
+
     public enum ActivityType {
         PLAYING,
         STREAMING,

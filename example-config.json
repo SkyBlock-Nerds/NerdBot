@@ -107,14 +107,6 @@
   "inactivityCheckEnabled": true,
   "inactivityDays": 7,
   "inactivityMessages": 10,
-  "features": [
-    {
-      "enabled": true,
-      "className": "net.hypixel.nerdbot.app.feature.CurateFeature",
-      "initialDelayMs": 0,
-      "periodMs": 3600000
-    }
-  ],
   "guildId": "1234567890123456789",
   "ownerIds": [
     "1234567890123456789"
@@ -226,5 +218,13 @@
     "greenlitEmojiId": "1234567890123456789"
   },
   "activityType": "WATCHING",
-  "activity": "with a default message!"
+  "activity": "with a default message!",
+  "features": [
+    {
+      "enabled": true,
+      "className": "net.hypixel.nerdbot.app.feature.CurateFeature",
+      "initialDelayMs": 0,
+      "periodMs": 3600000
+    }
+  ]
 }

@@ -15,6 +15,8 @@ import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.hypixel.nerdbot.discord.api.bot.DiscordBot;
 import net.hypixel.nerdbot.discord.api.bot.Environment;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
+import net.hypixel.nerdbot.discord.config.FeatureConfig;
+import net.hypixel.nerdbot.discord.api.feature.SchedulableFeature;
 import net.hypixel.nerdbot.discord.cache.ChannelCache;
 import net.hypixel.nerdbot.discord.cache.EmojiCache;
 import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
@@ -51,6 +53,8 @@ public abstract class AbstractDiscordBot implements DiscordBot {
     private long startTime;
     private List<BotFeature> features = Collections.emptyList();
     private final AtomicBoolean shuttingDown = new AtomicBoolean();
+
+    static final String FEATURE_PACKAGE_PREFIX = "net.hypixel.nerdbot.";
 
     protected AbstractDiscordBot() {
         this.database = Objects.requireNonNull(createDatabase(), "createDatabase() returned null");
@@ -192,7 +196,8 @@ public abstract class AbstractDiscordBot implements DiscordBot {
 
     /**
      * A feature that fails to start is logged and left out; the others still start, and only the
-     * ones that started are stopped on shutdown.
+     * ones that started are stopped on shutdown. A {@link SchedulableFeature}'s task is scheduled
+     * after its {@code onFeatureStart}, so the task never runs before the feature is set up.
      */
     @Override
     public final void onStart() {
@@ -204,17 +209,88 @@ public abstract class AbstractDiscordBot implements DiscordBot {
 
             try {
                 feature.onFeatureStart();
-                started.add(feature);
-                log.info("Started feature {}", feature.getClass().getSimpleName());
             } catch (RuntimeException exception) {
                 log.error("Feature {} failed to start and will not run", feature.getClass().getSimpleName(), exception);
+                continue;
             }
+
+            try {
+                scheduleIfSchedulable(feature);
+            } catch (RuntimeException exception) {
+                log.error("Feature {} could not be scheduled, stopping it", feature.getClass().getSimpleName(), exception);
+                runShutdownStep("stop feature " + feature.getClass().getSimpleName(), feature::onFeatureEnd);
+                continue;
+            }
+
+            started.add(feature);
+            log.info("Started feature {}", feature.getClass().getSimpleName());
         }
 
         features = Collections.unmodifiableList(started);
         startTime = System.currentTimeMillis();
 
         log.info("Bot started in environment {}", Environment.getEnvironment());
+    }
+
+    private void scheduleIfSchedulable(BotFeature feature) {
+        if (feature instanceof SchedulableFeature schedulable) {
+            feature.scheduleAtFixedRate(
+                feature.getClass().getSimpleName() + "-task",
+                schedulable::executeTask,
+                schedulable.defaultInitialDelayMs(config),
+                schedulable.defaultPeriodMs(config)
+            );
+        }
+    }
+
+    /**
+     * Instantiates the features listed under {@code features} in the config. Bots call this from
+     * {@link #createFeatures()} and add any always-on features of their own.
+     */
+    protected final List<BotFeature> createConfiguredFeatures() {
+        return instantiateFeatures(config == null ? null : config.getFeatures());
+    }
+
+    /**
+     * Enabled entries become features with their schedule overrides applied. An entry outside
+     * {@value #FEATURE_PACKAGE_PREFIX}, that isn't a {@link BotFeature}, or that can't be
+     * constructed is logged and skipped rather than stopping the rest.
+     */
+    static List<BotFeature> instantiateFeatures(@Nullable List<FeatureConfig> featureConfigs) {
+        if (featureConfigs == null) {
+            log.info("No feature config present");
+            return List.of();
+        }
+
+        log.info("Loading features from config ({} entries)", featureConfigs.size());
+        List<BotFeature> features = new ArrayList<>();
+        for (FeatureConfig featureConfig : featureConfigs) {
+            if (featureConfig == null || !featureConfig.isEnabled()) {
+                continue;
+            }
+
+            String className = featureConfig.getClassName();
+            if (className == null || !className.startsWith(FEATURE_PACKAGE_PREFIX)) {
+                log.warn("Feature class {} not permitted by class allowlist", className);
+                continue;
+            }
+
+            try {
+                Class<?> type = Class.forName(className);
+                if (!BotFeature.class.isAssignableFrom(type)) {
+                    log.warn("Feature class {} does not implement BotFeature", className);
+                    continue;
+                }
+
+                BotFeature feature = (BotFeature) type.getDeclaredConstructor().newInstance();
+                feature.setScheduleOverrides(featureConfig.getInitialDelayMs(), featureConfig.getPeriodMs());
+                features.add(feature);
+                log.info("Added feature from config: {}", className);
+            } catch (ReflectiveOperationException | RuntimeException exception) {
+                log.warn("Failed to instantiate feature {}", className, exception);
+            }
+        }
+        return features;
     }
 
     /**

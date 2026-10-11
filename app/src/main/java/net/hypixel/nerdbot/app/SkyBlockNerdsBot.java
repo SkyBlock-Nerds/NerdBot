@@ -37,13 +37,10 @@ import net.hypixel.nerdbot.app.reminder.ReminderDispatcher;
 import net.hypixel.nerdbot.discord.AbstractDiscordBot;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
 import net.hypixel.nerdbot.discord.api.feature.FeatureEventListener;
-import net.hypixel.nerdbot.discord.api.feature.SchedulableFeature;
-import net.hypixel.nerdbot.marmalade.functional.Result;
 import net.hypixel.nerdbot.discord.cache.MessageCache;
 import net.hypixel.nerdbot.app.suggestion.SuggestionCache;
 import net.hypixel.nerdbot.app.config.AlphaProjectConfigUpdater;
 import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
-import net.hypixel.nerdbot.discord.config.FeatureConfig;
 import net.hypixel.nerdbot.app.config.NerdBotConfig;
 import net.hypixel.nerdbot.marmalade.storage.database.Database;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
@@ -166,51 +163,7 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
 
     @Override
     protected @NotNull Collection<? extends BotFeature> createFeatures() {
-        NerdBotConfig config = getConfig();
-        List<BotFeature> features = new ArrayList<>();
-
-        if (config.getFeatures() != null) {
-            log.info("Loading features from config ({} entries)", config.getFeatures().size());
-
-            config.getFeatures().stream()
-                .filter(FeatureConfig::isEnabled)
-                .forEach(featureConfig -> Result.of(() -> {
-                    if (!isAllowed(featureConfig.getClassName())) {
-                        log.warn("Feature class {} not permitted by class allowlist", featureConfig.getClassName());
-                        return null;
-                    }
-
-                    Class<?> clazz = Class.forName(featureConfig.getClassName());
-                    if (!BotFeature.class.isAssignableFrom(clazz)) {
-                        log.warn("Feature class {} does not implement BotFeature", featureConfig.getClassName());
-                        return null;
-                    }
-
-                    BotFeature feature = (BotFeature) clazz.getDeclaredConstructor().newInstance();
-                    feature.setScheduleOverrides(featureConfig.getInitialDelayMs(), featureConfig.getPeriodMs());
-                    features.add(feature);
-                    log.info("Added feature from config: {}", featureConfig.getClassName());
-
-                    if (feature instanceof SchedulableFeature schedulable) {
-                        // Override precedence lives in BotFeature.scheduleAtFixedRate, which also logs
-                        // the resolved schedule. Don't duplicate that logic here.
-                        String taskName = feature.getClass().getSimpleName() + "-task";
-                        feature.scheduleAtFixedRate(
-                            taskName,
-                            schedulable::executeTask,
-                            schedulable.defaultInitialDelayMs(config),
-                            schedulable.defaultPeriodMs(config)
-                        );
-                    }
-
-                    return null;
-                }).mapError(e -> {
-                    log.warn("Failed to instantiate feature {}", featureConfig.getClassName(), e);
-                    return e;
-                }));
-        } else {
-            log.info("No feature config present");
-        }
+        List<BotFeature> features = new ArrayList<>(createConfiguredFeatures());
 
         // Always-on durability safety net, registered outside the config so it cannot be disabled by
         // omission: flushes write-behind repository changes on a fixed interval so an ungraceful
@@ -422,7 +375,4 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
         return settings == null ? new GeneratorConfig.AutoUpdateSettings() : settings;
     }
 
-    private static boolean isAllowed(String className) {
-        return className != null && className.startsWith("net.hypixel.nerdbot.");
-    }
 }
