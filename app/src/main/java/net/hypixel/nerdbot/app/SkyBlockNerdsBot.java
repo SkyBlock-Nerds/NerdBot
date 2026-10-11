@@ -15,6 +15,8 @@ import net.hypixel.nerdbot.app.badge.BadgeManager;
 import net.hypixel.nerdbot.app.drive.DrivePermissionService;
 import net.hypixel.nerdbot.app.config.GeneratorConfig;
 import net.hypixel.nerdbot.app.generation.pack.PackConfigMapper;
+import net.hypixel.nerdbot.app.inject.BotComponent;
+import net.hypixel.nerdbot.app.inject.DaggerBotComponent;
 import net.hypixel.nerdbot.app.generation.pack.update.HttpHypixelPackApiClient;
 import net.hypixel.nerdbot.app.generation.pack.update.PackBootResolver;
 import net.hypixel.nerdbot.app.generation.pack.update.PackCacheStore;
@@ -74,6 +76,8 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
     private final ResourcePackService resourcePackService = new ResourcePackService(PackRepository.global());
 
     private DrivePermissionService drivePermissionService;
+
+    private BotComponent component;
 
     /** Null when no pack opts into auto-update or the cache directory is unusable. */
     private volatile PackUpdater packUpdater;
@@ -184,8 +188,8 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
     }
 
     @Override
-    protected String getSlashCommandBasePackage() {
-        return "net.hypixel.nerdbot.app.command";
+    protected @NotNull Collection<Object> createSlashCommands() {
+        return List.copyOf(component.slashCommands());
     }
 
     @Override
@@ -196,6 +200,8 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
     @Override
     protected void onReady(@NotNull JDA jda) {
         super.onReady(jda);
+
+        component = DaggerBotComponent.factory().create(getDatabase());
 
         messageCache = new MessageCache();
         suggestionCache = new SuggestionCache();

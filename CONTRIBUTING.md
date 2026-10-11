@@ -66,3 +66,16 @@ This file is automatically updated when values are added, removed, or changed.
 
 - Changes to the configuration file can be reloaded by doing `/config reload`
 
+# Writing Code
+
+## Adding a slash command
+
+Command classes aren't found by scanning a package any more. Each one is listed in
+`app/src/main/java/net/hypixel/nerdbot/app/inject/CommandsModule.java`, and `BotComponentTest` fails if a
+class with `@SlashCommand` or another handler annotation is missing from it.
+
+New commands should take what they need through an `@Inject` constructor rather than calling
+`BotEnvironment.getBot()` or `SkyBlockNerdsBot.config()`, and be added to the module with `@Binds @IntoSet`.
+`PunishmentCommands` is the example to follow, and `PunishmentCommandsTest` shows how to test the handlers
+with the fakes in the framework's test jar. Once a class is injected, add it to the list in
+`ArchitectureRulesTest` so it can't drift back to the global lookups.

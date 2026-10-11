@@ -45,7 +45,7 @@ public final class Fakes {
         return type.cast(proxy);
     }
 
-    private static Object defaultValue(Class<?> returnType) {
+    static Object defaultValue(Class<?> returnType) {
         if (returnType.isPrimitive()) {
             return PRIMITIVE_DEFAULTS.get(returnType);
         }
