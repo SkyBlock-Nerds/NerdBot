@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.discord.config;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import net.dv8tion.jda.api.entities.Activity;
 import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
 
 import java.util.ArrayList;
@@ -60,6 +61,17 @@ public class DiscordBotConfig {
         LISTENING,
         WATCHING,
         COMPETING,
-        CUSTOM
+        CUSTOM;
+
+        public Activity.ActivityType toJda() {
+            return switch (this) {
+                case PLAYING -> Activity.ActivityType.PLAYING;
+                case STREAMING -> Activity.ActivityType.STREAMING;
+                case LISTENING -> Activity.ActivityType.LISTENING;
+                case WATCHING -> Activity.ActivityType.WATCHING;
+                case COMPETING -> Activity.ActivityType.COMPETING;
+                case CUSTOM -> Activity.ActivityType.CUSTOM_STATUS;
+            };
+        }
     }
 }

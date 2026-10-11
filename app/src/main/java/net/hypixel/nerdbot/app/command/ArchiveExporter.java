@@ -37,6 +37,8 @@ import java.util.zip.ZipOutputStream;
 @UtilityClass
 public class ArchiveExporter {
 
+    static final List<String> CSV_HEADERS = List.of("Timestamp", "Username", "User ID", "Message ID", "Thread ID", "Thread Name", "Reactions", "Message Content");
+
     public static File exportCategory(Category category, Consumer<String> progressCallback) throws IOException {
         List<File> exports = new ArrayList<>();
         List<TextChannel> textChannels = category.getTextChannels();
@@ -80,7 +82,7 @@ public class ArchiveExporter {
     }
 
     public static File exportTextChannel(TextChannel channel, Consumer<String> progressCallback) throws IOException {
-        CSVData csvData = new CSVData(List.of("Timestamp", "Username", "User ID", "Message ID", "Thread ID", "Thread Name", "Reactions", "Message Content"));
+        CSVData csvData = new CSVData(CSV_HEADERS);
         AtomicInteger total = new AtomicInteger(0);
 
         log.info("[TextChannel '{}' (ID: {})] Starting channel message retrieval", channel.getName(), channel.getId());
@@ -102,7 +104,7 @@ public class ArchiveExporter {
     }
 
     public static File exportForumChannel(ForumChannel forumChannel, Consumer<String> progressCallback) throws IOException {
-        CSVData csvData = new CSVData(List.of("Timestamp", "Username", "User ID", "Message ID", "Thread ID", "Thread Name", "Reactions", "Message Content"));
+        CSVData csvData = new CSVData(CSV_HEADERS);
         AtomicInteger total = new AtomicInteger(0);
 
         List<ThreadChannel> activeThreads = forumChannel.getThreadChannels();
@@ -261,10 +263,10 @@ public class ArchiveExporter {
         log.info("[addThreadMessages] Finished processing all {} threads", threads.size());
     }
 
-    private static List<String> buildRow(Message message, String threadId, String threadName) {
+    static List<String> buildRow(Message message, String threadId, String threadName) {
         String formattedTimestamp = message.getTimeCreated().format(FileUtils.REGULAR_DATE_FORMAT);
         String authorName = message.getAuthor().getName();
-        String authorId = message.getAuthor().getName();
+        String authorId = message.getAuthor().getId();
         MessageExport export = MessageExport.from(message, false);
         String messageContent = export.contentWithAttachments().replace("\"", "\"\"");
         String reactions = formatReactions(message);

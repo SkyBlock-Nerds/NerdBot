@@ -234,10 +234,7 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
 
     @Override
     protected Activity buildActivity(@NotNull DiscordBotConfig config) {
-        return Activity.of(
-            Activity.ActivityType.valueOf(config.getActivityType().name()),
-            config.getActivity()
-        );
+        return Activity.of(config.getActivityType().toJda(), config.getActivity());
     }
 
     @Override

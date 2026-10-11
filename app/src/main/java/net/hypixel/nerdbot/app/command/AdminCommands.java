@@ -39,6 +39,7 @@ import net.dv8tion.jda.api.requests.restaction.InviteAction;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import net.hypixel.nerdbot.app.command.util.CommandErrorResponder;
+import net.hypixel.nerdbot.app.command.util.ProgressUpdates;
 import net.hypixel.nerdbot.app.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.app.listener.RoleRestrictedChannelListener;
 import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
@@ -75,6 +76,7 @@ import net.hypixel.nerdbot.discord.util.Utils;
 import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -83,8 +85,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -116,37 +116,32 @@ public class AdminCommands {
                 BotEnvironment.EXECUTOR_SERVICE.execute(() -> {
                     event.deferReply(true).complete();
 
-                    TimerTask task = new TimerTask() {
-                        @Override
-                        public void run() {
-                            BotEnvironment.EXECUTOR_SERVICE.execute(() -> {
-                                if (forumChannelCurator.isCompleted()) {
-                                    this.cancel();
-                                    return;
-                                }
-
-                                if (forumChannelCurator.getCurrentObject() == null) {
-                                    return;
-                                }
-
-                                event.getHook().editOriginal("Export progress: " + forumChannelCurator.getIndex() + "/" + forumChannelCurator.getTotal()
-                                    + " in " + TimeUtils.formatMsCompact(System.currentTimeMillis() - forumChannelCurator.getStartTime())
-                                    + "\nCurrently looking at " + (forumChannelCurator.getCurrentObject().getJumpUrl())
-                                ).queue();
-                            });
+                    ProgressUpdates progress = ProgressUpdates.every(Duration.ofSeconds(1), "curate-progress", () -> {
+                        if (forumChannelCurator.getCurrentObject() == null) {
+                            return;
                         }
-                    };
 
-                    Timer timer = new Timer();
-                    timer.scheduleAtFixedRate(task, 0, 1_000);
+                        event.getHook().editOriginal("Curation progress: " + forumChannelCurator.getIndex() + "/" + forumChannelCurator.getTotal()
+                            + " in " + TimeUtils.formatMsCompact(System.currentTimeMillis() - forumChannelCurator.getStartTime())
+                            + "\nCurrently looking at " + (forumChannelCurator.getCurrentObject().getJumpUrl())
+                        ).queue();
+                    });
 
-                    List<GreenlitMessage> output = forumChannelCurator.curate(channel);
-
-                    if (output.isEmpty()) {
-                        event.getHook().editOriginal("No suggestions were greenlit").queue();
-                    } else {
-                        event.getHook().editOriginal(String.format("Greenlit %d suggestions in %dms!", output.size(), forumChannelCurator.getEndTime() - forumChannelCurator.getStartTime())).queue();
+                    List<GreenlitMessage> output;
+                    try {
+                        output = forumChannelCurator.curate(channel);
+                    } catch (RuntimeException exception) {
+                        progress.finish(() -> CommandErrorResponder.respond(event.getHook(), "Curation failed. Please try again later.", exception));
+                        return;
                     }
+
+                    progress.finish(() -> {
+                        if (output.isEmpty()) {
+                            event.getHook().editOriginal("No suggestions were greenlit").queue();
+                        } else {
+                            event.getHook().editOriginal(String.format("Greenlit %d suggestions in %dms!", output.size(), forumChannelCurator.getEndTime() - forumChannelCurator.getStartTime())).queue();
+                        }
+                    });
                 });
             })
             .exceptionally(throwable -> {
@@ -168,7 +163,15 @@ public class AdminCommands {
                 }
 
                 List<Invite> invites = new ArrayList<>(amount);
-                TextChannel selected = Objects.requireNonNullElse(channel, DiscordBotEnvironment.getBot().getJDA().getTextChannelsByName("limbo", true).get(0));
+                TextChannel selected = channel != null
+                    ? channel
+                    : DiscordBotEnvironment.getBot().getJDA().getTextChannelsByName("limbo", true).stream().findFirst().orElse(null);
+
+                if (selected == null) {
+                    event.reply("There's no #limbo channel to default to, so please pick a channel.").setEphemeral(true).queue();
+                    return;
+                }
+
                 event.deferReply(true).complete();
 
                 ChannelCache.sendToLogChannel(
@@ -397,7 +400,7 @@ public class AdminCommands {
         discordUserRepository.findByIdAsync(member.getId())
             .thenAccept(discordUser -> {
                 if (discordUser == null) {
-                    event.reply("User not found").queue();
+                    event.getHook().editOriginal("User not found").queue();
                     return;
                 }
 
@@ -521,7 +524,13 @@ public class AdminCommands {
         event.deferReply(true).queue();
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
         DiscordUser discordUser = discordUserRepository.findById(member.getId()).orElse(null);
-        List<MessageEmbed> embeds = new ArrayList<>(ProfileCommands.getActivityEmbeds(member));
+
+        if (discordUser == null) {
+            event.getHook().editOriginal("User not found").queue();
+            return;
+        }
+
+        List<MessageEmbed> embeds = new ArrayList<>(ProfileCommands.getActivityEmbeds(member, discordUser));
 
         String profile = discordUser.isProfileAssigned() ?
             discordUser.getMojangProfile().getUsername() + " (" + discordUser.getMojangProfile().getUniqueId().toString() + ")" :
@@ -1236,14 +1245,17 @@ public class AdminCommands {
     @SlashCommand(name = "reset-inactivity-check-data", description = "Reset the inactivity check data", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void resetInactiveCheckData(SlashCommandInteractionEvent event) {
         DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        List<DiscordUser> discordUsers = discordUserRepository.getAll();
 
-        discordUserRepository.forEach(discordUser -> {
+        discordUsers.forEach(discordUser -> {
             LastActivity lastActivity = discordUser.getLastActivity();
             NominationInfo nominationInfo = lastActivity.getNominationInfo();
 
             nominationInfo.setTotalInactivityWarnings(0);
             nominationInfo.setLastInactivityWarningTimestamp(null);
         });
+
+        event.reply(String.format("Reset inactivity check data for %d users.", discordUsers.size())).setEphemeral(true).queue();
     }
 
     @SlashCommand(name = "scan-channel", description = "Manually scan a channel for role membership", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})

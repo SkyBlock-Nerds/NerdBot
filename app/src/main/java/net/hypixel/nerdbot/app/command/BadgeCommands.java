@@ -8,6 +8,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.Command;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.hypixel.nerdbot.app.badge.BadgeManager;
@@ -18,7 +19,10 @@ import net.hypixel.nerdbot.marmalade.storage.badge.TieredBadge;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 @Slf4j
 public class BadgeCommands {
@@ -149,9 +153,17 @@ public class BadgeCommands {
 
     @SlashAutocompleteHandler(id = "available_badges")
     public List<Command.Choice> getAvailableBadges(CommandAutoCompleteInteractionEvent event) {
-        return BadgeManager.getBadgeMap().entrySet().stream()
+        return matchingBadgeChoices(BadgeManager.getBadgeMap(), event.getFocusedOption().getValue());
+    }
+
+    static List<Command.Choice> matchingBadgeChoices(Map<String, Badge> badges, String typed) {
+        String query = typed.toLowerCase(Locale.ROOT);
+
+        return badges.entrySet().stream()
             .map(entry -> new Command.Choice(entry.getValue().getName(), entry.getKey()))
-            .filter(choice -> choice.getName().contains(event.getFocusedOption().getName()))
+            .filter(choice -> choice.getName().toLowerCase(Locale.ROOT).contains(query))
+            .sorted(Comparator.comparing(Command.Choice::getName))
+            .limit(OptionData.MAX_CHOICES)
             .toList();
     }
 }
