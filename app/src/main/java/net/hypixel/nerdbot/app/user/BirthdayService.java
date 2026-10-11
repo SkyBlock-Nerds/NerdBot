@@ -11,14 +11,12 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
-import java.util.Locale;
 import java.util.Optional;
 
 public class BirthdayService {
 
     private static final DateTimeFormatter INPUT_FORMAT = DateTimeFormatter.ofPattern("M/d/uuuu")
         .withResolverStyle(ResolverStyle.STRICT);
-    private static final DateTimeFormatter REPLY_FORMAT = DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale.ENGLISH);
 
     public enum Status {
         SUCCESS, USER_NOT_FOUND, INVALID_DATE, INVALID_TIMEZONE, BIRTHDAY_NOT_SET
@@ -62,7 +60,7 @@ public class BirthdayService {
 
         DiscordUser user = found.get();
         ZoneId effectiveZone = zone.orElseGet(() -> user.getBirthdayData() == null
-            ? ZoneId.of("UTC") : user.getBirthdayData().getTimeZoneId());
+            ? BirthdayData.DEFAULT_ZONE : user.getBirthdayData().getTimeZoneId());
 
         try {
             user.setBirthday(birthDate, LocalDate.now(clock.withZone(effectiveZone)));
@@ -76,7 +74,7 @@ public class BirthdayService {
         store.save(user).join();
 
         return new Outcome(Status.SUCCESS, String.format("Set your birthday to %s (timezone: %s)!",
-            REPLY_FORMAT.format(birthDate), data.getTimeZoneId().getId()));
+            data.getFormattedDate(), data.getTimeZoneId().getId()));
     }
 
     public Outcome setTimezone(String discordId, String timezone) {
