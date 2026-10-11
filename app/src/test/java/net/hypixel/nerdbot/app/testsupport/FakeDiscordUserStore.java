@@ -4,6 +4,7 @@ import net.hypixel.nerdbot.app.storage.DiscordUserStore;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -25,6 +26,9 @@ public class FakeDiscordUserStore implements DiscordUserStore {
     private final List<String> cachedIds = new ArrayList<>();
     private final List<String> savedIds = new ArrayList<>();
     private final Set<String> failingSaves = new HashSet<>();
+    private final Set<String> throwingSaves = new HashSet<>();
+    // Users are held by reference, so this snapshot is the only way to tell what was persisted from what is in memory
+    private final Map<String, Integer> persistedAnnouncedYears = new HashMap<>();
 
     public FakeDiscordUserStore seed(DiscordUser user) {
         users.put(user.getDiscordId(), user);
@@ -33,6 +37,11 @@ public class FakeDiscordUserStore implements DiscordUserStore {
 
     public FakeDiscordUserStore failSavesFor(String... discordIds) {
         failingSaves.addAll(List.of(discordIds));
+        return this;
+    }
+
+    public FakeDiscordUserStore throwOnSaveFor(String... discordIds) {
+        throwingSaves.addAll(List.of(discordIds));
         return this;
     }
 
@@ -61,11 +70,15 @@ public class FakeDiscordUserStore implements DiscordUserStore {
 
     @Override
     public CompletableFuture<Void> save(DiscordUser user) {
+        if (throwingSaves.contains(user.getDiscordId())) {
+            throw new IllegalStateException("save threw");
+        }
         users.put(user.getDiscordId(), user);
         if (failingSaves.contains(user.getDiscordId())) {
             return CompletableFuture.failedFuture(new IllegalStateException("save failed"));
         }
         savedIds.add(user.getDiscordId());
+        persistedAnnouncedYears.put(user.getDiscordId(), announcedYearOf(user));
         return CompletableFuture.completedFuture(null);
     }
 
@@ -75,5 +88,13 @@ public class FakeDiscordUserStore implements DiscordUserStore {
 
     public List<String> savedIds() {
         return List.copyOf(savedIds);
+    }
+
+    public Integer persistedAnnouncedYear(String discordId) {
+        return persistedAnnouncedYears.get(discordId);
+    }
+
+    private static Integer announcedYearOf(DiscordUser user) {
+        return user.getBirthdayData() == null ? null : user.getBirthdayData().getLastAnnouncedYear();
     }
 }

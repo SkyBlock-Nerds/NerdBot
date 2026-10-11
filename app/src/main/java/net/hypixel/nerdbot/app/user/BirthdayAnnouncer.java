@@ -9,7 +9,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 
 @Slf4j
 public class BirthdayAnnouncer {
@@ -69,12 +68,12 @@ public class BirthdayAnnouncer {
         data.setLastAnnouncedYear(today.getYear());
         try {
             store.save(user).join();
-        } catch (CompletionException exception) {
+        } catch (RuntimeException exception) {
             data.setLastAnnouncedYear(previousYear);
             throw exception;
         }
 
-        messenger.send(message(user, today)).whenComplete((ignored, failure) -> {
+        deliver(message(user, today)).whenComplete((ignored, failure) -> {
             if (failure == null) {
                 log.info("Announced the birthday of {}", user.getDiscordId());
                 return;
@@ -87,5 +86,16 @@ public class BirthdayAnnouncer {
                 return null;
             });
         });
+    }
+
+    private CompletableFuture<?> deliver(String message) {
+        try {
+            CompletableFuture<?> delivery = messenger.send(message);
+            return delivery != null
+                ? delivery
+                : CompletableFuture.failedFuture(new IllegalStateException("Messenger returned no delivery future"));
+        } catch (RuntimeException exception) {
+            return CompletableFuture.failedFuture(exception);
+        }
     }
 }

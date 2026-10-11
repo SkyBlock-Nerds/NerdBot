@@ -15,6 +15,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BirthdayAnnouncerTest {
@@ -104,6 +105,7 @@ class BirthdayAnnouncerTest {
 
         assertEquals(1, announcer.announceDue());
         assertEquals(List.of("Happy birthday <@1>!"), sent);
+        assertEquals(2026, store.persistedAnnouncedYear("1"));
         assertEquals(0, announcer.announceDue());
     }
 
@@ -118,8 +120,57 @@ class BirthdayAnnouncerTest {
         announcer.announceDue();
 
         assertEquals(2025, user.getBirthdayData().getLastAnnouncedYear());
+        assertEquals(2025, store.persistedAnnouncedYear("1"));
         assertEquals(List.of("1", "1"), store.savedIds());
         assertTrue(BirthdayAnnouncer.isDue(user.getBirthdayData(), onTheDay.instant()));
+    }
+
+    @Test
+    void throwingSendUndoesTheRecordSoTheNextRunRetries() {
+        DiscordUser user = member("1", LocalDate.of(2007, 10, 12), "UTC");
+        user.getBirthdayData().setLastAnnouncedYear(2025);
+        FakeDiscordUserStore store = new FakeDiscordUserStore().seed(user);
+        BirthdayAnnouncer announcer = new BirthdayAnnouncer(store, message -> {
+            throw new IllegalStateException("JDA rejected the request");
+        }, onTheDay);
+
+        announcer.announceDue();
+
+        assertEquals(2025, user.getBirthdayData().getLastAnnouncedYear());
+        assertEquals(2025, store.persistedAnnouncedYear("1"));
+        assertEquals(List.of("1", "1"), store.savedIds());
+        assertTrue(BirthdayAnnouncer.isDue(user.getBirthdayData(), onTheDay.instant()));
+    }
+
+    @Test
+    void nullDeliveryFutureUndoesTheRecordSoTheNextRunRetries() {
+        DiscordUser user = member("1", LocalDate.of(2007, 10, 12), "UTC");
+        user.getBirthdayData().setLastAnnouncedYear(2025);
+        FakeDiscordUserStore store = new FakeDiscordUserStore().seed(user);
+        BirthdayAnnouncer announcer = new BirthdayAnnouncer(store, message -> null, onTheDay);
+
+        announcer.announceDue();
+
+        assertEquals(2025, user.getBirthdayData().getLastAnnouncedYear());
+        assertEquals(2025, store.persistedAnnouncedYear("1"));
+        assertEquals(List.of("1", "1"), store.savedIds());
+        assertTrue(BirthdayAnnouncer.isDue(user.getBirthdayData(), onTheDay.instant()));
+    }
+
+    @Test
+    void throwingSaveRestoresTheYearAndSendsNothing() {
+        DiscordUser user = member("1", LocalDate.of(2007, 10, 12), "UTC");
+        user.getBirthdayData().setLastAnnouncedYear(2025);
+        FakeDiscordUserStore store = new FakeDiscordUserStore().seed(user).throwOnSaveFor("1");
+        BirthdayAnnouncer announcer = new BirthdayAnnouncer(store, message -> {
+            sent.add(message);
+            return CompletableFuture.completedFuture(null);
+        }, onTheDay);
+
+        assertEquals(0, announcer.announceDue());
+        assertTrue(sent.isEmpty());
+        assertEquals(2025, user.getBirthdayData().getLastAnnouncedYear());
+        assertNull(store.persistedAnnouncedYear("1"));
     }
 
     @Test

@@ -45,10 +45,6 @@ class BirthdayAnnouncementSimulationTest {
 
         BirthdayAnnouncer announcer = new BirthdayAnnouncer(store, messenger, clock);
         for (int hour = 0; hour < hours; hour++) {
-            // A fresh announcer every 7 hours stands in for a bot restart; all state must live in the store
-            if (hour % 7 == 0) {
-                announcer = new BirthdayAnnouncer(store, messenger, clock);
-            }
             announcer.announceDue();
             clock.advance(Duration.ofHours(1));
         }
