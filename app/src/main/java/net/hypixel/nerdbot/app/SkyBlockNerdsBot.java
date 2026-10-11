@@ -33,7 +33,6 @@ import net.hypixel.nerdbot.app.listener.SuggestionListener;
 import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.app.sentry.SentryManager;
 import net.hypixel.nerdbot.app.reminder.ReminderDispatcher;
-import net.hypixel.nerdbot.app.user.BirthdayScheduler;
 import net.hypixel.nerdbot.discord.AbstractDiscordBot;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
 import net.hypixel.nerdbot.discord.api.feature.FeatureEventListener;
@@ -292,17 +291,14 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
             log.warn("No badges found in config file, so no badges will be loaded!");
         }
 
-        // Load Discord users and schedule birthdays
+        // Load Discord users into the cache
         DiscordUserRepository discordUserRepository = getDatabase()
             .getRepositoryManager()
             .getRepository(DiscordUserRepository.class);
 
         if (discordUserRepository != null) {
             discordUserRepository.loadAllDocumentsIntoCacheAsync()
-                .thenRun(() -> {
-                    discordUserRepository.forEach(BirthdayScheduler::schedule);
-                    log.info("Successfully loaded all Discord users into cache");
-                })
+                .thenRun(() -> log.info("Successfully loaded all Discord users into cache"))
                 .exceptionally(throwable -> {
                     log.error("Failed to load Discord users into cache", throwable);
                     return null;

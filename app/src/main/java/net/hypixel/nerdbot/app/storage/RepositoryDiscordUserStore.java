@@ -5,11 +5,12 @@ import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepo
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Production {@link DiscordUserStore} backed by the real {@link DiscordUserRepository}.
  *
- * <p>This is a thin adapter: {@link #getAll()} and {@link #save(DiscordUser)} map directly onto the
+ * <p>This is a thin adapter: {@link #getAll()} and {@link #cache(DiscordUser)} map directly onto the
  * repository's in-memory cache operations, matching the behaviour of the call sites this store
  * replaces.
  */
@@ -32,7 +33,21 @@ public class RepositoryDiscordUserStore implements DiscordUserStore {
     }
 
     @Override
-    public void save(DiscordUser user) {
+    public List<DiscordUser> findWithBirthdaySet() {
+        // Resolve through findById so we act on the cached instance and never overwrite unsaved changes
+        return repository.findIdsWithBirthdaySet().stream()
+            .map(id -> repository.findById(id).toOptional())
+            .flatMap(Optional::stream)
+            .toList();
+    }
+
+    @Override
+    public void cache(DiscordUser user) {
         repository.cacheObject(user);
+    }
+
+    @Override
+    public CompletableFuture<Void> save(DiscordUser user) {
+        return repository.cacheAndSaveAsync(user).thenApply(result -> null);
     }
 }

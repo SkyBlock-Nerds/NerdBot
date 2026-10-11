@@ -54,7 +54,7 @@ public class ActivityPurgeFeature extends BotFeature implements SchedulableFeatu
 
         for (DiscordUser discordUser : store.getAll()) {
             if (discordUser.getLastActivity().purgeOldHistory(daysRequiredForVoteHistory)) {
-                store.save(discordUser);
+                store.cache(discordUser);
                 purged++;
             }
         }

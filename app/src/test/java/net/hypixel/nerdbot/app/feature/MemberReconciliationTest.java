@@ -30,7 +30,7 @@ class MemberReconciliationTest {
         assertEquals("123", result.getDiscordId());
         assertNotNull(result.getLastActivity(), "a new user should have default activity");
         assertNotNull(result.getBadges(), "a new user should have a (non-null) badge list");
-        assertEquals(List.of("123"), store.savedIds(), "the new user should have been saved");
+        assertEquals(List.of("123"), store.cachedIds(), "the new user should have been saved");
         assertTrue(store.findById("123").isPresent(), "the new user should now be in the store");
     }
 
@@ -43,7 +43,7 @@ class MemberReconciliationTest {
         DiscordUser result = UserGrabberFeature.reconcileMember(store, "123", "Nerd", ALL_KNOWN, List.of());
 
         assertNotNull(result.getLastActivity(), "null activity should have been replaced with a default");
-        assertEquals(List.of("123"), store.savedIds());
+        assertEquals(List.of("123"), store.cachedIds());
     }
 
     @Test
@@ -56,7 +56,7 @@ class MemberReconciliationTest {
 
         assertNotNull(result.getBadges(), "null badges should have been replaced with an empty list");
         assertTrue(result.getBadges().isEmpty());
-        assertEquals(List.of("123"), store.savedIds());
+        assertEquals(List.of("123"), store.cachedIds());
     }
 
     @Test
@@ -69,7 +69,7 @@ class MemberReconciliationTest {
 
         assertEquals(1, result.getBadges().size(), "the unrecognised badge should have been removed");
         assertEquals("known", result.getBadges().get(0).badgeId());
-        assertEquals(List.of("123"), store.savedIds());
+        assertEquals(List.of("123"), store.cachedIds());
     }
 
     @Test

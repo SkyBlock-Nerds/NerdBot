@@ -27,7 +27,7 @@ class StaleActivityPurgeTest {
         int purged = ActivityPurgeFeature.purgeOldHistory(store, RETENTION_DAYS);
 
         assertEquals(1, purged, "only the stale user should be counted as purged");
-        assertEquals(List.of("stale"), store.savedIds(), "only the changed user should be re-saved");
+        assertEquals(List.of("stale"), store.cachedIds(), "only the changed user should be re-saved");
         assertTrue(stale.getLastActivity().getSuggestionCreationHistory().isEmpty(),
             "the stale entry should have been removed");
         assertEquals(1, recent.getLastActivity().getSuggestionCreationHistory().size(),
@@ -42,7 +42,7 @@ class StaleActivityPurgeTest {
         int purged = ActivityPurgeFeature.purgeOldHistory(store, RETENTION_DAYS);
 
         assertEquals(0, purged);
-        assertTrue(store.savedIds().isEmpty(), "no user should be re-saved when nothing is stale");
+        assertTrue(store.cachedIds().isEmpty(), "no user should be re-saved when nothing is stale");
         assertEquals(1, recent.getLastActivity().getSuggestionCreationHistory().size());
     }
 
