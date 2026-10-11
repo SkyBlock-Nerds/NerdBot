@@ -36,7 +36,7 @@ public class AlphaProjectConfig {
      * <br><br>
      * Default is 7 days
      * <br>
-     * Set to 0 to disable
+     * Set to 0 or below to disable
      */
     private int autoArchiveThreshold = 24 * 7;
 
@@ -45,7 +45,7 @@ public class AlphaProjectConfig {
      * <br><br>
      * Default is disabled
      * <br>
-     * Set to -1 to disable
+     * Set to 0 or below to disable
      */
     private int autoLockThreshold = -1;
 

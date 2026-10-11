@@ -11,6 +11,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
+import net.dv8tion.jda.api.utils.TimeUtil;
 import net.hypixel.nerdbot.marmalade.EnumUtils;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import net.hypixel.nerdbot.app.config.NerdBotConfig;
@@ -58,37 +59,11 @@ public class Suggestion {
         this.guildId = thread.getGuild().getId();
         this.timeCreated = thread.getTimeCreated();
         this.jumpUrl = String.format("https://discord.com/channels/%s/%s", this.getGuildId(), this.getThreadId());
-        this.greenlit = channelType == ChannelType.NORMAL && DiscordUtils.hasTagByName(thread, botConfig.getSuggestionConfig().getGreenlitTag());
         this.channelType = channelType == null ? SuggestionTypeResolver.getThreadSuggestionType(thread) : channelType;
+        this.greenlit = this.channelType == ChannelType.NORMAL && DiscordUtils.hasTagByName(thread, botConfig.getSuggestionConfig().getGreenlitTag());
         this.expired = false;
 
-        // Activity
-        Message latestMessage = thread.getHistory().getMessageById(thread.getLatestMessageId());
-        if (latestMessage != null) {
-            long createdAt = latestMessage.getTimeCreated().toInstant().toEpochMilli();
-            long currentTime = System.currentTimeMillis();
-            long hoursAgo = TimeUnit.MILLISECONDS.toHours(currentTime - createdAt);
-            ThreadChannelManager threadManager = thread.getManager();
-            boolean changed = false;
-            long autoArchiveThreshold = channelType == ChannelType.NORMAL ? botConfig.getSuggestionConfig().getAutoArchiveThreshold() : botConfig.getAlphaProjectConfig().getAutoArchiveThreshold();
-            long autoLockThreshold = channelType == ChannelType.NORMAL ? botConfig.getSuggestionConfig().getAutoLockThreshold() : botConfig.getAlphaProjectConfig().getAutoLockThreshold();
-
-            if (hoursAgo >= autoArchiveThreshold) {
-                log.debug("Auto-archiving suggestion '{}' (ID: {}) due to inactivity. (Hours: {}, Auto Archive Threshold: {})", thread.getName(), thread.getId(), hoursAgo, autoArchiveThreshold);
-                threadManager = threadManager.setArchived(true);
-                changed = true;
-            }
-
-            if (hoursAgo >= autoLockThreshold) {
-                log.debug("Auto-locking suggestion '{}' (ID: {}) due to inactivity. (Hours: {}, Auto Archive Threshold: {})", thread.getName(), thread.getId(), hoursAgo, autoLockThreshold);
-                threadManager = threadManager.setLocked(true);
-                changed = true;
-            }
-
-            if (changed) {
-                threadManager.queue();
-            }
-        }
+        applyAutoArchiveAndLock(thread, botConfig);
 
         // Message & Reactions
         Optional<Message> firstMessage = this.getFirstMessage();
@@ -104,6 +79,54 @@ public class Suggestion {
             this.disagrees = getReactionCount(message, DiscordBotEnvironment.getBot().getConfig().getEmojiConfig().getDisagreeEmojiId());
             this.neutrals = getReactionCount(message, DiscordBotEnvironment.getBot().getConfig().getEmojiConfig().getNeutralEmojiId());
         }
+    }
+
+    private void applyAutoArchiveAndLock(ThreadChannel thread, NerdBotConfig botConfig) {
+        if (channelType == ChannelType.UNKNOWN) {
+            return;
+        }
+
+        boolean normal = channelType == ChannelType.NORMAL;
+        int archiveAfterHours = normal ? botConfig.getSuggestionConfig().getAutoArchiveThreshold() : botConfig.getAlphaProjectConfig().getAutoArchiveThreshold();
+        int lockAfterHours = normal ? botConfig.getSuggestionConfig().getAutoLockThreshold() : botConfig.getAlphaProjectConfig().getAutoLockThreshold();
+        long lastActivity = thread.getLatestMessageIdLong() != 0
+            ? TimeUtil.getTimeCreated(thread.getLatestMessageIdLong()).toInstant().toEpochMilli()
+            : thread.getTimeCreated().toInstant().toEpochMilli();
+        long hoursInactive = TimeUnit.MILLISECONDS.toHours(System.currentTimeMillis() - lastActivity);
+
+        AutoArchiveDecision decision = decideAutoArchive(hoursInactive, archiveAfterHours, lockAfterHours, thread.isArchived(), thread.isLocked());
+        if (!decision.archive() && !decision.lock()) {
+            return;
+        }
+
+        ThreadChannelManager manager = thread.getManager();
+        if (decision.archive()) {
+            manager = manager.setArchived(true);
+        }
+        if (decision.lock()) {
+            manager = manager.setLocked(true);
+        }
+
+        log.info("Suggestion '{}' (ID: {}) has had no activity for {} hours (archive: {}, lock: {})",
+            thread.getName(), thread.getId(), hoursInactive, decision.archive(), decision.lock());
+        manager.queue(null, failure -> log.warn("Failed to auto-archive/lock suggestion '{}' (ID: {})", thread.getName(), thread.getId(), failure));
+    }
+
+    record AutoArchiveDecision(boolean archive, boolean lock) {
+    }
+
+    /**
+     * A threshold of zero or less turns that action off. Threads that are already archived are left
+     * alone: Discord won't edit an archived thread (including locking it) without unarchiving it first.
+     */
+    static AutoArchiveDecision decideAutoArchive(long hoursInactive, int archiveAfterHours, int lockAfterHours, boolean archived, boolean locked) {
+        if (archived) {
+            return new AutoArchiveDecision(false, false);
+        }
+
+        boolean archive = archiveAfterHours > 0 && hoursInactive >= archiveAfterHours;
+        boolean lock = !locked && lockAfterHours > 0 && hoursInactive >= lockAfterHours;
+        return new AutoArchiveDecision(archive, lock);
     }
 
     public static int getReactionCount(Message message, String emojiId) {
