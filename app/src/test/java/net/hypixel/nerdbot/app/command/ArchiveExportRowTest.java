@@ -2,7 +2,7 @@ package net.hypixel.nerdbot.app.command;
 
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
-import net.hypixel.nerdbot.app.testsupport.Fakes;
+import net.hypixel.nerdbot.discord.testsupport.Fakes;
 import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
