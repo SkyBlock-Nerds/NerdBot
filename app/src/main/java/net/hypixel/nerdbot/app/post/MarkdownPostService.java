@@ -1,6 +1,7 @@
 package net.hypixel.nerdbot.app.post;
 
 import com.github.tomtung.latex2unicode.LaTeX2Unicode;
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -46,6 +47,10 @@ public class MarkdownPostService {
         Pattern.compile("(?=^####(?!#) )", Pattern.MULTILINE)
     );
     private static final Pattern TABLE_BLOCK_PATTERN = Pattern.compile("(?m)(^[ \\t]*\\|.+\\|[ \\t]*\n)(^[ \\t]*\\|[-|: ]+\\|[ \\t]*\n)((?:^[ \\t]*\\|.+\\|[ \\t]*\n?)+)");
+
+    @Inject
+    public MarkdownPostService() {
+    }
 
     /**
      * Render a Markdown document into Discord-ready message chunks.

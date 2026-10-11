@@ -16,6 +16,7 @@ import net.hypixel.nerdbot.app.drive.DrivePermissionService;
 import net.hypixel.nerdbot.app.config.GeneratorConfig;
 import net.hypixel.nerdbot.app.generation.pack.PackConfigMapper;
 import net.hypixel.nerdbot.app.inject.BotComponent;
+import net.hypixel.nerdbot.app.inject.BotState;
 import net.hypixel.nerdbot.app.inject.DaggerBotComponent;
 import net.hypixel.nerdbot.app.generation.pack.update.HttpHypixelPackApiClient;
 import net.hypixel.nerdbot.app.generation.pack.update.PackBootResolver;
@@ -56,13 +57,14 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * SkyBlock Nerds Discord bot implementation.
  * This class configures all listeners, features, and services specific to the SkyBlock Nerds community.
  */
 @Slf4j
-public class SkyBlockNerdsBot extends AbstractDiscordBot {
+public class SkyBlockNerdsBot extends AbstractDiscordBot implements BotState {
 
     private MessageCache messageCache;
     private SuggestionCache suggestionCache;
@@ -73,7 +75,7 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
      */
     private final ResourcePackService resourcePackService = new ResourcePackService(PackRepository.global());
 
-    private DrivePermissionService drivePermissionService;
+    private volatile DrivePermissionService drivePermissionService;
 
     private BotComponent component;
 
@@ -139,6 +141,21 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
     }
 
     @Override
+    public NerdBotConfig currentConfig() {
+        return getConfig();
+    }
+
+    @Override
+    public Optional<PackUpdater> currentPackUpdater() {
+        return Optional.ofNullable(packUpdater);
+    }
+
+    @Override
+    public Optional<DrivePermissionService> currentDrivePermissionService() {
+        return Optional.ofNullable(drivePermissionService);
+    }
+
+    @Override
     protected @NotNull Database createDatabase() {
         String mongoUri = System.getProperty("db.mongodb.uri", "mongodb://localhost:27017/");
         return new Database(mongoUri, "skyblock_nerds");
@@ -199,7 +216,7 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
     protected void onReady(@NotNull JDA jda) {
         super.onReady(jda);
 
-        component = DaggerBotComponent.factory().create(jda, getDatabase());
+        component = DaggerBotComponent.factory().create(jda, getDatabase(), this);
 
         messageCache = new MessageCache();
         suggestionCache = new SuggestionCache();
@@ -286,6 +303,7 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot {
     protected void onShutdown() {
         if (component != null) {
             component.scheduler().shutdownNow();
+            component.backgroundWorkPool().shutdownNow();
         }
         PrometheusMetrics.setMetricsEnabled(false);
         SentryManager.close();

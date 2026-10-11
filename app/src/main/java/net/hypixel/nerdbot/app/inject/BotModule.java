@@ -4,20 +4,32 @@ import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
 import jakarta.inject.Singleton;
+import net.hypixel.nerdbot.app.badge.BadgeCatalog;
+import net.hypixel.nerdbot.app.badge.ConfiguredBadgeCatalog;
 import net.hypixel.nerdbot.app.channel.DiscordLogChannel;
 import net.hypixel.nerdbot.app.channel.LogChannel;
+import net.hypixel.nerdbot.app.config.NerdBotConfig;
+import net.hypixel.nerdbot.app.drive.DrivePermissionService;
+import net.hypixel.nerdbot.app.drive.DriveSyncSweep;
+import net.hypixel.nerdbot.app.generation.pack.update.PackUpdater;
 import net.hypixel.nerdbot.app.reminder.DiscordReminderSender;
 import net.hypixel.nerdbot.app.reminder.ReminderSender;
 
 import java.time.Clock;
+import java.util.Optional;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Module
 public interface BotModule {
 
     int SCHEDULER_THREADS = 2;
+    int BACKGROUND_WORK_THREADS = 4;
 
     @Binds
     LogChannel logChannel(DiscordLogChannel channel);
@@ -25,9 +37,43 @@ public interface BotModule {
     @Binds
     ReminderSender reminderSender(DiscordReminderSender sender);
 
+    @Binds
+    BadgeCatalog badgeCatalog(ConfiguredBadgeCatalog catalog);
+
     @Provides
     static Clock clock() {
         return Clock.systemUTC();
+    }
+
+    // Unscoped, so every Provider.get() reads the bot's current value
+    @Provides
+    static NerdBotConfig config(BotState state) {
+        return state.currentConfig();
+    }
+
+    @Provides
+    static Optional<PackUpdater> packUpdater(BotState state) {
+        return state.currentPackUpdater();
+    }
+
+    @Provides
+    static Optional<DrivePermissionService> drivePermissionService(BotState state) {
+        return state.currentDrivePermissionService();
+    }
+
+    @Binds
+    Executor backgroundWork(ExecutorService pool);
+
+    /** For slow work a command starts, such as downloads, so it doesn't hold a dispatch thread. Shut down with the bot. */
+    @Provides
+    @Singleton
+    static ExecutorService backgroundWorkPool() {
+        return Executors.newFixedThreadPool(BACKGROUND_WORK_THREADS, daemonThreads("bot-work-"));
+    }
+
+    @Provides
+    static DriveSyncSweep driveSyncSweep() {
+        return new DriveSyncSweep();
     }
 
     /**
@@ -37,13 +83,17 @@ public interface BotModule {
     @Provides
     @Singleton
     static ScheduledExecutorService scheduler() {
-        AtomicInteger threadNumber = new AtomicInteger();
-        ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(SCHEDULER_THREADS, task -> {
-            Thread thread = new Thread(task, "bot-scheduler-" + threadNumber.incrementAndGet());
-            thread.setDaemon(true);
-            return thread;
-        });
+        ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(SCHEDULER_THREADS, daemonThreads("bot-scheduler-"));
         executor.setRemoveOnCancelPolicy(true);
         return executor;
+    }
+
+    private static ThreadFactory daemonThreads(String namePrefix) {
+        AtomicInteger threadNumber = new AtomicInteger();
+        return task -> {
+            Thread thread = new Thread(task, namePrefix + threadNumber.incrementAndGet());
+            thread.setDaemon(true);
+            return thread;
+        };
     }
 }

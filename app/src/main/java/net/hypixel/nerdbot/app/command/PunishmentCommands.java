@@ -25,6 +25,7 @@ import net.dv8tion.jda.api.interactions.modals.Modal;
 import net.dv8tion.jda.api.interactions.modals.ModalInteraction;
 import net.dv8tion.jda.api.interactions.modals.ModalMapping;
 import net.hypixel.nerdbot.app.channel.LogChannel;
+import net.hypixel.nerdbot.app.command.util.CommandReplies;
 import net.hypixel.nerdbot.app.command.util.PanelId;
 import net.hypixel.nerdbot.app.punishment.PunishmentService;
 import net.hypixel.nerdbot.app.punishment.PunishmentStats;
@@ -144,7 +145,7 @@ public class PunishmentCommands {
     }
 
     void startCreate(IReplyCallback interaction, Member member) {
-        interaction.deferReply(true).queue();
+        CommandReplies.deferPrivately(interaction);
         String modId = interaction.getUser().getId();
         String targetId = member.getId();
 
@@ -162,13 +163,12 @@ public class PunishmentCommands {
     }
 
     void showHistory(IReplyCallback interaction, Member member) {
-        interaction.deferReply(true).queue();
+        CommandReplies.deferPrivately(interaction);
         renderHistory(interaction.getHook(), interaction.getUser().getId(), member.getId(), 1, null);
     }
 
     void search(IReplyCallback interaction, @Nullable Member moderator, @Nullable String type) {
-        interaction.deferReply(true).queue();
-        InteractionHook hook = interaction.getHook();
+        InteractionHook hook = CommandReplies.deferPrivately(interaction);
 
         PunishmentType punishmentType = type != null ? PunishmentType.fromName(type) : null;
         if (type != null && punishmentType == null) {
@@ -204,7 +204,7 @@ public class PunishmentCommands {
     }
 
     void showStats(IReplyCallback interaction, Member member) {
-        interaction.deferReply(true).queue();
+        CommandReplies.deferPrivately(interaction);
 
         PunishmentStats stats = punishments.stats(member.getId());
 
@@ -258,8 +258,7 @@ public class PunishmentCommands {
         String modId = parts.get().get(0);
         String targetId = parts.get().get(1);
 
-        interaction.deferReply(true).queue();
-        InteractionHook hook = interaction.getHook();
+        InteractionHook hook = CommandReplies.deferPrivately(interaction);
 
         PunishmentType type = PunishmentType.fromName(parts.get().get(2));
         if (type == null) {
@@ -273,13 +272,8 @@ public class PunishmentCommands {
             return;
         }
 
-        punishments.record(targetId, modId, type, reason, modalText(interaction, "notes")).whenComplete((punishment, error) -> {
-            if (error != null) {
-                log.error("Failed to save punishment for target={}, moderator={}", targetId, modId, error);
-                hook.editOriginal("Failed to save punishment. Please try again.").queue();
-                return;
-            }
-
+        CommandReplies.finish(punishments.record(targetId, modId, type, reason, modalText(interaction, "notes")), hook,
+            "save a punishment for " + targetId + " by " + modId, "Failed to save punishment. Please try again.", punishment -> {
             EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("Punishment Recorded")
                 .setColor(Color.RED)
@@ -373,13 +367,8 @@ public class PunishmentCommands {
         Punishment punishment = found.get();
         String targetId = punishment.getTargetUserId();
 
-        punishments.delete(punishmentId).whenComplete((ignored, error) -> {
-            if (error != null) {
-                log.error("Failed to delete punishment id={}, deletedBy={}", punishmentId, modId, error);
-                hook.editOriginal("Failed to delete punishment. Please try again.").setComponents().queue();
-                return;
-            }
-
+        CommandReplies.finish(punishments.delete(punishmentId), hook,
+            "delete punishment " + punishmentId + " for " + modId, "Failed to delete punishment. Please try again.", ignored -> {
             logChannel.send(new EmbedBuilder()
                 .setTitle("Punishment Deleted")
                 .setColor(Color.GRAY)

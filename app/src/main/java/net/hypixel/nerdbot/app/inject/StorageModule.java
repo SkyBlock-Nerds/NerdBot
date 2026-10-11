@@ -7,7 +7,10 @@ import net.hypixel.nerdbot.app.punishment.PunishmentStore;
 import net.hypixel.nerdbot.app.punishment.RepositoryPunishmentStore;
 import net.hypixel.nerdbot.app.reminder.ReminderStore;
 import net.hypixel.nerdbot.app.reminder.RepositoryReminderStore;
+import net.hypixel.nerdbot.app.storage.DiscordUserStore;
+import net.hypixel.nerdbot.app.storage.RepositoryDiscordUserStore;
 import net.hypixel.nerdbot.marmalade.storage.database.Database;
+import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.PunishmentRepository;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.ReminderRepository;
 
@@ -20,9 +23,17 @@ public interface StorageModule {
     @Binds
     ReminderStore reminderStore(RepositoryReminderStore store);
 
+    @Binds
+    DiscordUserStore discordUserStore(RepositoryDiscordUserStore store);
+
     @Provides
     static PunishmentRepository punishmentRepository(Database database) {
         return repository(database, PunishmentRepository.class);
+    }
+
+    @Provides
+    static DiscordUserRepository discordUserRepository(Database database) {
+        return repository(database, DiscordUserRepository.class);
     }
 
     @Provides

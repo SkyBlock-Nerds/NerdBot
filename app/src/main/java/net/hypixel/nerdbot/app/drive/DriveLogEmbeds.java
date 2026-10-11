@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.app.drive;
 
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.hypixel.nerdbot.app.channel.LogChannel;
 import net.hypixel.nerdbot.discord.cache.ChannelCache;
 import net.hypixel.nerdbot.marmalade.discord.EmbedFactory;
 
@@ -23,6 +24,11 @@ public final class DriveLogEmbeds {
 
     public static void postAccessChange(DrivePermissionService service, String memberId,
                                         List<String> grantedFolders, List<String> revokedFolders) {
+        postAccessChange(ChannelCache::sendToLogChannel, service, memberId, grantedFolders, revokedFolders);
+    }
+
+    public static void postAccessChange(LogChannel logChannel, DrivePermissionService service, String memberId,
+                                        List<String> grantedFolders, List<String> revokedFolders) {
         if (grantedFolders.isEmpty() && revokedFolders.isEmpty()) {
             return;
         }
@@ -40,7 +46,7 @@ public final class DriveLogEmbeds {
                 embed.addField("Revoked", folderLines(service, revokedFolders), false);
             }
 
-            ChannelCache.sendToLogChannel(embed.build());
+            logChannel.send(embed.build());
         } catch (Exception e) {
             log.warn("Failed to post Drive access log embed for {}", memberId, e);
         }

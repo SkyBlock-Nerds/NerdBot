@@ -36,6 +36,26 @@ public interface CommandsModule {
     @SlashCommandHandlers
     Object reminderCommands(ReminderCommands commands);
 
+    @Binds
+    @IntoSet
+    @SlashCommandHandlers
+    Object driveCommands(DriveCommands commands);
+
+    @Binds
+    @IntoSet
+    @SlashCommandHandlers
+    Object postCommands(PostCommands commands);
+
+    @Binds
+    @IntoSet
+    @SlashCommandHandlers
+    Object packCommands(PackCommands commands);
+
+    @Binds
+    @IntoSet
+    @SlashCommandHandlers
+    Object badgeCommands(BadgeCommands commands);
+
     @Provides
     @IntoSet
     @SlashCommandHandlers
@@ -46,22 +66,8 @@ public interface CommandsModule {
     @Provides
     @IntoSet
     @SlashCommandHandlers
-    static Object badgeCommands() {
-        return new BadgeCommands();
-    }
-
-    @Provides
-    @IntoSet
-    @SlashCommandHandlers
     static Object channelCommands() {
         return new ChannelCommands();
-    }
-
-    @Provides
-    @IntoSet
-    @SlashCommandHandlers
-    static Object driveCommands() {
-        return new DriveCommands();
     }
 
     @Provides
@@ -83,20 +89,6 @@ public interface CommandsModule {
     @SlashCommandHandlers
     static Object infoCommands() {
         return new InfoCommands();
-    }
-
-    @Provides
-    @IntoSet
-    @SlashCommandHandlers
-    static Object packCommands() {
-        return new PackCommands();
-    }
-
-    @Provides
-    @IntoSet
-    @SlashCommandHandlers
-    static Object postCommands() {
-        return new PostCommands();
     }
 
     @Provides
