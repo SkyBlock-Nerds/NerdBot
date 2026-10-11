@@ -191,8 +191,7 @@ public class PunishmentCommands {
         PunishmentRepository repo = getPunishmentRepository();
         Punishment punishment = new Punishment(targetId, modId, type, reason, notes);
 
-        repo.cacheObject(punishment);
-        repo.saveToDatabaseAsync(punishment).thenAccept(result -> {
+        repo.cacheAndSaveAsync(punishment).thenAccept(result -> {
             if (result != null && result.wasAcknowledged()) {
                 EmbedBuilder embed = new EmbedBuilder()
                     .setTitle("Punishment Recorded")

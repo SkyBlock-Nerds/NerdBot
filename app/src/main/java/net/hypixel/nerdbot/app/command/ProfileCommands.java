@@ -27,7 +27,8 @@ import net.hypixel.nerdbot.app.command.util.CommandErrorResponder;
 import net.hypixel.nerdbot.app.command.util.SuggestionCommandUtils;
 import net.hypixel.nerdbot.app.badge.BadgeManager;
 import net.hypixel.nerdbot.discord.role.RoleManager;
-import net.hypixel.nerdbot.app.user.BirthdayScheduler;
+import net.hypixel.nerdbot.app.storage.RepositoryDiscordUserStore;
+import net.hypixel.nerdbot.app.user.BirthdayService;
 import net.hypixel.nerdbot.app.util.HttpUtils;
 import net.hypixel.nerdbot.marmalade.exception.HttpException;
 import net.hypixel.nerdbot.marmalade.json.HypixelPlayerResponse;
@@ -40,7 +41,6 @@ import net.hypixel.nerdbot.marmalade.storage.badge.Badge;
 import net.hypixel.nerdbot.marmalade.storage.badge.TieredBadge;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.badge.BadgeEntry;
-import net.hypixel.nerdbot.marmalade.storage.database.model.user.birthday.BirthdayData;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.stats.LastActivity;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
@@ -49,20 +49,20 @@ import net.hypixel.nerdbot.discord.util.DiscordUtils;
 import net.hypixel.nerdbot.discord.util.pagination.PaginatedResponse;
 import net.hypixel.nerdbot.discord.util.pagination.PaginationManager;
 import org.apache.commons.lang.time.DateFormatUtils;
-import org.apache.commons.lang.time.DateUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.Color;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
 @Slf4j
 public class ProfileCommands {
@@ -822,35 +822,9 @@ public class ProfileCommands {
         guildOnly = true
     )
     public void removeBirthday(SlashCommandInteractionEvent event) {
-        event.deferReply(true).complete();
-
-        if (!BotEnvironment.getBot().getDatabase().isConnected()) {
-            event.getHook().editOriginal("Could not connect to database!").queue();
-            return;
-        }
-
-        DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-
-        discordUserRepository.findByIdAsync(event.getMember().getId())
-            .thenAccept(discordUser -> {
-                if (discordUser == null) {
-                    event.getHook().editOriginal("User not found").queue();
-                    return;
-                }
-
-                if (discordUser.getBirthdayData().getTimer() != null) {
-                    discordUser.getBirthdayData().getTimer().cancel();
-                }
-
-                discordUser.setBirthdayData(new BirthdayData());
-                discordUserRepository.cacheObject(discordUser);
-
-                event.getHook().editOriginal("Your birthday has been removed!").queue();
-            })
-            .exceptionally(throwable -> {
-                CommandErrorResponder.respond(event.getHook(), "Failed to remove the birthday. Please try again later.", throwable);
-                return null;
-            });
+        String discordId = event.getMember().getId();
+        replyWithBirthdayOutcome(event, service -> service.removeBirthday(discordId),
+            "Failed to remove the birthday. Please try again later.");
     }
 
     @SlashCommand(
@@ -864,49 +838,9 @@ public class ProfileCommands {
         SlashCommandInteractionEvent event,
         @SlashOption(autocompleteId = "timezones", description = "Your timezone (e.g., America/New_York, Europe/London, Asia/Tokyo, UTC).") String timezone
     ) {
-        event.deferReply(true).complete();
-
-        if (!BotEnvironment.getBot().getDatabase().isConnected()) {
-            event.getHook().editOriginal("Could not connect to database!").queue();
-            return;
-        }
-
-        ZoneId zoneId;
-        try {
-            zoneId = ZoneId.of(timezone);
-        } catch (Exception e) {
-            event.getHook().editOriginal("Invalid timezone: `" + timezone + "`. Please use a valid timezone ID (e.g., `America/New_York`, `Europe/London`, `Asia/Tokyo`, `UTC`).").queue();
-            return;
-        }
-
-        DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-
-        discordUserRepository.findByIdAsync(event.getMember().getId())
-            .thenAccept(discordUser -> {
-                if (discordUser == null) {
-                    event.getHook().editOriginal("User not found").queue();
-                    return;
-                }
-
-                BirthdayData birthdayData = discordUser.getBirthdayData();
-                if (!birthdayData.isBirthdaySet()) {
-                    event.getHook().editOriginal("You need to set your birthday first using `/profile birthday set`.").queue();
-                    return;
-                }
-
-                if (birthdayData.getTimer() != null) {
-                    birthdayData.getTimer().cancel();
-                }
-
-                birthdayData.setTimezone(zoneId.getId());
-                BirthdayScheduler.schedule(discordUser);
-
-                event.getHook().editOriginal("Your birthday timezone has been updated to `" + zoneId.getId() + "`.").queue();
-            })
-            .exceptionally(throwable -> {
-                CommandErrorResponder.respond(event.getHook(), "Failed to update the timezone. Please try again later.", throwable);
-                return null;
-            });
+        String discordId = event.getMember().getId();
+        replyWithBirthdayOutcome(event, service -> service.setTimezone(discordId, timezone),
+            "Failed to update the timezone. Please try again later.");
     }
 
     @SlashCommand(
@@ -922,59 +856,29 @@ public class ProfileCommands {
         @SlashOption(description = "Whether to announce your age.", required = false) Boolean announceAge,
         @SlashOption(autocompleteId = "timezones", description = "Your timezone (e.g., America/New_York, Europe/London, Asia/Tokyo). Defaults to UTC.", required = false) String timezone
     ) {
-        event.deferReply(true).complete();
+        String discordId = event.getMember().getId();
+        replyWithBirthdayOutcome(event, service -> service.setBirthday(discordId, birthday, Boolean.TRUE.equals(announceAge), timezone),
+            "Failed to set the birthday. Please try again later.");
+    }
+
+    private static void replyWithBirthdayOutcome(SlashCommandInteractionEvent event,
+                                                 Function<BirthdayService, BirthdayService.Outcome> action,
+                                                 String failureMessage) {
+        // The hook holds edits until the deferral is acknowledged, so there's no need to block on it
+        event.deferReply(true).queue();
 
         if (!BotEnvironment.getBot().getDatabase().isConnected()) {
             event.getHook().editOriginal("Could not connect to database!").queue();
             return;
         }
 
-        ZoneId zoneId = null;
-        if (timezone != null && !timezone.isBlank()) {
-            try {
-                zoneId = ZoneId.of(timezone);
-            } catch (Exception e) {
-                event.getHook().editOriginal("Invalid timezone: `" + timezone + "`. Please use a valid timezone ID (e.g., `America/New_York`, `Europe/London`, `Asia/Tokyo`, `UTC`).").queue();
-                return;
-            }
-        }
+        DiscordUserRepository repository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
+        BirthdayService service = new BirthdayService(new RepositoryDiscordUserStore(repository), Clock.systemUTC());
 
-        Member member = event.getMember();
-        DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        ZoneId finalZoneId = zoneId;
-
-        discordUserRepository.findByIdAsync(member.getId())
-            .thenAccept(discordUser -> {
-                if (discordUser == null) {
-                    event.getHook().editOriginal("User not found").queue();
-                    return;
-                }
-
-                try {
-                    BirthdayData birthdayData = discordUser.getBirthdayData();
-
-                    if (birthdayData.getTimer() != null) {
-                        birthdayData.getTimer().cancel();
-                    }
-
-                    Date date = DateUtils.parseDate(birthday, new String[]{"MM/dd/yyyy"});
-                    discordUser.setBirthday(date);
-                    birthdayData.setShouldAnnounceAge(announceAge != null && announceAge);
-
-                    if (finalZoneId != null) {
-                        birthdayData.setTimezone(finalZoneId.getId());
-                    }
-
-                    BirthdayScheduler.schedule(discordUser);
-
-                    String timezoneDisplay = birthdayData.getTimeZoneId().getId();
-                    event.getHook().editOriginal(String.format("Set your birthday to %s (timezone: %s)!", DateFormatUtils.format(date, "dd MMMM yyyy"), timezoneDisplay)).queue();
-                } catch (Exception exception) {
-                    event.getHook().editOriginal("That doesn't seem to be a valid date. Please try again or contact a bot developer!").queue();
-                }
-            })
+        CompletableFuture.supplyAsync(() -> action.apply(service))
+            .thenAccept(outcome -> event.getHook().editOriginal(outcome.message()).queue())
             .exceptionally(throwable -> {
-                CommandErrorResponder.respond(event.getHook(), "Failed to set the birthday. Please try again later.", throwable);
+                CommandErrorResponder.respond(event.getHook(), failureMessage, throwable);
                 return null;
             });
     }

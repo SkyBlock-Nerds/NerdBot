@@ -87,8 +87,7 @@ public class DriveCommands {
                 event.getHook().editOriginal("That email is already linked to another member. If it's yours, ask a moderator for help.").queue();
             }
             case LINKED -> {
-                repository.cacheObject(user);
-                repository.saveToDatabaseAsync(user);
+                repository.cacheAndSaveAsync(user);
                 DriveLogEmbeds.postAccessChange(service.get(), user.getDiscordId(),
                     result.outcome().grantedFolders(), result.outcome().revokedFolders());
                 int granted = result.outcome().grantedFolders().size();

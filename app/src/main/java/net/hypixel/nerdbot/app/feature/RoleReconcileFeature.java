@@ -51,8 +51,7 @@ public class RoleReconcileFeature extends BotFeature {
                 }
                 List<String> roleIds = member.getRoles().stream().map(Role::getId).toList();
                 if (RoleIdSync.applyRoleIds(user, roleIds)) {
-                    repository.cacheObject(user);
-                    repository.saveToDatabaseAsync(user);
+                    repository.cacheAndSaveAsync(user);
                     log.info("Reconciled role ids for {} ({} roles)", member.getId(), roleIds.size());
                 }
             })

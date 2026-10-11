@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Purging activity history older than the retention window re-saves only the users whose history
+ * Purging activity history older than the retention window re-caches only the users whose history
  * actually changed.
  */
 class StaleActivityPurgeTest {
@@ -19,7 +19,7 @@ class StaleActivityPurgeTest {
     private static final int RETENTION_DAYS = 30;
 
     @Test
-    void purgesStaleHistoryAndResavesOnlyChangedUsers() {
+    void purgesStaleHistoryAndRecachesOnlyChangedUsers() {
         DiscordUser stale = userWithSuggestionCreatedAt("stale", daysAgo(100));
         DiscordUser recent = userWithSuggestionCreatedAt("recent", daysAgo(1));
         FakeDiscordUserStore store = new FakeDiscordUserStore().seed(stale).seed(recent);
@@ -27,7 +27,7 @@ class StaleActivityPurgeTest {
         int purged = ActivityPurgeFeature.purgeOldHistory(store, RETENTION_DAYS);
 
         assertEquals(1, purged, "only the stale user should be counted as purged");
-        assertEquals(List.of("stale"), store.savedIds(), "only the changed user should be re-saved");
+        assertEquals(List.of("stale"), store.cachedIds(), "only the changed user should be re-cached");
         assertTrue(stale.getLastActivity().getSuggestionCreationHistory().isEmpty(),
             "the stale entry should have been removed");
         assertEquals(1, recent.getLastActivity().getSuggestionCreationHistory().size(),
@@ -42,7 +42,7 @@ class StaleActivityPurgeTest {
         int purged = ActivityPurgeFeature.purgeOldHistory(store, RETENTION_DAYS);
 
         assertEquals(0, purged);
-        assertTrue(store.savedIds().isEmpty(), "no user should be re-saved when nothing is stale");
+        assertTrue(store.cachedIds().isEmpty(), "no user should be re-cached when nothing is stale");
         assertEquals(1, recent.getLastActivity().getSuggestionCreationHistory().size());
     }
 

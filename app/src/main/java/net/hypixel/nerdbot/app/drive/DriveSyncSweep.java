@@ -209,13 +209,13 @@ public class DriveSyncSweep {
 
             // Wrap the saver with pacing so a large sweep doesn't hammer the API
             UserSaver saver = user -> {
-                repository.cacheObject(user);
                 if (user.getDriveAccess() == null) {
+                    repository.cacheObject(user);
                     // A $set save can't remove a field: the serializer omits nulls and $set leaves absent
                     // fields alone, so a departed member's driveAccess would silently survive in Mongo.
                     repository.unsetField(user.getDiscordId(), "driveAccess");
                 } else {
-                    repository.saveToDatabaseAsync(user);
+                    repository.cacheAndSaveAsync(user);
                 }
                 try {
                     Thread.sleep(PAUSE_BETWEEN_USERS_MS);

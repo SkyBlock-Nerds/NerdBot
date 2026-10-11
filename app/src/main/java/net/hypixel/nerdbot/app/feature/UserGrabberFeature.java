@@ -45,7 +45,11 @@ public class UserGrabberFeature extends BotFeature {
 
                 log.info("Found user {} ({})", member.getEffectiveName(), member.getId());
                 List<String> roleIds = member.getRoles().stream().map(Role::getId).toList();
-                reconcileMember(store, member.getId(), member.getEffectiveName(), UserGrabberFeature::isKnownBadge, roleIds);
+                try {
+                    reconcileMember(store, member.getId(), member.getEffectiveName(), UserGrabberFeature::isKnownBadge, roleIds);
+                } catch (RuntimeException exception) {
+                    log.error("Failed to reconcile user {} ({}), leaving their record untouched", member.getEffectiveName(), member.getId(), exception);
+                }
             })
             .onSuccess(aVoid -> log.info("Finished grabbing users from guild {} (ID: {})", guild.getName(), guild.getId()))
             .onError(throwable -> log.error("Failed to grab users from guild {} (ID: {})", guild.getName(), guild.getId(), throwable));
@@ -54,7 +58,7 @@ public class UserGrabberFeature extends BotFeature {
     /**
      * Reconcile a single guild member into the store: look the user up (creating a fresh one if
      * absent), backfill any null activity/badge fields, drop badges the bot no longer recognises,
-     * and save.
+     * and cache.
      *
      * <p>Extracted from {@link #onFeatureStart()} so the reconciliation can be exercised against an
      * in-memory {@link DiscordUserStore} without a live bot, database or JDA guild. Badge validity
@@ -66,7 +70,7 @@ public class UserGrabberFeature extends BotFeature {
      * @param effectiveName the member's display name (used only for logging)
      * @param knownBadge    returns {@code true} if the given badge ID is still recognised
      * @param roleIds       the member's current Discord role ids
-     * @return the reconciled (and saved) user
+     * @return the reconciled (and cached) user
      */
     static DiscordUser reconcileMember(DiscordUserStore store, String memberId, String effectiveName, Predicate<String> knownBadge, List<String> roleIds) {
         DiscordUser discordUser = store.findById(memberId).orElse(null);
@@ -97,7 +101,7 @@ public class UserGrabberFeature extends BotFeature {
             log.info("Updated role ids for {} (ID: {})", effectiveName, memberId);
         }
 
-        store.save(discordUser);
+        store.cache(discordUser);
         return discordUser;
     }
 
