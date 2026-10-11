@@ -1,216 +1,278 @@
 package net.hypixel.nerdbot.app.command;
 
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import lombok.extern.slf4j.Slf4j;
 import net.aerh.slashcommands.api.annotations.SlashCommand;
 import net.aerh.slashcommands.api.annotations.SlashComponentHandler;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.ISnowflake;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.selections.StringSelectInteraction;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
-import net.hypixel.nerdbot.discord.role.RoleManager;
-import net.hypixel.nerdbot.discord.BotEnvironment;
+import net.dv8tion.jda.api.requests.RestAction;
+import net.hypixel.nerdbot.app.command.util.CommandReplies;
+import net.hypixel.nerdbot.app.command.util.PanelId;
+import net.hypixel.nerdbot.app.config.NerdBotConfig;
+import net.hypixel.nerdbot.app.nomination.ActivityRequirements;
+import net.hypixel.nerdbot.app.storage.DiscordUserStore;
 import net.hypixel.nerdbot.discord.config.RoleConfig;
 import net.hypixel.nerdbot.discord.config.objects.PingableRole;
-import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.StringUtils;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Slf4j
 public class RoleCommands {
 
+    static final String SELECT_PREFIX = "role-select";
+    static final PanelId SELECT = PanelId.of(SELECT_PREFIX, 1, 0);
+    static final String NOT_YOUR_MENU = "You can only use your own role menu!";
+    static final String SERVER_ONLY = "This command can only be used in a server!";
+
+    /** Where a member sits relative to the Member role, which is the one /promotion checks from. */
+    enum PromotionStanding {
+        BELOW_MEMBER,
+        MEMBER,
+        ABOVE_MEMBER
+    }
+
+    /** What the role menu shows: the status text and the select menu, which is absent when no configured role exists. */
+    record RoleMenuView(String text, Optional<StringSelectMenu> menu) {
+    }
+
+    private final Provider<NerdBotConfig> config;
+    private final DiscordUserStore users;
+
+    @Inject
+    public RoleCommands(Provider<NerdBotConfig> config, DiscordUserStore users) {
+        this.config = config;
+        this.users = users;
+    }
+
     @SlashCommand(name = "roles", description = "View and manage your assignable roles", guildOnly = true)
     public void roleMenu(SlashCommandInteractionEvent event) {
-        event.deferReply(true).complete();
-
-        if (event.getGuild() == null) {
-            event.getHook().editOriginal("This command can only be used in a server!").queue();
-            return;
-        }
-
-        PingableRole[] pingableRoles = DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getPingableRoles();
-        Member member = event.getMember();
-
-        if (pingableRoles.length == 0) {
-            event.getHook().editOriginal("No roles are currently available.").queue();
-            return;
-        }
-
-        StringSelectMenu.Builder selectBuilder = StringSelectMenu.create("role-select-" + member.getId())
-            .setPlaceholder("Select a role to toggle")
-            .setRequiredRange(1, 1);
-
-        for (PingableRole pingableRole : pingableRoles) {
-            Role discordRole = event.getGuild().getRoleById(pingableRole.roleId());
-            if (discordRole != null) {
-                boolean hasRole = RoleManager.hasRoleById(member, pingableRole.roleId());
-                String emoji = hasRole ? "✅" : "❌";
-                String description = hasRole ? "Currently assigned - click to remove" : "Not assigned - click to add";
-
-                selectBuilder.addOption(emoji + " " + pingableRole.name(), pingableRole.name(), description);
-            }
-        }
-
-        ActionRow selectRow = ActionRow.of(selectBuilder.build());
-
-        List<String> currentRoles = Arrays.stream(pingableRoles)
-            .filter(role -> RoleManager.hasRoleById(member, role.roleId()))
-            .map(PingableRole::name)
-            .collect(Collectors.toList());
-
-        String statusMessage = currentRoles.isEmpty()
-            ? "**Your Current Roles:** None\n\n" +
-            "**Available Roles:** " + pingableRoles.length + "\n" +
-            "Use the dropdown below to add or remove roles."
-            : "**Your Current Roles:** " + String.join(", ", currentRoles) + "\n\n" +
-            "**Available Roles:** " + pingableRoles.length + "\n" +
-            "Use the dropdown below to add or remove roles.";
-
-        event.getHook().editOriginal(statusMessage)
-            .setComponents(selectRow)
-            .queue();
+        showRoleMenu(event);
     }
 
     @SlashCommand(name = "promotion", description = "Check if you are eligible for a promotion to a higher role", guildOnly = true)
     public void checkForPromotionEligibility(SlashCommandInteractionEvent event) {
-        event.deferReply(true).complete();
-
-        RoleConfig roleConfig = DiscordBotEnvironment.getBot().getConfig().getRoleConfig();
-        if (!roleConfig.isCurrentlyPromotingUsers()) {
-            event.getHook().editOriginal("We are not currently assessing promotion eligibility, please check back later!").queue();
-            return;
-        }
-
-        DiscordUserRepository repository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-
-        repository.findByIdAsync(event.getMember().getId())
-            .thenAccept(user -> {
-                if (user == null) {
-                    event.getHook().editOriginal("User not found").queue();
-                    return;
-                }
-
-                if (!RoleManager.getHighestRole(event.getMember()).equals(RoleManager.getRoleById(roleConfig.getMemberRoleId()).orElseThrow())) {
-                    event.getHook().editOriginal("You are already at the highest role!").queue();
-                    return;
-                }
-
-                if (isEligibleForPromotion(user)) {
-                    event.getHook().editOriginal("You are currently eligible for a promotion! This is not a guarantee that you will be promoted. Thanks for contributing to SkyBlock Nerds!").queue();
-                } else {
-                    event.getHook().editOriginal(String.format("You have %s/%s required suggestion votes and %s/%s required suggestion comments to be nominated for the Orange role!",
-                        StringUtils.formatWithCommas(user.getLastActivity().getTotalVotes(DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory())),
-                        StringUtils.formatWithCommas(DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getMinimumVotesRequiredForPromotion()),
-                        StringUtils.formatWithCommas(user.getLastActivity().getTotalComments(DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory())),
-                        StringUtils.formatWithCommas(DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getMinimumCommentsRequiredForPromotion())
-                    )).queue();
-                }
-            })
-            .exceptionally(throwable -> {
-                log.error("Error loading user for promotion check", throwable);
-                event.getHook().editOriginal("Failed to load user data").queue();
-                return null;
-            });
+        checkPromotion(event);
     }
 
-    private boolean isEligibleForPromotion(DiscordUser user) {
-        return user.getLastActivity().getTotalVotes(DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getDaysRequiredForVoteHistory()) >= DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getMinimumVotesRequiredForPromotion();
-    }
-
-    @SlashComponentHandler(id = "role-select", patterns = {"role-select-*"})
+    @SlashComponentHandler(id = SELECT_PREFIX, patterns = {SELECT_PREFIX + "-*"})
     public void handleRoleSelect(StringSelectInteractionEvent event) {
-        String userId = event.getComponentId().split("-")[2];
-        if (!event.getUser().getId().equals(userId)) {
-            event.reply("You can only use your own role menu!").setEphemeral(true).queue();
+        toggleRole(event);
+    }
+
+    void showRoleMenu(IReplyCallback interaction) {
+        InteractionHook hook = CommandReplies.deferPrivately(interaction);
+        Guild guild = interaction.getGuild();
+        Member member = interaction.getMember();
+        if (guild == null || member == null) {
+            hook.editOriginal(SERVER_ONLY).queue();
             return;
         }
 
-        if (event.getGuild() == null) {
-            event.reply("This command can only be used in a server!").setEphemeral(true).queue();
+        List<PingableRole> roles = pingableRoles();
+        RoleMenuView view = roleMenu(member.getId(), roles, roleIds(member), roleId -> guild.getRoleById(roleId) != null, null);
+        if (view.menu().isEmpty()) {
+            hook.editOriginal("No roles are currently available.").queue();
             return;
         }
 
-        event.deferEdit().queue();
+        hook.editOriginal(view.text()).setComponents(ActionRow.of(view.menu().get())).queue();
+    }
 
-        String selectedRole = event.getValues().get(0);
-        Member member = event.getMember();
-
-        if (member == null) {
-            event.getHook().sendMessage("An error occurred, please try again later.").setEphemeral(true).queue();
+    void toggleRole(StringSelectInteraction interaction) {
+        if (SELECT.parseFor(interaction, interaction.getComponentId(), NOT_YOUR_MENU).isEmpty()) {
             return;
         }
 
-        RoleManager.getPingableRoleByName(selectedRole).ifPresentOrElse(pingableRole -> {
-            Role discordRole = event.getGuild().getRoleById(pingableRole.roleId());
-            if (discordRole == null) {
-                event.getHook().sendMessage("❌ Could not find role: " + selectedRole).setEphemeral(true).queue();
-                return;
-            }
+        Guild guild = interaction.getGuild();
+        Member member = interaction.getMember();
+        if (guild == null || member == null) {
+            CommandReplies.replyPrivately(interaction, SERVER_ONLY);
+            return;
+        }
 
-            boolean hadRole = RoleManager.hasRoleById(member, pingableRole.roleId());
+        interaction.deferEdit().queue();
+        InteractionHook hook = interaction.getHook();
+        String selected = interaction.getValues().isEmpty() ? "" : interaction.getValues().getFirst();
 
+        Optional<PingableRole> pingableRole = pingableRoles().stream()
+            .filter(role -> role.name().equalsIgnoreCase(selected))
+            .findFirst();
+        if (pingableRole.isEmpty()) {
+            hook.sendMessage("❌ Role not found: " + selected).setEphemeral(true).queue();
+            return;
+        }
+
+        Role role = guild.getRoleById(pingableRole.get().roleId());
+        if (role == null) {
+            hook.sendMessage("❌ Could not find role: " + selected).setEphemeral(true).queue();
+            return;
+        }
+
+        boolean hadRole = roleIds(member).contains(role.getId());
+        RestAction<Void> change = hadRole ? guild.removeRoleFromMember(member, role) : guild.addRoleToMember(member, role);
+
+        change.queue(success -> {
+            // The member object can lag behind the change until Discord sends the update, so the menu is drawn from what we just did
+            Set<String> heldNow = new HashSet<>(roleIds(member));
             if (hadRole) {
-                event.getGuild().removeRoleFromMember(member, discordRole).queue(success -> {
-                    updateRoleMenuInternal(event.getHook(), member, event.getGuild(), "✅ Removed role: " + discordRole.getAsMention());
-                }, error -> {
-                    event.getHook().sendMessage("❌ Failed to remove role: " + selectedRole).setEphemeral(true).queue();
-                });
+                heldNow.remove(role.getId());
             } else {
-                event.getGuild().addRoleToMember(member, discordRole).queue(success -> {
-                    updateRoleMenuInternal(event.getHook(), member, event.getGuild(), "✅ Added role: " + discordRole.getAsMention());
-                }, error -> {
-                    event.getHook().sendMessage("❌ Failed to add role: " + selectedRole).setEphemeral(true).queue();
-                });
+                heldNow.add(role.getId());
             }
-        }, () -> {
-            event.getHook().sendMessage("❌ Role not found: " + selectedRole).setEphemeral(true).queue();
+
+            String message = (hadRole ? "✅ Removed role: " : "✅ Added role: ") + role.getAsMention();
+            RoleMenuView view = roleMenu(member.getId(), pingableRoles(), heldNow, roleId -> guild.getRoleById(roleId) != null, message);
+            view.menu().ifPresentOrElse(
+                menu -> hook.editOriginal(view.text()).setComponents(ActionRow.of(menu)).queue(),
+                () -> hook.editOriginal(view.text()).setComponents().queue());
+        }, failure -> {
+            log.warn("Failed to {} role {} for member {}", hadRole ? "remove" : "add", role.getId(), member.getId(), failure);
+            hook.sendMessage((hadRole ? "❌ Failed to remove role: " : "❌ Failed to add role: ") + selected).setEphemeral(true).queue();
         });
     }
 
-    private void updateRoleMenuInternal(InteractionHook hook, Member member, Guild guild, String message) {
-        PingableRole[] pingableRoles = DiscordBotEnvironment.getBot().getConfig().getRoleConfig().getPingableRoles();
+    void checkPromotion(IReplyCallback interaction) {
+        InteractionHook hook = CommandReplies.deferPrivately(interaction);
+        RoleConfig roleConfig = config.get().getRoleConfig();
 
-        StringSelectMenu.Builder selectBuilder = StringSelectMenu.create("role-select-" + member.getId())
-            .setPlaceholder("Select a role to toggle")
-            .setRequiredRange(1, 1);
+        if (!roleConfig.isCurrentlyPromotingUsers()) {
+            hook.editOriginal("We are not currently assessing promotion eligibility, please check back later!").queue();
+            return;
+        }
 
-        for (PingableRole pingableRole : pingableRoles) {
-            Role discordRole = guild.getRoleById(pingableRole.roleId());
-            if (discordRole != null) {
-                boolean hasRole = RoleManager.hasRoleById(member, pingableRole.roleId());
-                String emoji = hasRole ? "✅" : "❌";
-                String description = hasRole ? "Currently assigned - click to remove" : "Not assigned - click to add";
+        Member member = interaction.getMember();
+        if (member == null) {
+            hook.editOriginal(SERVER_ONLY).queue();
+            return;
+        }
 
-                selectBuilder.addOption(emoji + " " + pingableRole.name(), pingableRole.name(), description);
+        if (roleConfig.getMemberRoleId() == null || roleConfig.getMemberRoleId().isBlank()) {
+            log.warn("/promotion was used but roleConfig.memberRoleId is not set");
+            hook.editOriginal("Promotion checks aren't set up yet, please check back later!").queue();
+            return;
+        }
+
+        switch (promotionStanding(member.getRoles().stream().map(ISnowflake::getId).toList(), roleConfig)) {
+            case BELOW_MEMBER -> {
+                hook.editOriginal("Promotion checks start once you have the Member role.").queue();
+                return;
+            }
+            case ABOVE_MEMBER -> {
+                hook.editOriginal("You are already at the highest role!").queue();
+                return;
+            }
+            case MEMBER -> {
             }
         }
 
-        ActionRow selectRow = ActionRow.of(selectBuilder.build());
+        ActivityRequirements.Progress progress = ActivityRequirements.forPromotion(roleConfig)
+            .measure(users.require(member.getId()).getLastActivity());
+        hook.editOriginal(promotionMessage(progress)).queue();
+    }
 
-        List<String> currentRoles = Arrays.stream(pingableRoles)
-            .filter(role -> RoleManager.hasRoleById(member, role.roleId()))
+    /**
+     * Uses the promotion path ({@code promotionTierRoleIds}, lowest first) to tell members above the
+     * Member role from those below it. Without the Member role on that path, it falls back to
+     * whether the Member role is their highest role.
+     *
+     * @param heldRoleIds the member's roles, highest first as Discord orders them
+     */
+    static PromotionStanding promotionStanding(List<String> heldRoleIds, RoleConfig roleConfig) {
+        String memberRoleId = roleConfig.getMemberRoleId();
+        boolean holdsMemberRole = heldRoleIds.stream().anyMatch(memberRoleId::equalsIgnoreCase);
+        List<String> path = roleConfig.getPromotionTierRoleIds() == null ? List.of() : Arrays.asList(roleConfig.getPromotionTierRoleIds());
+        int memberIndex = indexIgnoringCase(path, memberRoleId);
+
+        if (memberIndex >= 0) {
+            boolean holdsHigherTier = path.subList(memberIndex + 1, path.size()).stream()
+                .anyMatch(tier -> heldRoleIds.stream().anyMatch(tier::equalsIgnoreCase));
+            if (holdsHigherTier) {
+                return PromotionStanding.ABOVE_MEMBER;
+            }
+            return holdsMemberRole ? PromotionStanding.MEMBER : PromotionStanding.BELOW_MEMBER;
+        }
+
+        if (!holdsMemberRole) {
+            return PromotionStanding.BELOW_MEMBER;
+        }
+        return heldRoleIds.getFirst().equalsIgnoreCase(memberRoleId) ? PromotionStanding.MEMBER : PromotionStanding.ABOVE_MEMBER;
+    }
+
+    /** Eligibility is on votes alone; comments are shown as they count towards the nomination. */
+    static String promotionMessage(ActivityRequirements.Progress progress) {
+        if (progress.votesMet()) {
+            return "You are currently eligible for a promotion! This is not a guarantee that you will be promoted. Thanks for contributing to SkyBlock Nerds!";
+        }
+
+        return String.format("You have %s/%s required suggestion votes and %s/%s required suggestion comments to be nominated for the Orange role!",
+            StringUtils.formatWithCommas(progress.votes()),
+            StringUtils.formatWithCommas(progress.requirements().requiredVotes()),
+            StringUtils.formatWithCommas(progress.comments()),
+            StringUtils.formatWithCommas(progress.requirements().requiredComments()));
+    }
+
+    static RoleMenuView roleMenu(String memberId, List<PingableRole> roles, Set<String> heldRoleIds, Predicate<String> roleExists, @Nullable String message) {
+        StringSelectMenu.Builder selectBuilder = StringSelectMenu.create(SELECT.build(memberId))
+            .setPlaceholder("Select a role to toggle")
+            .setRequiredRange(1, 1);
+
+        for (PingableRole role : roles) {
+            if (!roleExists.test(role.roleId())) {
+                continue;
+            }
+
+            boolean held = heldRoleIds.contains(role.roleId());
+            selectBuilder.addOption((held ? "✅ " : "❌ ") + role.name(), role.name(),
+                held ? "Currently assigned - click to remove" : "Not assigned - click to add");
+        }
+
+        String current = roles.stream()
+            .filter(role -> heldRoleIds.contains(role.roleId()))
             .map(PingableRole::name)
-            .collect(Collectors.toList());
+            .collect(Collectors.joining(", "));
 
-        String statusMessage = (message != null ? message + "\n\n" : "") +
-            (currentRoles.isEmpty()
-                ? "**Your Current Roles:** None\n\n" +
-                "**Available Roles:** " + pingableRoles.length + "\n" +
-                "Use the dropdown below to add or remove roles."
-                : "**Your Current Roles:** " + String.join(", ", currentRoles) + "\n\n" +
-                "**Available Roles:** " + pingableRoles.length + "\n" +
-                "Use the dropdown below to add or remove roles.");
+        String text = (message != null ? message + "\n\n" : "")
+            + "**Your Current Roles:** " + (current.isEmpty() ? "None" : current) + "\n\n"
+            + "**Available Roles:** " + roles.size() + "\n"
+            + "Use the dropdown below to add or remove roles.";
 
-        hook.editOriginal(statusMessage)
-            .setComponents(selectRow)
-            .queue();
+        return new RoleMenuView(text, selectBuilder.getOptions().isEmpty() ? Optional.empty() : Optional.of(selectBuilder.build()));
+    }
+
+    private List<PingableRole> pingableRoles() {
+        PingableRole[] roles = config.get().getRoleConfig().getPingableRoles();
+        return roles == null ? List.of() : List.of(roles);
+    }
+
+    private static Set<String> roleIds(Member member) {
+        return member.getRoles().stream().map(ISnowflake::getId).collect(Collectors.toSet());
+    }
+
+    private static int indexIgnoringCase(List<String> values, String wanted) {
+        for (int i = 0; i < values.size(); i++) {
+            if (values.get(i) != null && values.get(i).equalsIgnoreCase(wanted)) {
+                return i;
+            }
+        }
+        return -1;
     }
 }

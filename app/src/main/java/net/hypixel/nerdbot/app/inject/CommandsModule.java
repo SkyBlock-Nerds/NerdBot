@@ -39,6 +39,21 @@ public interface CommandsModule {
     @Binds
     @IntoSet
     @SlashCommandHandlers
+    Object infoCommands(InfoCommands commands);
+
+    @Binds
+    @IntoSet
+    @SlashCommandHandlers
+    Object channelCommands(ChannelCommands commands);
+
+    @Binds
+    @IntoSet
+    @SlashCommandHandlers
+    Object roleCommands(RoleCommands commands);
+
+    @Binds
+    @IntoSet
+    @SlashCommandHandlers
     Object driveCommands(DriveCommands commands);
 
     @Binds
@@ -66,13 +81,6 @@ public interface CommandsModule {
     @Provides
     @IntoSet
     @SlashCommandHandlers
-    static Object channelCommands() {
-        return new ChannelCommands();
-    }
-
-    @Provides
-    @IntoSet
-    @SlashCommandHandlers
     static Object exportCommands() {
         return new ExportCommands();
     }
@@ -87,22 +95,8 @@ public interface CommandsModule {
     @Provides
     @IntoSet
     @SlashCommandHandlers
-    static Object infoCommands() {
-        return new InfoCommands();
-    }
-
-    @Provides
-    @IntoSet
-    @SlashCommandHandlers
     static Object profileCommands() {
         return new ProfileCommands();
-    }
-
-    @Provides
-    @IntoSet
-    @SlashCommandHandlers
-    static Object roleCommands() {
-        return new RoleCommands();
     }
 
     @Provides

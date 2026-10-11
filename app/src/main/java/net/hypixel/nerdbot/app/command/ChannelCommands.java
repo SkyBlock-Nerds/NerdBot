@@ -1,48 +1,62 @@
 package net.hypixel.nerdbot.app.command;
 
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import lombok.extern.slf4j.Slf4j;
 import net.aerh.slashcommands.api.annotations.SlashCommand;
 import net.aerh.slashcommands.api.annotations.SlashOption;
+import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
+import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
-import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
+import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.dv8tion.jda.api.utils.FileUpload;
-import net.hypixel.nerdbot.discord.BotEnvironment;
+import net.hypixel.nerdbot.app.command.util.CommandReplies;
+import net.hypixel.nerdbot.app.config.NerdBotConfig;
+import net.hypixel.nerdbot.app.config.SuggestionConfig;
+import net.hypixel.nerdbot.discord.config.channel.ChannelConfig;
 import net.hypixel.nerdbot.discord.config.objects.CustomForumTag;
 import net.hypixel.nerdbot.discord.config.objects.ForumAutoTag;
-import net.hypixel.nerdbot.app.command.util.CommandErrorResponder;
-import net.hypixel.nerdbot.app.config.SuggestionConfig;
-import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
-import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
-import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 public class ChannelCommands {
 
+    static final long PROGRESS_INTERVAL_MS = 10_000;
+
+    private final Provider<NerdBotConfig> config;
+    private final Executor backgroundWork;
+
+    @Inject
+    public ChannelCommands(Provider<NerdBotConfig> config, Executor backgroundWork) {
+        this.config = config;
+        this.backgroundWork = backgroundWork;
+    }
+
     @SlashCommand(name = "archive", subcommand = "channel", description = "Archives a channel and exports its contents to a file", guildOnly = true, defaultMemberPermissions = {"MANAGE_CHANNEL"}, requiredPermissions = {"MANAGE_CHANNEL"})
     public void archive(SlashCommandInteractionEvent event, @SlashOption TextChannel channel) {
-        event.deferReply(true).complete();
-        InteractionHook hook = event.getHook();
+        InteractionHook hook = CommandReplies.deferPrivately(event);
         hook.editOriginal(String.format("Archiving channel %s! If no file appears here, please contact a bot developer.", channel.getAsMention())).queue();
 
         CompletableFuture.runAsync(() -> {
             try {
-                File file = ArchiveExporter.exportTextChannel(channel, createProgressUpdater(hook));
+                File file = ArchiveExporter.exportTextChannel(channel, progressUpdater(hook));
                 log.info("Finished archiving channel {} (ID: {})! File located at: {}", channel.getName(), channel.getId(), file.getAbsolutePath());
 
                 if (!hook.isExpired()) {
@@ -51,68 +65,153 @@ public class ChannelCommands {
                         .queue();
                 }
             } catch (Exception exception) {
-                CommandErrorResponder.capture("An error occurred when archiving the channel " + channel.getId(), exception);
+                CommandReplies.logFailure("An error occurred when archiving the channel " + channel.getId(), exception);
                 if (!hook.isExpired()) {
                     hook.editOriginal(String.format("An error occurred while archiving channel %s. Please try again later.", channel.getAsMention())).queue();
                 }
             }
-        });
+        }, backgroundWork);
     }
 
     @SlashCommand(name = "archive", subcommand = "category", description = "Archives all text/forum channels (including threads) in a category into a single zip", guildOnly = true, defaultMemberPermissions = {"MANAGE_CHANNEL"}, requiredPermissions = {"MANAGE_CHANNEL"})
     public void archiveCategory(SlashCommandInteractionEvent event, @SlashOption Category category) {
-        event.deferReply(true).complete();
-        InteractionHook hook = event.getHook();
+        InteractionHook hook = CommandReplies.deferPrivately(event);
+        User user = event.getUser();
         hook.editOriginal(String.format("Archiving category **%s** (ID: %s). You will receive a DM when complete.", category.getName(), category.getId())).queue();
 
         CompletableFuture.runAsync(() -> {
             try {
-                File zipFile = ArchiveExporter.exportCategory(category, createProgressUpdater(hook));
+                File zipFile = ArchiveExporter.exportCategory(category, progressUpdater(hook));
                 if (!hook.isExpired()) {
                     hook.editOriginal("Finished archiving! Sending the zip file via DM").queue();
                 }
-                sendZipToUserAsync(event, zipFile, hook, category.getName());
+                sendZipToUser(user, zipFile, hook, category.getName());
             } catch (Exception exception) {
-                CommandErrorResponder.capture("Failed to archive category " + category.getId(), exception);
+                CommandReplies.logFailure("Failed to archive category " + category.getId(), exception);
                 if (!hook.isExpired()) {
                     hook.editOriginal("Failed to create the archive zip file. Please try again later.").queue();
                 } else {
-                    event.getUser().openPrivateChannel().queue(
+                    user.openPrivateChannel().queue(
                         dm -> dm.sendMessage("Failed to archive category " + category.getName() + ". Please try again later.").queue(),
-                        error -> log.error("Failed to notify user {} of archive failure via DM", event.getUser().getId(), error)
+                        error -> log.error("Failed to notify user {} of archive failure via DM", user.getId(), error)
                     );
                 }
             }
-        });
+        }, backgroundWork);
     }
 
-    private void sendZipToUserAsync(SlashCommandInteractionEvent event, File zipFile, InteractionHook hook, String categoryName) {
-        event.getUser().openPrivateChannel().queue(privateChannel -> {
-            privateChannel.sendMessage("Here is your archive for category **" + categoryName + "**:")
-                .addFiles(FileUpload.fromData(zipFile))
-                .queue(
-                    success -> {
-                        log.info("Successfully sent archive zip for category {} to user {}", categoryName, event.getUser().getId());
-                        if (!hook.isExpired()) {
-                            hook.editOriginal("Finished! Sent you the archive zip via DM.").queue();
-                        }
-                    },
-                    error -> {
-                        log.error("Failed to DM archive zip file to user {}", event.getUser().getId(), error);
-                        if (!hook.isExpired()) {
-                            hook.editOriginal("Finished archiving, but failed to DM the zip file. Sending here instead...")
-                                .setFiles(FileUpload.fromData(zipFile))
-                                .queue(
-                                    null,
-                                    sendError -> hook.editOriginal("Failed to send the zip. File path: " + zipFile.getAbsolutePath()).queue()
-                                );
-                        } else {
-                            log.warn("Hook expired and DM failed. Archive file located at: {}", zipFile.getAbsolutePath());
-                        }
+    @SlashCommand(name = "lock", description = "Locks the thread that the command is executed in", guildOnly = true, defaultMemberPermissions = {"MANAGE_THREADS"}, requiredPermissions = {"MANAGE_THREADS"})
+    public void lockThread(SlashCommandInteractionEvent event) {
+        lock(event, event.getChannel());
+    }
+
+    void lock(IReplyCallback interaction, @Nullable MessageChannelUnion channel) {
+        InteractionHook hook = CommandReplies.deferPrivately(interaction);
+
+        if (channel == null || !channel.getType().isThread()) {
+            hook.editOriginal("This command is only available in threads!").queue();
+            return;
+        }
+
+        ThreadChannel thread = channel.asThreadChannel();
+        if (thread.getParentChannel().getType() != ChannelType.FORUM) {
+            hook.editOriginal("This command is only available in threads!").queue();
+            return;
+        }
+
+        ForumChannel forum = thread.getParentChannel().asForumChannel();
+        String tagName = tagNameFor(forum.getId(), interaction.getUser().getId());
+        Optional<ForumTag> tag = DiscordUtils.findTagByName(forum, tagName);
+        if (tag.isEmpty()) {
+            hook.editOriginal(String.format("I could not find a tag with the name `%s`!", tagName)).queue();
+            return;
+        }
+
+        ForumTag autoDefault = autoDefaultTag(forum, tagName).orElse(null);
+        Optional<List<ForumTag>> tagsToApply = tagsAfterLock(thread.getAppliedTags(), tag.get(), autoDefault, thread.isLocked());
+        if (tagsToApply.isEmpty()) {
+            hook.editOriginal("This thread is already tagged and locked!").queue();
+            return;
+        }
+
+        boolean newlyTagged = !thread.getAppliedTags().contains(tag.get());
+        thread.getManager().setAppliedTags(tagsToApply.get()).setLocked(true).queue(success -> {
+            String announcement = newlyTagged
+                ? String.format("%s applied the %s tag and locked this suggestion!", interaction.getUser().getAsMention(), tag.get().getName())
+                : String.format("%s locked this suggestion!", interaction.getUser().getAsMention());
+            channel.sendMessage(announcement).queue();
+            hook.editOriginal("Successfully locked thread!").queue();
+        }, failure -> CommandReplies.fail(hook, "Failed to lock the thread. Please check my permissions and try again.", failure));
+    }
+
+    /**
+     * The tags the thread should end up with, or empty when it already has the tag and is locked.
+     * When the forum swaps an automatic tag for this one, the automatic tag is removed.
+     */
+    static Optional<List<ForumTag>> tagsAfterLock(List<ForumTag> applied, ForumTag tag, @Nullable ForumTag autoDefault, boolean locked) {
+        if (applied.contains(tag) && locked) {
+            return Optional.empty();
+        }
+
+        List<ForumTag> tags = new ArrayList<>(applied);
+        if (!tags.contains(tag)) {
+            tags.add(tag);
+        }
+        if (autoDefault != null) {
+            tags.remove(autoDefault);
+        }
+        return Optional.of(tags);
+    }
+
+    /** Suggestions get the reviewed tag; elsewhere a member with their own tag gets that one. */
+    private String tagNameFor(String forumId, String userId) {
+        NerdBotConfig current = config.get();
+        SuggestionConfig suggestionConfig = current.getSuggestionConfig();
+        if (forumId.equalsIgnoreCase(suggestionConfig.getForumChannelId())) {
+            return suggestionConfig.getReviewedTag();
+        }
+
+        return current.getChannelConfig().getCustomForumTags().stream()
+            .filter(customTag -> userId.equals(customTag.getOwnerId()))
+            .map(CustomForumTag::getName)
+            .findFirst()
+            .orElse(suggestionConfig.getReviewedTag());
+    }
+
+    private Optional<ForumTag> autoDefaultTag(ForumChannel forum, String tagName) {
+        ChannelConfig channelConfig = config.get().getChannelConfig();
+        ForumAutoTag autoTag = channelConfig.getForumAutoTagConfig(forum.getId());
+        if (autoTag == null || !autoTag.getReviewTagName().equalsIgnoreCase(tagName)) {
+            return Optional.empty();
+        }
+        return DiscordUtils.findTagByName(forum, autoTag.getDefaultTagName());
+    }
+
+    private void sendZipToUser(User user, File zipFile, InteractionHook hook, String categoryName) {
+        user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage("Here is your archive for category **" + categoryName + "**:")
+            .addFiles(FileUpload.fromData(zipFile))
+            .queue(
+                success -> {
+                    log.info("Successfully sent archive zip for category {} to user {}", categoryName, user.getId());
+                    if (!hook.isExpired()) {
+                        hook.editOriginal("Finished! Sent you the archive zip via DM.").queue();
                     }
-                );
-        }, error -> {
-            log.error("Failed to open DM for user {}", event.getUser().getId(), error);
+                },
+                error -> {
+                    log.error("Failed to DM archive zip file to user {}", user.getId(), error);
+                    if (!hook.isExpired()) {
+                        hook.editOriginal("Finished archiving, but failed to DM the zip file. Sending here instead...")
+                            .setFiles(FileUpload.fromData(zipFile))
+                            .queue(
+                                null,
+                                sendError -> hook.editOriginal("Failed to send the zip. File path: " + zipFile.getAbsolutePath()).queue()
+                            );
+                    } else {
+                        log.warn("Hook expired and DM failed. Archive file located at: {}", zipFile.getAbsolutePath());
+                    }
+                }
+            ), error -> {
+            log.error("Failed to open DM for user {}", user.getId(), error);
             if (!hook.isExpired()) {
                 hook.editOriginal("Finished archiving, but could not open DMs to send the zip file. File path: " + zipFile.getAbsolutePath()).queue();
             } else {
@@ -121,9 +220,8 @@ public class ChannelCommands {
         });
     }
 
-    private Consumer<String> createProgressUpdater(InteractionHook hook) {
+    private static Consumer<String> progressUpdater(InteractionHook hook) {
         AtomicLong lastUpdate = new AtomicLong(0);
-        long intervalMs = 10_000;
 
         return status -> {
             log.info(status);
@@ -134,97 +232,12 @@ public class ChannelCommands {
 
             long now = System.currentTimeMillis();
             long last = lastUpdate.get();
-            if (now - last >= intervalMs && lastUpdate.compareAndSet(last, now)) {
+            if (now - last >= PROGRESS_INTERVAL_MS && lastUpdate.compareAndSet(last, now)) {
                 hook.editOriginal(status).queue(
                     null,
                     throwable -> log.debug("Failed to send progress update: {}", throwable.getMessage())
                 );
             }
         };
-    }
-
-    @SlashCommand(name = "lock", description = "Locks the thread that the command is executed in", guildOnly = true, defaultMemberPermissions = {"MANAGE_THREADS"}, requiredPermissions = {"MANAGE_THREADS"})
-    public void lockThread(SlashCommandInteractionEvent event) {
-        event.deferReply(true).complete();
-        InteractionHook hook = event.getHook();
-
-        hook.editOriginal("Locking...").queue();
-
-        DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-
-        discordUserRepository.findByIdAsync(event.getMember().getId())
-            .thenAccept(discordUser -> {
-                if (discordUser == null) {
-                    hook.editOriginal("User not found").queue();
-                    return;
-                }
-
-                if (!(event.getChannel() instanceof ThreadChannel threadChannel) || !(threadChannel.getParentChannel() instanceof ForumChannel)) {
-                    hook.editOriginal("This command is only available in threads!").queue();
-                    return;
-                }
-
-                ForumChannel forumChannel = threadChannel.getParentChannel().asForumChannel();
-                SuggestionConfig suggestionConfig = SkyBlockNerdsBot.config().getSuggestionConfig();
-                boolean isSuggestion = threadChannel.getParentChannel().getId().equalsIgnoreCase(suggestionConfig.getForumChannelId());
-
-                if (isSuggestion) {
-                    if (!DiscordUtils.hasTagByName(forumChannel, suggestionConfig.getReviewedTag())) {
-                        hook.editOriginal(String.format("I could not find a tag with the name `%s`!", suggestionConfig.getReviewedTag())).queue();
-                        return;
-                    }
-
-                    handleTagAndLock(event, discordUser, threadChannel, forumChannel, suggestionConfig.getReviewedTag());
-                } else {
-                    Optional<CustomForumTag> customForumTag = DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getCustomForumTags().stream()
-                        .filter(tag -> tag.getOwnerId() != null && tag.getOwnerId().equals(discordUser.getDiscordId()))
-                        .findFirst();
-
-                    if (customForumTag.isPresent()) {
-                        handleTagAndLock(event, discordUser, threadChannel, forumChannel, customForumTag.get().getName());
-                    } else {
-                        handleTagAndLock(event, discordUser, threadChannel, forumChannel, suggestionConfig.getReviewedTag());
-                    }
-                }
-            })
-            .exceptionally(throwable -> {
-                log.error("Error loading user for channel lock", throwable);
-                hook.editOriginal("Failed to load user data").queue();
-                return null;
-            });
-    }
-
-    private void handleTagAndLock(SlashCommandInteractionEvent event, DiscordUser discordUser, ThreadChannel threadChannel, ForumChannel forumChannel, String tagName) {
-        InteractionHook hook = event.getHook();
-
-        if (!DiscordUtils.hasTagByName(forumChannel, tagName)) {
-            hook.editOriginal(String.format("I could not find a tag with the name `%s`!", tagName)).queue();
-            return;
-        }
-
-        ThreadChannelManager threadManager = threadChannel.getManager();
-        ForumTag tag = DiscordUtils.getTagByName(forumChannel, tagName);
-
-        if (!threadChannel.getAppliedTags().contains(tag)) {
-            List<ForumTag> appliedTags = new ArrayList<>(threadChannel.getAppliedTags());
-            appliedTags.add(tag);
-
-            // Check for auto-tag swap configuration
-            ForumAutoTag autoTagConfig = DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getForumAutoTagConfig(forumChannel.getId());
-            if (autoTagConfig != null && autoTagConfig.getReviewTagName().equalsIgnoreCase(tagName)) {
-                ForumTag defaultTag = DiscordUtils.findTagByName(forumChannel, autoTagConfig.getDefaultTagName()).orElse(null);
-                if (defaultTag != null && appliedTags.contains(defaultTag)) {
-                    appliedTags.remove(defaultTag);
-                    log.info("Removed auto-tag '{}' from thread '{}' (ID: {}) when '{}' tag was applied via /lock", autoTagConfig.getDefaultTagName(), threadChannel.getName(), threadChannel.getId(), tagName);
-                }
-            }
-
-            threadManager.setAppliedTags(appliedTags).complete();
-            threadManager.setLocked(true).complete();
-            event.getChannel().sendMessage(String.format("%s applied the %s tag and locked this suggestion!", event.getUser().getAsMention(), tag.getName())).queue();
-            hook.editOriginal("Successfully locked thread!").queue();
-        } else {
-            hook.editOriginal("This thread is already tagged!").queue();
-        }
     }
 }

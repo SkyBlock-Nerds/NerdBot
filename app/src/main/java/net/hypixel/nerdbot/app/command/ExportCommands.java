@@ -15,7 +15,7 @@ import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
-import net.hypixel.nerdbot.app.command.util.CommandErrorResponder;
+import net.hypixel.nerdbot.app.command.util.CommandReplies;
 import net.hypixel.nerdbot.discord.role.RoleManager;
 import net.hypixel.nerdbot.marmalade.io.FileUtils;
 import net.hypixel.nerdbot.marmalade.csv.CSVData;
@@ -65,7 +65,7 @@ public class ExportCommands {
                 .setFiles(FileUpload.fromData(file))
                 .queue();
         } catch (IOException exception) {
-            CommandErrorResponder.respond(event.getHook(), "Failed to create the export file. Please try again later.", exception);
+            CommandReplies.fail(event.getHook(), "Failed to create the export file. Please try again later.", exception);
         }
     }
 
@@ -136,7 +136,7 @@ public class ExportCommands {
 
             event.getHook().editOriginal(data).queue();
         } catch (IOException exception) {
-            CommandErrorResponder.respond(event.getHook(), "Failed to create the export file. Please try again later.", exception);
+            CommandReplies.fail(event.getHook(), "Failed to create the export file. Please try again later.", exception);
         }
     }
 
@@ -178,10 +178,10 @@ public class ExportCommands {
                 );
                 event.getHook().sendFiles(FileUpload.fromData(file)).queue();
             } catch (IOException exception) {
-                CommandErrorResponder.respond(event.getHook(), "Failed to create the export file. Please try again later.", exception);
+                CommandReplies.fail(event.getHook(), "Failed to create the export file. Please try again later.", exception);
             }
         }).onError(throwable -> {
-            CommandErrorResponder.respond(event.getHook(), "Failed to load the guild members. Please try again later.", throwable);
+            CommandReplies.fail(event.getHook(), "Failed to load the guild members. Please try again later.", throwable);
         });
     }
 
@@ -228,10 +228,10 @@ public class ExportCommands {
                 );
                 event.getHook().sendFiles(FileUpload.fromData(file)).queue();
             } catch (IOException exception) {
-                CommandErrorResponder.respond(event.getHook(), "Failed to create the export file. Please try again later.", exception);
+                CommandReplies.fail(event.getHook(), "Failed to create the export file. Please try again later.", exception);
             }
         }).onError(throwable -> {
-            CommandErrorResponder.respond(event.getHook(), "Failed to load the guild members. Please try again later.", throwable);
+            CommandReplies.fail(event.getHook(), "Failed to load the guild members. Please try again later.", throwable);
         });
     }
 
@@ -311,7 +311,7 @@ public class ExportCommands {
             File file = FileUtils.createTempFile(String.format("export-member-activity-%s.csv", FileUtils.FILE_NAME_DATE_FORMAT.format(Instant.now())), csvData.toCSV());
             event.getHook().sendFiles(FileUpload.fromData(file)).queue();
         } catch (IOException exception) {
-            CommandErrorResponder.respond(event.getHook(), "Failed to create the export file. Please try again later.", exception);
+            CommandReplies.fail(event.getHook(), "Failed to create the export file. Please try again later.", exception);
         }
     }
 
@@ -468,7 +468,7 @@ public class ExportCommands {
                     .setFiles(FileUpload.fromData(file))
                     .queue();
             }).exceptionally(throwable -> {
-                CommandErrorResponder.respond(event.getHook(), "Failed to create the export file. Please try again later.", throwable);
+                CommandReplies.fail(event.getHook(), "Failed to create the export file. Please try again later.", throwable);
                 return null;
             });
 

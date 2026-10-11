@@ -39,7 +39,7 @@ import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.requests.restaction.InviteAction;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
-import net.hypixel.nerdbot.app.command.util.CommandErrorResponder;
+import net.hypixel.nerdbot.app.command.util.CommandReplies;
 import net.hypixel.nerdbot.app.command.util.ProgressUpdates;
 import net.hypixel.nerdbot.app.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.app.listener.RoleRestrictedChannelListener;
@@ -131,7 +131,7 @@ public class AdminCommands {
                     try {
                         output = forumChannelCurator.curate(channel);
                     } catch (RuntimeException exception) {
-                        progress.finish(() -> CommandErrorResponder.respond(event.getHook(), "Curation failed. Please try again later.", exception));
+                        progress.finish(() -> CommandReplies.fail(event.getHook(), "Curation failed. Please try again later.", exception));
                         return;
                     }
 
@@ -444,7 +444,7 @@ public class AdminCommands {
                         );
                     })
                     .exceptionally(throwable -> {
-                        CommandErrorResponder.respond(event.getHook(), String.format("Could not find a player with username `%s`. Please try again later.", username), throwable);
+                        CommandReplies.fail(event.getHook(), String.format("Could not find a player with username `%s`. Please try again later.", username), throwable);
                         return null;
                     });
             })
@@ -503,7 +503,7 @@ public class AdminCommands {
                         }
                     })
                     .exceptionally(throwable -> {
-                        CommandErrorResponder.respond(event.getHook(), "An error occurred while checking for missing profiles. Please try again later.", throwable);
+                        CommandReplies.fail(event.getHook(), "An error occurred while checking for missing profiles. Please try again later.", throwable);
                         return null;
                     });
             })
@@ -625,7 +625,7 @@ public class AdminCommands {
                         event.getHook().editOriginal("Migration complete! Migrated " + mojangProfiles.size() + " users.").queue();
                     })
                     .exceptionally(throwable -> {
-                        CommandErrorResponder.respond(event.getHook(), "Migration failed. Please try again later.", throwable);
+                        CommandReplies.fail(event.getHook(), "Migration failed. Please try again later.", throwable);
                         return null;
                     });
             })
@@ -728,7 +728,7 @@ public class AdminCommands {
             repository.saveAllToDatabase();
             event.getHook().editOriginal(String.format("Saved %d documents to the database!", repository.getCache().estimatedSize())).queue();
         } catch (RepositoryException exception) {
-            CommandErrorResponder.respond(event.getHook(), "An error occurred while saving the repository. Please try again later.", exception);
+            CommandReplies.fail(event.getHook(), "An error occurred while saving the repository. Please try again later.", exception);
         }
     }
 
@@ -755,7 +755,7 @@ public class AdminCommands {
             repository.loadAllDocumentsIntoCache();
             event.getHook().editOriginal(String.format("Loaded %d documents from the database!", repository.getCache().estimatedSize())).queue();
         } catch (RepositoryException exception) {
-            CommandErrorResponder.respond(event.getHook(), "An error occurred while loading the repository. Please try again later.", exception);
+            CommandReplies.fail(event.getHook(), "An error occurred while loading the repository. Please try again later.", exception);
         }
     }
 
@@ -776,7 +776,7 @@ public class AdminCommands {
 
             event.getHook().editOriginal(repository.getCache().stats().toString()).queue();
         } catch (RepositoryException exception) {
-            CommandErrorResponder.respond(event.getHook(), "An error occurred while getting the repository statistics. Please try again later.", exception);
+            CommandReplies.fail(event.getHook(), "An error occurred while getting the repository statistics. Please try again later.", exception);
         }
     }
 

@@ -24,7 +24,7 @@ import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
-import net.hypixel.nerdbot.app.command.util.CommandErrorResponder;
+import net.hypixel.nerdbot.app.command.util.CommandReplies;
 import net.hypixel.nerdbot.app.command.util.SuggestionCommandUtils;
 import net.hypixel.nerdbot.app.badge.BadgeManager;
 import net.hypixel.nerdbot.discord.role.RoleManager;
@@ -594,7 +594,7 @@ public class ProfileCommands {
                     });
             })
             .exceptionally(throwable -> {
-                CommandErrorResponder.respond(event.getHook(), "Failed to process the verification request. Please try again later.", throwable);
+                CommandReplies.fail(event.getHook(), "Failed to process the verification request. Please try again later.", throwable);
                 return null;
             });
     }
@@ -662,7 +662,7 @@ public class ProfileCommands {
                     });
             })
             .exceptionally(throwable -> {
-                CommandErrorResponder.respond(event.getHook(), "Failed to link the profile. Please try again later.", throwable);
+                CommandReplies.fail(event.getHook(), "Failed to link the profile. Please try again later.", throwable);
                 return null;
             });
     }
@@ -733,7 +733,7 @@ public class ProfileCommands {
                 ).queue();
             })
             .exceptionally(throwable -> {
-                CommandErrorResponder.respond(event.getHook(), "Failed to load the profile. Please try again later.", throwable);
+                CommandReplies.fail(event.getHook(), "Failed to load the profile. Please try again later.", throwable);
                 return null;
             });
     }
@@ -765,7 +765,7 @@ public class ProfileCommands {
                 event.getHook().editOriginalEmbeds(createBadgesEmbed(event.getMember(), discordUser, true)).queue();
             })
             .exceptionally(throwable -> {
-                CommandErrorResponder.respond(event.getHook(), "Failed to load the badges. Please try again later.", throwable);
+                CommandReplies.fail(event.getHook(), "Failed to load the badges. Please try again later.", throwable);
                 return null;
             });
     }
@@ -829,7 +829,7 @@ public class ProfileCommands {
                 );
             })
             .exceptionally(throwable -> {
-                CommandErrorResponder.respond(event.getHook(), "Failed to load the suggestions. Please try again later.", throwable);
+                CommandReplies.fail(event.getHook(), "Failed to load the suggestions. Please try again later.", throwable);
                 return null;
             });
     }
@@ -898,7 +898,7 @@ public class ProfileCommands {
         CompletableFuture.supplyAsync(() -> action.apply(service))
             .thenAccept(outcome -> event.getHook().editOriginal(outcome.message()).queue())
             .exceptionally(throwable -> {
-                CommandErrorResponder.respond(event.getHook(), failureMessage, throwable);
+                CommandReplies.fail(event.getHook(), failureMessage, throwable);
                 return null;
             });
     }

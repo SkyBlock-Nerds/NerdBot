@@ -2,8 +2,8 @@ package net.hypixel.nerdbot.discord.util.pagination;
 
 import lombok.Getter;
 import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
@@ -63,7 +63,7 @@ public class PaginatedResponse<T> {
         return currentPage;
     }
 
-    public synchronized void sendMessage(SlashCommandInteractionEvent event) {
+    public synchronized void sendMessage(IReplyCallback event) {
         MessageEditData response = buildCurrentPageResponse();
         List<ActionRow> components = currentComponents();
 
