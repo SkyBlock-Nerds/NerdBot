@@ -8,6 +8,7 @@ import net.hypixel.nerdbot.marmalade.collections.ArrayUtils;
 import net.hypixel.nerdbot.discord.cache.ChannelCache;
 import net.hypixel.nerdbot.app.config.AlphaProjectConfig;
 import net.hypixel.nerdbot.app.config.SuggestionConfig;
+import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 
 import java.time.Duration;
@@ -71,6 +72,7 @@ public class SuggestionCache extends TimerTask {
                 .filter(Suggestion::isExpired)
                 .forEach(suggestion -> this.removeSuggestion(suggestion.getThreadName(), suggestion.getThreadId()));
 
+            publishSuggestionCount();
             log.info("Finished caching suggestions.");
             this.initialized = true;
             this.updating = false;
@@ -99,6 +101,7 @@ public class SuggestionCache extends TimerTask {
 
     public void addSuggestion(ThreadChannel thread) {
         this.cache.put(thread.getId(), new Suggestion(thread));
+        publishSuggestionCount();
         log.debug("Added new suggestion '{}' (ID: {}) to the suggestion cache.", thread.getName(), thread.getId());
     }
 
@@ -122,7 +125,12 @@ public class SuggestionCache extends TimerTask {
 
     public void removeSuggestion(String threadName, String threadId) {
         this.cache.remove(threadId);
+        publishSuggestionCount();
         log.debug("Removed suggestion '{}' (ID: {}) from the suggestion cache.", threadName, threadId);
+    }
+
+    private void publishSuggestionCount() {
+        PrometheusMetrics.TOTAL_SUGGESTIONS_AMOUNT.set(this.cache.size());
     }
 
     public void updateSuggestion(ThreadChannel thread) {

@@ -1,7 +1,7 @@
 package net.hypixel.nerdbot.app.listener;
 
 import lombok.extern.slf4j.Slf4j;
-import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.channel.forum.ForumTagAddEvent;
 import net.dv8tion.jda.api.events.channel.forum.ForumTagRemoveEvent;
@@ -14,9 +14,6 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
 import net.hypixel.nerdbot.discord.role.RoleManager;
-import net.hypixel.nerdbot.marmalade.collections.ArrayUtils;
-import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
-import net.hypixel.nerdbot.app.config.NerdBotConfig;
 
 @Slf4j
 public class MetricsListener {
@@ -29,17 +26,8 @@ public class MetricsListener {
     @SubscribeEvent
     public void onMessageSent(MessageReceivedEvent event) {
         if (event.getMember() != null) {
-            PrometheusMetrics.TOTAL_MESSAGES_AMOUNT.labels(event.getAuthor().getName(), RoleManager.getHighestRole(event.getMember()).getName(), event.getChannel().getName()).inc();
-        }
-
-        if (event.getChannel() instanceof ThreadChannel threadChannel) {
-            String forumChannelId = threadChannel.getParentChannel().getId();
-            NerdBotConfig botConfig = SkyBlockNerdsBot.config();
-
-            if (forumChannelId.equals(botConfig.getSuggestionConfig().getForumChannelId())
-                || ArrayUtils.safeArrayStream(botConfig.getAlphaProjectConfig().getAlphaForumIds(), botConfig.getAlphaProjectConfig().getProjectForumIds()).anyMatch(forumChannelId::equals)) {
-                PrometheusMetrics.TOTAL_SUGGESTIONS_AMOUNT.inc();
-            }
+            Role highestRole = RoleManager.getHighestRole(event.getMember());
+            PrometheusMetrics.TOTAL_MESSAGES_AMOUNT.labels(highestRole == null ? "none" : highestRole.getName(), event.getChannel().getName()).inc();
         }
     }
 
@@ -55,7 +43,7 @@ public class MetricsListener {
 
     @SubscribeEvent
     public void onSlashCommand(SlashCommandInteractionEvent event) {
-        PrometheusMetrics.SLASH_COMMANDS_AMOUNT.labels(event.getMember() == null ? "N/A" : event.getMember().getEffectiveName(), event.getFullCommandName()).inc();
+        PrometheusMetrics.SLASH_COMMANDS_AMOUNT.labels(event.getFullCommandName()).inc();
     }
 
     @SubscribeEvent
@@ -70,11 +58,11 @@ public class MetricsListener {
 
     @SubscribeEvent
     public void onInviteCreate(GuildInviteCreateEvent event) {
-        PrometheusMetrics.INVITES_CREATED_AMOUNT.labels(event.getCode()).inc();
+        PrometheusMetrics.INVITES_CREATED_AMOUNT.inc();
     }
 
     @SubscribeEvent
     public void onInviteDelete(GuildInviteDeleteEvent event) {
-        PrometheusMetrics.INVITES_DELETED_AMOUNT.labels(event.getCode()).inc();
+        PrometheusMetrics.INVITES_DELETED_AMOUNT.inc();
     }
 }
