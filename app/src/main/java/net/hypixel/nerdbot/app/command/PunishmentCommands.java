@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.command;
 
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.aerh.slashcommands.api.annotations.SlashCommand;
 import net.aerh.slashcommands.api.annotations.SlashComponentHandler;
@@ -12,59 +13,71 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.components.buttons.ButtonInteraction;
+import net.dv8tion.jda.api.interactions.components.selections.StringSelectInteraction;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import net.dv8tion.jda.api.interactions.modals.Modal;
+import net.dv8tion.jda.api.interactions.modals.ModalInteraction;
+import net.dv8tion.jda.api.interactions.modals.ModalMapping;
+import net.hypixel.nerdbot.app.channel.LogChannel;
 import net.hypixel.nerdbot.app.punishment.PunishmentService;
 import net.hypixel.nerdbot.app.punishment.PunishmentStats;
-import net.hypixel.nerdbot.app.punishment.RepositoryPunishmentStore;
-import net.hypixel.nerdbot.discord.BotEnvironment;
-import net.hypixel.nerdbot.discord.cache.ChannelCache;
+import net.hypixel.nerdbot.discord.util.StringUtils;
 import net.hypixel.nerdbot.marmalade.format.DiscordTimestamp;
 import net.hypixel.nerdbot.marmalade.storage.database.model.punishment.Punishment;
 import net.hypixel.nerdbot.marmalade.storage.database.model.punishment.PunishmentType;
-import net.hypixel.nerdbot.marmalade.storage.database.repository.PunishmentRepository;
-import net.hypixel.nerdbot.discord.util.StringUtils;
+import org.jetbrains.annotations.Nullable;
 
-import java.awt.*;
+import java.awt.Color;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+import static net.hypixel.nerdbot.app.command.PunishmentComponentIds.BACK;
+import static net.hypixel.nerdbot.app.command.PunishmentComponentIds.CONFIRM_NO;
+import static net.hypixel.nerdbot.app.command.PunishmentComponentIds.CONFIRM_YES;
+import static net.hypixel.nerdbot.app.command.PunishmentComponentIds.DELETE;
+import static net.hypixel.nerdbot.app.command.PunishmentComponentIds.DETAIL;
+import static net.hypixel.nerdbot.app.command.PunishmentComponentIds.MODAL;
+import static net.hypixel.nerdbot.app.command.PunishmentComponentIds.NAV;
+import static net.hypixel.nerdbot.app.command.PunishmentComponentIds.TYPE;
+
+/**
+ * The {@code /punishment} commands and the panels they open. Each handler hands its event to a
+ * method that takes the matching JDA interface, so tests can drive them with fakes.
+ */
 @Slf4j
 public class PunishmentCommands {
 
-    private static final int ITEMS_PER_PAGE = 10;
+    static final int ITEMS_PER_PAGE = 10;
+    static final String NOT_YOUR_PANEL = "You can only use your own punishment interface!";
+    static final String OUTDATED_PANEL = "This punishment panel is out of date. Run the command again.";
 
-    private PunishmentRepository getPunishmentRepository() {
-        return BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(PunishmentRepository.class);
+    private final PunishmentService punishments;
+    private final LogChannel logChannel;
+    private final Clock clock;
+
+    @Inject
+    public PunishmentCommands(PunishmentService punishments, LogChannel logChannel, Clock clock) {
+        this.punishments = punishments;
+        this.logChannel = logChannel;
+        this.clock = clock;
     }
 
     @SlashCommand(name = "punishment", subcommand = "create", description = "Record a new punishment for a user", guildOnly = true, defaultMemberPermissions = {"BAN_MEMBERS"}, requiredPermissions = {"BAN_MEMBERS"})
     public void punishmentCreate(SlashCommandInteractionEvent event, @SlashOption Member member) {
-        event.deferReply(true).complete();
-        String modId = event.getUser().getId();
-        String targetId = member.getId();
-
-        StringSelectMenu.Builder selectBuilder = StringSelectMenu.create("punish-type-" + modId + "-" + targetId)
-            .setPlaceholder("Select punishment type...")
-            .setRequiredRange(1, 1);
-
-        for (PunishmentType type : PunishmentType.values()) {
-            selectBuilder.addOption(type.getDisplayName(), type.name(), type.getDescription());
-        }
-
-        event.getHook().editOriginal("Select the punishment type for <@" + targetId + ">:")
-            .setComponents(ActionRow.of(selectBuilder.build()))
-            .queue();
+        startCreate(event, member);
     }
 
     @SlashCommand(name = "punishment", subcommand = "history", description = "View punishment history for a user", guildOnly = true, defaultMemberPermissions = {"BAN_MEMBERS"}, requiredPermissions = {"BAN_MEMBERS"})
     public void punishmentHistory(SlashCommandInteractionEvent event, @SlashOption Member member) {
-        event.deferReply(true).complete();
-        createHistoryPanel(event.getHook(), event.getUser().getId(), member.getId(), 1, null);
+        showHistory(event, member);
     }
 
     @SlashCommand(name = "punishment", subcommand = "search", description = "Search punishments with filters", guildOnly = true, defaultMemberPermissions = {"BAN_MEMBERS"}, requiredPermissions = {"BAN_MEMBERS"})
@@ -73,20 +86,95 @@ public class PunishmentCommands {
         @SlashOption(description = "Filter by moderator", required = false) Member moderator,
         @SlashOption(description = "Filter by punishment type", required = false) String type
     ) {
-        event.deferReply(true).complete();
+        search(event, moderator, type);
+    }
+
+    @SlashCommand(name = "punishment", subcommand = "stats", description = "View punishment stats for a user", guildOnly = true, defaultMemberPermissions = {"BAN_MEMBERS"}, requiredPermissions = {"BAN_MEMBERS"})
+    public void punishmentStats(SlashCommandInteractionEvent event, @SlashOption Member member) {
+        showStats(event, member);
+    }
+
+    @SlashComponentHandler(id = TYPE, patterns = {TYPE + "-*"})
+    public void handleTypeSelect(StringSelectInteractionEvent event) {
+        chooseType(event);
+    }
+
+    @SlashModalHandler(id = MODAL, patterns = {MODAL + "-*"})
+    public void handleModalSubmit(ModalInteractionEvent event) {
+        submit(event);
+    }
+
+    @SlashComponentHandler(id = DETAIL, patterns = {DETAIL + "-*"})
+    public void handleDetailSelect(StringSelectInteractionEvent event) {
+        selectDetail(event);
+    }
+
+    @SlashComponentHandler(id = NAV, patterns = {NAV + "-*"})
+    public void handleNavigation(ButtonInteractionEvent event) {
+        navigate(event);
+    }
+
+    @SlashComponentHandler(id = DELETE, patterns = {DELETE + "-*"})
+    public void handleDelete(ButtonInteractionEvent event) {
+        askToDelete(event);
+    }
+
+    @SlashComponentHandler(id = CONFIRM_YES, patterns = {CONFIRM_YES + "-*"})
+    public void handleConfirmDelete(ButtonInteractionEvent event) {
+        confirmDelete(event);
+    }
+
+    @SlashComponentHandler(id = CONFIRM_NO, patterns = {CONFIRM_NO + "-*"})
+    public void handleCancelDelete(ButtonInteractionEvent event) {
+        cancelDelete(event);
+    }
+
+    @SlashComponentHandler(id = BACK, patterns = {BACK + "-*"})
+    public void handleBack(ButtonInteractionEvent event) {
+        back(event);
+    }
+
+    void startCreate(IReplyCallback interaction, Member member) {
+        interaction.deferReply(true).queue();
+        String modId = interaction.getUser().getId();
+        String targetId = member.getId();
+
+        StringSelectMenu.Builder selectBuilder = StringSelectMenu.create(PunishmentComponentIds.build(TYPE, modId, targetId))
+            .setPlaceholder("Select punishment type...")
+            .setRequiredRange(1, 1);
+
+        for (PunishmentType type : PunishmentType.values()) {
+            selectBuilder.addOption(type.getDisplayName(), type.name(), type.getDescription());
+        }
+
+        interaction.getHook().editOriginal("Select the punishment type for <@" + targetId + ">:")
+            .setComponents(ActionRow.of(selectBuilder.build()))
+            .queue();
+    }
+
+    void showHistory(IReplyCallback interaction, Member member) {
+        interaction.deferReply(true).queue();
+        renderHistory(interaction.getHook(), interaction.getUser().getId(), member.getId(), 1, null);
+    }
+
+    void search(IReplyCallback interaction, @Nullable Member moderator, @Nullable String type) {
+        interaction.deferReply(true).queue();
+        InteractionHook hook = interaction.getHook();
 
         PunishmentType punishmentType = type != null ? PunishmentType.fromName(type) : null;
-
-        if (moderator == null && punishmentType == null) {
-            event.getHook().editOriginal("Please provide at least one filter (moderator or type).").queue();
+        if (type != null && punishmentType == null) {
+            hook.editOriginal("Unknown punishment type: " + type).queue();
             return;
         }
 
-        PunishmentService punishmentService = new PunishmentService(new RepositoryPunishmentStore(getPunishmentRepository()));
-        List<Punishment> results = punishmentService.search(moderator != null ? moderator.getId() : null, punishmentType, ITEMS_PER_PAGE);
+        if (moderator == null && punishmentType == null) {
+            hook.editOriginal("Please provide at least one filter (moderator or type).").queue();
+            return;
+        }
 
+        List<Punishment> results = punishments.search(moderator != null ? moderator.getId() : null, punishmentType, ITEMS_PER_PAGE);
         if (results.isEmpty()) {
-            event.getHook().editOriginal("No punishments found matching the given filters.").queue();
+            hook.editOriginal("No punishments found matching the given filters.").queue();
             return;
         }
 
@@ -95,23 +183,21 @@ public class PunishmentCommands {
             .setColor(Color.ORANGE)
             .setFooter("Showing " + results.size() + " result(s)");
 
-        for (Punishment p : results) {
-            String fieldValue = "**Target:** <@" + p.getTargetUserId() + ">\n" +
-                "**Moderator:** <@" + p.getModeratorUserId() + ">\n" +
-                "**Date:** " + DiscordTimestamp.toShortDateTime(p.getCreatedAt()) + "\n" +
-                "**Reason:** " + StringUtils.truncate(p.getReason(), 100);
-            embed.addField(p.getType().getDisplayName(), fieldValue, false);
+        for (Punishment punishment : results) {
+            String fieldValue = "**Target:** <@" + punishment.getTargetUserId() + ">\n" +
+                "**Moderator:** <@" + punishment.getModeratorUserId() + ">\n" +
+                "**Date:** " + DiscordTimestamp.toShortDateTime(punishment.getCreatedAt()) + "\n" +
+                "**Reason:** " + StringUtils.truncate(punishment.getReason(), 100);
+            embed.addField(punishment.getType().getDisplayName(), fieldValue, false);
         }
 
-        event.getHook().editOriginalEmbeds(embed.build()).queue();
+        hook.editOriginalEmbeds(embed.build()).queue();
     }
 
-    @SlashCommand(name = "punishment", subcommand = "stats", description = "View punishment stats for a user", guildOnly = true, defaultMemberPermissions = {"BAN_MEMBERS"}, requiredPermissions = {"BAN_MEMBERS"})
-    public void punishmentStats(SlashCommandInteractionEvent event, @SlashOption Member member) {
-        event.deferReply(true).complete();
+    void showStats(IReplyCallback interaction, Member member) {
+        interaction.deferReply(true).queue();
 
-        PunishmentService punishmentService = new PunishmentService(new RepositoryPunishmentStore(getPunishmentRepository()));
-        PunishmentStats stats = punishmentService.stats(member.getId());
+        PunishmentStats stats = punishments.stats(member.getId());
 
         EmbedBuilder embed = new EmbedBuilder()
             .setTitle("Punishment Stats for " + member.getEffectiveName())
@@ -126,23 +212,16 @@ public class PunishmentCommands {
             embed.setDescription("This user has no recorded punishments.");
         }
 
-        event.getHook().editOriginalEmbeds(embed.build()).queue();
+        interaction.getHook().editOriginalEmbeds(embed.build()).queue();
     }
 
-    // ─── Type Select Handler ─────────────────────────────────────────
-
-    @SlashComponentHandler(id = "punish-type", patterns = {"punish-type-*"})
-    public void handleTypeSelect(StringSelectInteractionEvent event) {
-        String[] parts = event.getComponentId().split("-");
-        String modId = parts[2];
-        String targetId = parts[3];
-
-        if (!event.getUser().getId().equals(modId)) {
-            event.reply("You can only use your own punishment interface!").setEphemeral(true).queue();
+    void chooseType(StringSelectInteraction interaction) {
+        Optional<List<String>> parts = ownedParts(interaction, TYPE, interaction.getComponentId(), 2, 0);
+        if (parts.isEmpty() || interaction.getValues().isEmpty()) {
             return;
         }
-
-        String selectedType = event.getValues().get(0);
+        String modId = parts.get().get(0);
+        String targetId = parts.get().get(1);
 
         TextInput reasonInput = TextInput.create("reason", "Reason", TextInputStyle.PARAGRAPH)
             .setPlaceholder("Describe the reason for this punishment...")
@@ -155,319 +234,279 @@ public class PunishmentCommands {
             .setMaxLength(1024)
             .build();
 
-        Modal modal = Modal.create("punish-modal-" + modId + "-" + targetId + "-" + selectedType, "Record Punishment")
+        Modal modal = Modal.create(PunishmentComponentIds.build(MODAL, modId, targetId, interaction.getValues().getFirst()), "Record Punishment")
             .addComponents(ActionRow.of(reasonInput), ActionRow.of(notesInput))
             .build();
 
-        event.replyModal(modal).queue();
+        interaction.replyModal(modal).queue();
     }
 
-    // ─── Modal Submit Handler ────────────────────────────────────────
-
-    @SlashModalHandler(id = "punish-modal", patterns = {"punish-modal-*"})
-    public void handleModalSubmit(ModalInteractionEvent event) {
-        String[] parts = event.getModalId().split("-");
-        String modId = parts[2];
-        String targetId = parts[3];
-        String typeName = parts[4];
-
-        if (!event.getUser().getId().equals(modId)) {
-            event.reply("You can only use your own punishment interface!").setEphemeral(true).queue();
+    void submit(ModalInteraction interaction) {
+        Optional<List<String>> parts = ownedParts(interaction, MODAL, interaction.getModalId(), 3, 0);
+        if (parts.isEmpty()) {
             return;
         }
+        String modId = parts.get().get(0);
+        String targetId = parts.get().get(1);
 
-        event.deferReply(true).queue();
+        interaction.deferReply(true).queue();
+        InteractionHook hook = interaction.getHook();
 
-        PunishmentType type = PunishmentType.fromName(typeName);
+        PunishmentType type = PunishmentType.fromName(parts.get().get(2));
         if (type == null) {
-            event.getHook().editOriginal("Invalid punishment type!").queue();
+            hook.editOriginal(OUTDATED_PANEL).queue();
             return;
         }
 
-        String reason = event.getValue("reason").getAsString();
-        String rawNotes = event.getValue("notes") != null ? event.getValue("notes").getAsString() : null;
-        String notes = (rawNotes != null && !rawNotes.isBlank()) ? rawNotes : null;
+        String reason = modalText(interaction, "reason");
+        if (reason == null || reason.isBlank()) {
+            hook.editOriginal("A reason is required.").queue();
+            return;
+        }
 
-        PunishmentRepository repo = getPunishmentRepository();
-        Punishment punishment = new Punishment(targetId, modId, type, reason, notes);
-
-        repo.cacheAndSaveAsync(punishment).thenAccept(result -> {
-            if (result != null && result.wasAcknowledged()) {
-                EmbedBuilder embed = new EmbedBuilder()
-                    .setTitle("Punishment Recorded")
-                    .setColor(Color.RED)
-                    .addField("Target", "<@" + targetId + ">", true)
-                    .addField("Type", type.getDisplayName(), true)
-                    .addField("Moderator", "<@" + modId + ">", true)
-                    .addField("Reason", reason, false)
-                    .setTimestamp(java.time.Instant.now());
-
-                if (notes != null) {
-                    embed.addField("Notes", notes, false);
-                }
-
-                event.getHook().editOriginalEmbeds(embed.build()).setComponents().queue();
-
-                // Log to mod log channel
-                ChannelCache.sendToLogChannel(embed.build());
-
-                log.info("Punishment recorded: type={}, target={}, moderator={}, id={}",
-                    type.name(), targetId, modId, punishment.getPunishmentId());
-            } else {
-                event.getHook().editOriginal("Failed to save punishment. Please try again.").queue();
-                log.error("Failed to save punishment for target={}, moderator={}", targetId, modId);
+        punishments.record(targetId, modId, type, reason, modalText(interaction, "notes")).whenComplete((punishment, error) -> {
+            if (error != null) {
+                log.error("Failed to save punishment for target={}, moderator={}", targetId, modId, error);
+                hook.editOriginal("Failed to save punishment. Please try again.").queue();
+                return;
             }
+
+            EmbedBuilder embed = new EmbedBuilder()
+                .setTitle("Punishment Recorded")
+                .setColor(Color.RED)
+                .addField("Target", "<@" + targetId + ">", true)
+                .addField("Type", type.getDisplayName(), true)
+                .addField("Moderator", "<@" + modId + ">", true)
+                .addField("Reason", reason, false)
+                .setTimestamp(clock.instant());
+
+            if (punishment.getNotes() != null) {
+                embed.addField("Notes", punishment.getNotes(), false);
+            }
+
+            hook.editOriginalEmbeds(embed.build()).setComponents().queue();
+            logChannel.send(embed.build());
+
+            log.info("Punishment recorded: type={}, target={}, moderator={}, id={}",
+                type.name(), targetId, modId, punishment.getPunishmentId());
         });
     }
 
-    // ─── History Panel Detail Select ─────────────────────────────────
-
-    @SlashComponentHandler(id = "punish-detail", patterns = {"punish-detail-*"})
-    public void handleDetailSelect(StringSelectInteractionEvent event) {
-        String[] parts = event.getComponentId().split("-");
-        String modId = parts[2];
-        String targetId = parts[3];
-
-        if (!event.getUser().getId().equals(modId)) {
-            event.reply("You can only use your own punishment interface!").setEphemeral(true).queue();
+    void selectDetail(StringSelectInteraction interaction) {
+        Optional<List<String>> parts = ownedParts(interaction, DETAIL, interaction.getComponentId(), 2, 0);
+        if (parts.isEmpty() || interaction.getValues().isEmpty()) {
             return;
         }
 
-        event.deferEdit().queue();
-
-        String punishmentId = event.getValues().get(0);
-        showPunishmentDetail(event.getHook(), modId, targetId, punishmentId);
+        interaction.deferEdit().queue();
+        renderDetail(interaction.getHook(), parts.get().get(0), parts.get().get(1), interaction.getValues().getFirst());
     }
 
-    // ─── Navigation Button Handler ───────────────────────────────────
-
-    @SlashComponentHandler(id = "punish-nav", patterns = {"punish-nav-*"})
-    public void handleNavigation(ButtonInteractionEvent event) {
-        String[] parts = event.getComponentId().split("-");
-        String action = parts[2]; // "prev" or "next"
-        int page = Integer.parseInt(parts[3]);
-        String modId = parts[4];
-        String targetId = parts[5];
-
-        if (!event.getUser().getId().equals(modId)) {
-            event.reply("You can only use your own punishment interface!").setEphemeral(true).queue();
+    void navigate(ButtonInteraction interaction) {
+        Optional<List<String>> parts = ownedParts(interaction, NAV, interaction.getComponentId(), 4, 2);
+        if (parts.isEmpty()) {
             return;
         }
 
-        event.deferEdit().queue();
+        Integer page = parsePage(parts.get().get(1));
+        if (page == null) {
+            interaction.reply(OUTDATED_PANEL).setEphemeral(true).queue();
+            return;
+        }
 
-        int newPage = switch (action) {
-            case "prev" -> Math.max(1, page - 1);
+        int newPage = switch (parts.get().get(0)) {
+            case "prev" -> page - 1;
             case "next" -> page + 1;
             default -> page;
         };
 
-        createHistoryPanel(event.getHook(), modId, targetId, newPage, null);
+        interaction.deferEdit().queue();
+        renderHistory(interaction.getHook(), parts.get().get(2), parts.get().get(3), newPage, null);
     }
 
-    // ─── Delete Button Handler ───────────────────────────────────────
-
-    @SlashComponentHandler(id = "punish-delete", patterns = {"punish-delete-*"})
-    public void handleDelete(ButtonInteractionEvent event) {
-        // punish-delete-{modId}-{uuid parts...}
-        String[] parts = event.getComponentId().split("-");
-        String modId = parts[2];
-        // UUID is parts[3] through parts[7]
-        String punishmentId = String.join("-", parts[3], parts[4], parts[5], parts[6], parts[7]);
-
-        if (!event.getUser().getId().equals(modId)) {
-            event.reply("You can only use your own punishment interface!").setEphemeral(true).queue();
+    void askToDelete(ButtonInteraction interaction) {
+        Optional<List<String>> parts = ownedParts(interaction, DELETE, interaction.getComponentId(), 2, 0);
+        if (parts.isEmpty()) {
             return;
         }
+        String modId = parts.get().get(0);
+        String punishmentId = parts.get().get(1);
 
-        event.deferEdit().queue();
+        interaction.deferEdit().queue();
 
         ActionRow confirmRow = ActionRow.of(
-            Button.danger("punish-confirm-yes-" + modId + "-" + punishmentId, "Confirm Delete"),
-            Button.secondary("punish-confirm-no-" + modId + "-" + punishmentId, "Cancel")
+            Button.danger(PunishmentComponentIds.build(CONFIRM_YES, modId, punishmentId), "Confirm Delete"),
+            Button.secondary(PunishmentComponentIds.build(CONFIRM_NO, modId, punishmentId), "Cancel")
         );
 
-        event.getHook().editOriginal("Are you sure you want to delete this punishment record? This cannot be undone.")
+        interaction.getHook().editOriginal("Are you sure you want to delete this punishment record? This cannot be undone.")
             .setEmbeds()
             .setComponents(confirmRow)
             .queue();
     }
 
-    // ─── Confirm Delete Handler ──────────────────────────────────────
-
-    @SlashComponentHandler(id = "punish-confirm-yes", patterns = {"punish-confirm-yes-*"})
-    public void handleConfirmDelete(ButtonInteractionEvent event) {
-        // punish-confirm-yes-{modId}-{uuid parts...}
-        String[] parts = event.getComponentId().split("-");
-        String modId = parts[3];
-        // UUID is parts[4] through parts[8]
-        String punishmentId = String.join("-", parts[4], parts[5], parts[6], parts[7], parts[8]);
-
-        if (!event.getUser().getId().equals(modId)) {
-            event.reply("You can only use your own punishment interface!").setEphemeral(true).queue();
+    void confirmDelete(ButtonInteraction interaction) {
+        Optional<List<String>> parts = ownedParts(interaction, CONFIRM_YES, interaction.getComponentId(), 2, 0);
+        if (parts.isEmpty()) {
             return;
         }
+        String modId = parts.get().get(0);
+        String punishmentId = parts.get().get(1);
 
-        event.deferEdit().queue();
+        interaction.deferEdit().queue();
+        InteractionHook hook = interaction.getHook();
 
-        PunishmentRepository repo = getPunishmentRepository();
-        Punishment punishment = repo.findById(punishmentId).orElse(null);
-
-        if (punishment == null) {
-            event.getHook().editOriginal("Punishment not found! It may have already been deleted.")
-                .setComponents()
-                .queue();
+        Optional<Punishment> found = punishments.find(punishmentId);
+        if (found.isEmpty()) {
+            hook.editOriginal("Punishment not found! It may have already been deleted.").setComponents().queue();
             return;
         }
-
+        Punishment punishment = found.get();
         String targetId = punishment.getTargetUserId();
 
-        repo.deleteFromDatabaseAsync(punishmentId).thenAccept(result -> {
-            if (result != null && result.wasAcknowledged()) {
-                EmbedBuilder logEmbed = new EmbedBuilder()
-                    .setTitle("Punishment Deleted")
-                    .setColor(Color.GRAY)
-                    .addField("Target", "<@" + targetId + ">", true)
-                    .addField("Type", punishment.getType().getDisplayName(), true)
-                    .addField("Deleted By", "<@" + modId + ">", true)
-                    .setTimestamp(java.time.Instant.now());
-
-                ChannelCache.sendToLogChannel(logEmbed.build());
-
-                log.info("Punishment deleted: id={}, target={}, deletedBy={}", punishmentId, targetId, modId);
-
-                createHistoryPanel(event.getHook(), modId, targetId, 1, "Successfully deleted punishment record.");
-            } else {
-                event.getHook().editOriginal("Failed to delete punishment. Please try again.")
-                    .setComponents()
-                    .queue();
+        punishments.delete(punishmentId).whenComplete((ignored, error) -> {
+            if (error != null) {
+                log.error("Failed to delete punishment id={}, deletedBy={}", punishmentId, modId, error);
+                hook.editOriginal("Failed to delete punishment. Please try again.").setComponents().queue();
+                return;
             }
+
+            logChannel.send(new EmbedBuilder()
+                .setTitle("Punishment Deleted")
+                .setColor(Color.GRAY)
+                .addField("Target", "<@" + targetId + ">", true)
+                .addField("Type", punishment.getType().getDisplayName(), true)
+                .addField("Deleted By", "<@" + modId + ">", true)
+                .setTimestamp(clock.instant())
+                .build());
+
+            log.info("Punishment deleted: id={}, target={}, deletedBy={}", punishmentId, targetId, modId);
+
+            renderHistory(hook, modId, targetId, 1, "Successfully deleted punishment record.");
         });
     }
 
-    // ─── Cancel Delete Handler ───────────────────────────────────────
-
-    @SlashComponentHandler(id = "punish-confirm-no", patterns = {"punish-confirm-no-*"})
-    public void handleCancelDelete(ButtonInteractionEvent event) {
-        // punish-confirm-no-{modId}-{uuid parts...}
-        String[] parts = event.getComponentId().split("-");
-        String modId = parts[3];
-        // UUID is parts[4] through parts[8]
-        String punishmentId = String.join("-", parts[4], parts[5], parts[6], parts[7], parts[8]);
-
-        if (!event.getUser().getId().equals(modId)) {
-            event.reply("You can only use your own punishment interface!").setEphemeral(true).queue();
+    void cancelDelete(ButtonInteraction interaction) {
+        Optional<List<String>> parts = ownedParts(interaction, CONFIRM_NO, interaction.getComponentId(), 2, 0);
+        if (parts.isEmpty()) {
             return;
         }
 
-        event.deferEdit().queue();
-
-        showPunishmentDetail(event.getHook(), modId, null, punishmentId);
+        interaction.deferEdit().queue();
+        renderDetail(interaction.getHook(), parts.get().get(0), null, parts.get().get(1));
     }
 
-    // ─── Back to List Handler ────────────────────────────────────────
-
-    @SlashComponentHandler(id = "punish-back", patterns = {"punish-back-*"})
-    public void handleBack(ButtonInteractionEvent event) {
-        String[] parts = event.getComponentId().split("-");
-        String modId = parts[2];
-        String targetId = parts[3];
-
-        if (!event.getUser().getId().equals(modId)) {
-            event.reply("You can only use your own punishment interface!").setEphemeral(true).queue();
+    void back(ButtonInteraction interaction) {
+        Optional<List<String>> parts = ownedParts(interaction, BACK, interaction.getComponentId(), 2, 0);
+        if (parts.isEmpty()) {
             return;
         }
 
-        event.deferEdit().queue();
-        createHistoryPanel(event.getHook(), modId, targetId, 1, null);
+        interaction.deferEdit().queue();
+        renderHistory(interaction.getHook(), parts.get().get(0), parts.get().get(1), 1, null);
     }
 
-    // ─── Panel Builder ───────────────────────────────────────────────
+    /**
+     * The parts of a panel id, or empty after telling the user why not: the id isn't one this class
+     * made, or someone other than the moderator who opened the panel clicked it.
+     */
+    private static Optional<List<String>> ownedParts(IReplyCallback interaction, String prefix, String id, int count, int moderatorIndex) {
+        Optional<List<String>> parts = PunishmentComponentIds.parse(prefix, id, count);
+        if (parts.isEmpty()) {
+            log.warn("Ignoring malformed punishment panel id '{}'", id);
+            interaction.reply(OUTDATED_PANEL).setEphemeral(true).queue();
+            return Optional.empty();
+        }
 
-    private void createHistoryPanel(InteractionHook hook, String modId, String targetId, int page, String message) {
-        PunishmentRepository repo = getPunishmentRepository();
-        List<Punishment> allPunishments = new ArrayList<>(repo.findByTargetUserId(targetId));
+        if (!interaction.getUser().getId().equals(parts.get().get(moderatorIndex))) {
+            interaction.reply(NOT_YOUR_PANEL).setEphemeral(true).queue();
+            return Optional.empty();
+        }
 
-        if (allPunishments.isEmpty()) {
-            String content = "**Punishment History for <@" + targetId + ">**\n\n" +
-                (message != null ? message + "\n\n" : "") +
-                "No punishments found for this user.";
-            hook.editOriginal(content).setComponents().setEmbeds().queue();
+        return parts;
+    }
+
+    @Nullable
+    private static String modalText(ModalInteraction interaction, String inputId) {
+        ModalMapping mapping = interaction.getValue(inputId);
+        return mapping == null ? null : mapping.getAsString();
+    }
+
+    @Nullable
+    private static Integer parsePage(String page) {
+        try {
+            return Integer.parseInt(page);
+        } catch (NumberFormatException exception) {
+            return null;
+        }
+    }
+
+    private void renderHistory(InteractionHook hook, String modId, String targetId, int page, @Nullable String message) {
+        List<Punishment> history = punishments.history(targetId);
+        String header = "**Punishment History for <@" + targetId + ">**\n\n" + (message != null ? message + "\n\n" : "");
+
+        if (history.isEmpty()) {
+            hook.editOriginal(header + "No punishments found for this user.").setComponents().setEmbeds().queue();
             return;
         }
 
-        int totalPages = (int) Math.ceil((double) allPunishments.size() / ITEMS_PER_PAGE);
-        page = Math.min(Math.max(1, page), totalPages);
+        int totalPages = (history.size() + ITEMS_PER_PAGE - 1) / ITEMS_PER_PAGE;
+        int shownPage = Math.clamp(page, 1, totalPages);
+        int firstIndex = (shownPage - 1) * ITEMS_PER_PAGE;
+        List<Punishment> pageItems = history.subList(firstIndex, Math.min(firstIndex + ITEMS_PER_PAGE, history.size()));
 
-        List<Punishment> pagePunishments = allPunishments.stream()
-            .skip((long) (page - 1) * ITEMS_PER_PAGE)
-            .limit(ITEMS_PER_PAGE)
-            .toList();
-
-        StringBuilder content = new StringBuilder();
-        content.append("**Punishment History for <@").append(targetId).append(">**\n\n");
-
-        if (message != null) {
-            content.append(message).append("\n\n");
-        }
-
-        content.append("**Total:** ").append(allPunishments.size()).append(" punishment(s)");
+        StringBuilder content = new StringBuilder(header)
+            .append("**Total:** ").append(history.size()).append(" punishment(s)");
         if (totalPages > 1) {
-            content.append(" (Page ").append(page).append("/").append(totalPages).append(")");
+            content.append(" (Page ").append(shownPage).append("/").append(totalPages).append(")");
         }
         content.append("\n\nSelect a punishment below to view details.");
 
-        List<ActionRow> actionRows = new ArrayList<>();
-
-        // Select menu for punishment details
-        StringSelectMenu.Builder selectBuilder = StringSelectMenu.create("punish-detail-" + modId + "-" + targetId)
+        StringSelectMenu.Builder selectBuilder = StringSelectMenu.create(PunishmentComponentIds.build(DETAIL, modId, targetId))
             .setPlaceholder("Select a punishment to view...")
             .setRequiredRange(1, 1);
 
-        for (int i = 0; i < pagePunishments.size(); i++) {
-            Punishment p = pagePunishments.get(i);
-            int globalIndex = (page - 1) * ITEMS_PER_PAGE + i + 1;
-            String label = "#" + globalIndex + " - " + p.getType().getDisplayName();
-            String description = StringUtils.truncate(p.getReason(), 50) + " (" + DiscordTimestamp.toShortDate(p.getCreatedAt()) + ")";
-            // Discord requires descriptions <= 100 chars; toShortDate returns a Discord format string
-            description = StringUtils.truncate(description, 100);
-            selectBuilder.addOption(label, p.getPunishmentId(), description);
+        for (int i = 0; i < pageItems.size(); i++) {
+            Punishment punishment = pageItems.get(i);
+            String label = "#" + (firstIndex + i + 1) + " - " + punishment.getType().getDisplayName();
+            // toShortDate is a Discord format string, so the whole description is cut again to Discord's 100 character limit
+            String description = StringUtils.truncate(
+                StringUtils.truncate(punishment.getReason(), 50) + " (" + DiscordTimestamp.toShortDate(punishment.getCreatedAt()) + ")", 100);
+            selectBuilder.addOption(label, punishment.getPunishmentId(), description);
         }
 
+        List<ActionRow> actionRows = new ArrayList<>();
         actionRows.add(ActionRow.of(selectBuilder.build()));
 
-        // Navigation buttons
-        List<Button> navButtons = new ArrayList<>();
         if (totalPages > 1) {
-            navButtons.add(Button.secondary("punish-nav-prev-" + page + "-" + modId + "-" + targetId, "Previous")
-                .withDisabled(page <= 1));
-            navButtons.add(Button.secondary("punish-nav-next-" + page + "-" + modId + "-" + targetId, "Next")
-                .withDisabled(page >= totalPages));
-        }
-
-        if (!navButtons.isEmpty()) {
-            actionRows.add(ActionRow.of(navButtons));
+            actionRows.add(ActionRow.of(
+                Button.secondary(PunishmentComponentIds.build(NAV, "prev", shownPage, modId, targetId), "Previous")
+                    .withDisabled(shownPage <= 1),
+                Button.secondary(PunishmentComponentIds.build(NAV, "next", shownPage, modId, targetId), "Next")
+                    .withDisabled(shownPage >= totalPages)
+            ));
         }
 
         hook.editOriginal(content.toString()).setComponents(actionRows).setEmbeds().queue();
     }
 
-    // ─── Detail View ─────────────────────────────────────────────────
-
-    private void showPunishmentDetail(InteractionHook hook, String modId, String targetIdHint, String punishmentId) {
-        PunishmentRepository repo = getPunishmentRepository();
-        Punishment punishment = repo.findById(punishmentId).orElse(null);
-
-        if (punishment == null) {
+    /**
+     * @param targetIdHint whose history to go back to when the punishment is gone, or null to just
+     *                     say it's gone
+     */
+    private void renderDetail(InteractionHook hook, String modId, @Nullable String targetIdHint, String punishmentId) {
+        Optional<Punishment> found = punishments.find(punishmentId);
+        if (found.isEmpty()) {
             String content = "Punishment not found! It may have been deleted.";
             if (targetIdHint != null) {
-                createHistoryPanel(hook, modId, targetIdHint, 1, content);
+                renderHistory(hook, modId, targetIdHint, 1, content);
             } else {
                 hook.editOriginal(content).setComponents().setEmbeds().queue();
             }
             return;
         }
 
+        Punishment punishment = found.get();
         String targetId = punishment.getTargetUserId();
 
         EmbedBuilder embed = new EmbedBuilder()
@@ -477,20 +516,18 @@ public class PunishmentCommands {
             .addField("Type", punishment.getType().getDisplayName(), true)
             .addField("Moderator", "<@" + punishment.getModeratorUserId() + ">", true)
             .addField("Date", DiscordTimestamp.toLongDateTime(punishment.getCreatedAt()) + " (" + DiscordTimestamp.toRelativeTimestamp(punishment.getCreatedAt()) + ")", false)
-            .addField("Reason", punishment.getReason(), false);
+            .addField("Reason", punishment.getReason(), false)
+            .setFooter("ID: " + punishmentId);
 
         if (punishment.getNotes() != null && !punishment.getNotes().isBlank()) {
             embed.addField("Notes", punishment.getNotes(), false);
         }
 
-        embed.setFooter("ID: " + punishmentId);
-
         ActionRow actionRow = ActionRow.of(
-            Button.danger("punish-delete-" + modId + "-" + punishmentId, "Delete"),
-            Button.secondary("punish-back-" + modId + "-" + targetId, "Back to List")
+            Button.danger(PunishmentComponentIds.build(DELETE, modId, punishmentId), "Delete"),
+            Button.secondary(PunishmentComponentIds.build(BACK, modId, targetId), "Back to List")
         );
 
         hook.editOriginal("").setEmbeds(embed.build()).setComponents(actionRow).queue();
     }
-
 }

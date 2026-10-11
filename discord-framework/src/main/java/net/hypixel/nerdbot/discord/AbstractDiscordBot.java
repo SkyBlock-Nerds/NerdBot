@@ -4,6 +4,7 @@ import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.MongoClient;
 import lombok.extern.slf4j.Slf4j;
 import net.aerh.slashcommands.SlashCommandManager;
+import net.aerh.slashcommands.SlashCommandManagerBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -80,10 +81,22 @@ public abstract class AbstractDiscordBot implements DiscordBot {
 
     /**
      * Returns the package that should be scanned for slash commands. If {@code null} or blank, no scanning occurs.
+     * Only for command classes with a no-arg constructor; bots that build their commands themselves
+     * return them from {@link #createSlashCommands()} instead.
      */
     @Nullable
     protected String getSlashCommandBasePackage() {
         return null;
+    }
+
+    /**
+     * Command instances to register, for bots that construct their commands with their
+     * dependencies. Called after {@link #onReady(JDA)}. A bot uses either this or
+     * {@link #getSlashCommandBasePackage()}, not both.
+     */
+    @NotNull
+    protected Collection<Object> createSlashCommands() {
+        return List.of();
     }
 
     /**
@@ -170,15 +183,35 @@ public abstract class AbstractDiscordBot implements DiscordBot {
     }
 
     private void registerSlashCommands() {
-        String commandPackage = getSlashCommandBasePackage();
-        if (commandPackage == null || commandPackage.isBlank()) {
-            return;
+        SlashCommandManagerBuilder builder = SlashCommandManager.builder().withJDA(jda);
+        if (addCommandSources(builder, createSlashCommands(), getSlashCommandBasePackage())) {
+            builder.build();
+        }
+    }
+
+    /**
+     * Adds the bot's commands to {@code builder}, returning false when it has none.
+     *
+     * @throws IllegalStateException when the bot supplies both instances and a package, since the
+     *                               scan would register a second copy of every command
+     */
+    static boolean addCommandSources(SlashCommandManagerBuilder builder, Collection<Object> commands, @Nullable String commandPackage) {
+        boolean hasPackage = commandPackage != null && !commandPackage.isBlank();
+        if (!commands.isEmpty() && hasPackage) {
+            throw new IllegalStateException("Bot returns command instances and a command package; use one or the other");
         }
 
-        SlashCommandManager.builder()
-            .withJDA(jda)
-            .scanPackage(commandPackage)
-            .build();
+        if (!commands.isEmpty()) {
+            builder.registerCommands(commands.toArray());
+            return true;
+        }
+
+        if (hasPackage) {
+            builder.scanPackage(commandPackage);
+            return true;
+        }
+
+        return false;
     }
 
     protected void configureMemoryUsage(@NotNull JDABuilder builder) {

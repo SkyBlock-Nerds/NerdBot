@@ -32,6 +32,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7.0.1
+        with:
+          # diff-cover compares against the base branch, so it needs the history
+          fetch-depth: 0
 
       - name: Set up JDK 25
         uses: actions/setup-java@v6
@@ -41,3 +44,17 @@ jobs:
 
       - name: Build with Maven
         run: mvn org.ec4j.maven:editorconfig-maven-plugin:check clean verify
+
+      # Fails the PR when fewer than 60% of the main-code lines it adds or changes are covered by
+      # tests. Integration tests count when Docker is available, which it is here. Prints to the
+      # job log only.
+      - name: Check coverage of changed lines
+        if: github.event_name == 'pull_request'
+        run: >
+          pipx run --spec diff-cover==10.6.0 diff-cover
+          app/target/site/jacoco/jacoco.xml
+          discord-framework/target/site/jacoco/jacoco.xml
+          tooling/target/site/jacoco/jacoco.xml
+          --src-roots app/src/main/java discord-framework/src/main/java tooling/src/main/java
+          --compare-branch=origin/${{ github.base_ref }}
+          --fail-under=60

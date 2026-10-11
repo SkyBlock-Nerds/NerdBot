@@ -13,13 +13,13 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class RepositoryDiscordUserStoreTest {
+class RepositoryLookupsTest {
 
     @Test
     void successIsPresent() {
         DiscordUser user = new DiscordUser("1");
 
-        Optional<DiscordUser> result = RepositoryDiscordUserStore.toOptional("1", Result.success(user));
+        Optional<DiscordUser> result = RepositoryLookups.toOptional("1", Result.success(user));
 
         assertSame(user, result.orElseThrow());
     }
@@ -28,7 +28,7 @@ class RepositoryDiscordUserStoreTest {
     void notFoundIsEmpty() {
         Result<DiscordUser, RepositoryException> notFound = Result.failure(new RepositoryException("Not found: 1"));
 
-        assertTrue(RepositoryDiscordUserStore.toOptional("1", notFound).isEmpty());
+        assertTrue(RepositoryLookups.toOptional("1", notFound).isEmpty());
     }
 
     @Test
@@ -36,7 +36,7 @@ class RepositoryDiscordUserStoreTest {
         RepositoryException error = new RepositoryException("Database error looking up ID: 1", new MongoException("down"));
 
         IllegalStateException thrown = assertThrows(IllegalStateException.class,
-            () -> RepositoryDiscordUserStore.toOptional("1", Result.failure(error)));
+            () -> RepositoryLookups.toOptional("1", Result.failure(error)));
 
         assertEquals("Database error looking up 1", thrown.getMessage());
         assertSame(error, thrown.getCause());

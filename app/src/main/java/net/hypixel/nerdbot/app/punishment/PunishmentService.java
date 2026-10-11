@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.punishment;
 
+import jakarta.inject.Inject;
 import net.hypixel.nerdbot.marmalade.storage.database.model.punishment.Punishment;
 import net.hypixel.nerdbot.marmalade.storage.database.model.punishment.PunishmentType;
 import org.jetbrains.annotations.Nullable;
@@ -7,18 +8,58 @@ import org.jetbrains.annotations.Nullable;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 /**
- * Punishment search and statistics, extracted from {@code PunishmentCommands} so the querying and
- * aggregation logic can be exercised against a {@link PunishmentStore} without a live bot or
- * database. The commands keep the Discord modal/embed plumbing.
+ * Recording, looking up and deleting punishments, plus search and stats. The commands keep the
+ * Discord modal and embed plumbing.
  */
 public class PunishmentService {
 
     private final PunishmentStore store;
 
+    @Inject
     public PunishmentService(PunishmentStore store) {
         this.store = store;
+    }
+
+    /**
+     * Saves a new punishment. Blank notes are stored as no notes.
+     *
+     * @return the saved punishment; fails if the database didn't acknowledge the write
+     */
+    public CompletableFuture<Punishment> record(String targetUserId, String moderatorUserId, PunishmentType type,
+                                                String reason, @Nullable String notes) {
+        String storedNotes = notes == null || notes.isBlank() ? null : notes;
+        Punishment punishment = new Punishment(targetUserId, moderatorUserId, type, reason, storedNotes);
+
+        return store.save(punishment).thenApply(acknowledged -> {
+            if (!acknowledged) {
+                throw new IllegalStateException("Database did not acknowledge punishment " + punishment.getPunishmentId());
+            }
+            return punishment;
+        });
+    }
+
+    /**
+     * Fails if the database didn't acknowledge the delete. Deleting an id that no longer exists
+     * succeeds.
+     */
+    public CompletableFuture<Void> delete(String punishmentId) {
+        return store.delete(punishmentId).thenAccept(acknowledged -> {
+            if (!acknowledged) {
+                throw new IllegalStateException("Database did not acknowledge deleting punishment " + punishmentId);
+            }
+        });
+    }
+
+    public Optional<Punishment> find(String punishmentId) {
+        return store.findById(punishmentId);
+    }
+
+    public List<Punishment> history(String targetUserId) {
+        return store.findByTargetUserId(targetUserId);
     }
 
     /**

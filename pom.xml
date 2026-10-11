@@ -12,6 +12,7 @@
     <properties>
         <java.version>25</java.version>
         <lombok.version>1.18.48</lombok.version>
+        <dagger.version>2.60.1</dagger.version>
         <sentry.version>8.59.0</sentry.version>
         <imagegenerator.version>master-SNAPSHOT</imagegenerator.version>
         <editorconfig.encoding>UTF-8</editorconfig.encoding>

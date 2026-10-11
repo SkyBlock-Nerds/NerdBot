@@ -1,8 +1,5 @@
 package net.hypixel.nerdbot.app.storage;
 
-import com.mongodb.MongoException;
-import net.hypixel.nerdbot.marmalade.exception.RepositoryException;
-import net.hypixel.nerdbot.marmalade.functional.Result;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 
@@ -31,22 +28,12 @@ public class RepositoryDiscordUserStore implements DiscordUserStore {
 
     @Override
     public Optional<DiscordUser> findById(String discordId) {
-        return toOptional(discordId, repository.findById(discordId));
+        return RepositoryLookups.toOptional(discordId, repository.findById(discordId));
     }
 
     @Override
     public List<String> findIdsWithBirthdaySet() {
         return repository.findIdsWithBirthdaySet();
-    }
-
-    // A database error must not look like "not found", or callers would cache a blank user over the real record
-    static Optional<DiscordUser> toOptional(String discordId, Result<DiscordUser, RepositoryException> result) {
-        if (result instanceof Result.Failure<DiscordUser, RepositoryException> failure
-            && failure.error().getCause() instanceof MongoException) {
-            throw new IllegalStateException("Database error looking up " + discordId, failure.error());
-        }
-
-        return result.toOptional();
     }
 
     @Override
