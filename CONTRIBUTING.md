@@ -79,3 +79,7 @@ New commands should take what they need through an `@Inject` constructor rather 
 `PunishmentCommands` is the example to follow, and `PunishmentCommandsTest` shows how to test the handlers
 with the fakes in the framework's test jar. Once a class is injected, add it to the list in
 `ArchitectureRulesTest` so it can't drift back to the global lookups.
+
+Panels that only the person who opened them may use (buttons, select menus, modals) should describe
+their ids with `PanelId`, which builds and parses them and rejects clicks from anyone else. Timed work
+goes on the shared `ScheduledExecutorService` from `BotModule` rather than a new `Timer`.

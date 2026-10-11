@@ -31,6 +31,11 @@ public interface CommandsModule {
     @SlashCommandHandlers
     Object punishmentCommands(PunishmentCommands commands);
 
+    @Binds
+    @IntoSet
+    @SlashCommandHandlers
+    Object reminderCommands(ReminderCommands commands);
+
     @Provides
     @IntoSet
     @SlashCommandHandlers
@@ -99,13 +104,6 @@ public interface CommandsModule {
     @SlashCommandHandlers
     static Object profileCommands() {
         return new ProfileCommands();
-    }
-
-    @Provides
-    @IntoSet
-    @SlashCommandHandlers
-    static Object reminderCommands() {
-        return new ReminderCommands();
     }
 
     @Provides

@@ -16,12 +16,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class FakePunishmentStore implements PunishmentStore {
 
-    public enum WriteOutcome {
-        ACKNOWLEDGED,
-        UNACKNOWLEDGED,
-        FAILED
-    }
-
     private final List<Punishment> punishments = new CopyOnWriteArrayList<>();
     private WriteOutcome writeOutcome = WriteOutcome.ACKNOWLEDGED;
 
@@ -75,22 +69,11 @@ public class FakePunishmentStore implements PunishmentStore {
 
     @Override
     public CompletableFuture<Boolean> save(Punishment punishment) {
-        return write(() -> punishments.add(punishment));
+        return writeOutcome.apply(() -> punishments.add(punishment));
     }
 
     @Override
     public CompletableFuture<Boolean> delete(String punishmentId) {
-        return write(() -> punishments.removeIf(punishment -> punishmentId.equals(punishment.getPunishmentId())));
-    }
-
-    private CompletableFuture<Boolean> write(Runnable change) {
-        return switch (writeOutcome) {
-            case ACKNOWLEDGED -> {
-                change.run();
-                yield CompletableFuture.completedFuture(true);
-            }
-            case UNACKNOWLEDGED -> CompletableFuture.completedFuture(false);
-            case FAILED -> CompletableFuture.failedFuture(new IllegalStateException("database unavailable"));
-        };
+        return writeOutcome.apply(() -> punishments.removeIf(punishment -> punishmentId.equals(punishment.getPunishmentId())));
     }
 }

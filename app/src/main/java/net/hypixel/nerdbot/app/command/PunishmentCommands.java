@@ -25,6 +25,7 @@ import net.dv8tion.jda.api.interactions.modals.Modal;
 import net.dv8tion.jda.api.interactions.modals.ModalInteraction;
 import net.dv8tion.jda.api.interactions.modals.ModalMapping;
 import net.hypixel.nerdbot.app.channel.LogChannel;
+import net.hypixel.nerdbot.app.command.util.PanelId;
 import net.hypixel.nerdbot.app.punishment.PunishmentService;
 import net.hypixel.nerdbot.app.punishment.PunishmentStats;
 import net.hypixel.nerdbot.discord.util.StringUtils;
@@ -39,15 +40,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static net.hypixel.nerdbot.app.command.PunishmentComponentIds.BACK;
-import static net.hypixel.nerdbot.app.command.PunishmentComponentIds.CONFIRM_NO;
-import static net.hypixel.nerdbot.app.command.PunishmentComponentIds.CONFIRM_YES;
-import static net.hypixel.nerdbot.app.command.PunishmentComponentIds.DELETE;
-import static net.hypixel.nerdbot.app.command.PunishmentComponentIds.DETAIL;
-import static net.hypixel.nerdbot.app.command.PunishmentComponentIds.MODAL;
-import static net.hypixel.nerdbot.app.command.PunishmentComponentIds.NAV;
-import static net.hypixel.nerdbot.app.command.PunishmentComponentIds.TYPE;
-
 /**
  * The {@code /punishment} commands and the panels they open. Each handler hands its event to a
  * method that takes the matching JDA interface, so tests can drive them with fakes.
@@ -57,7 +49,24 @@ public class PunishmentCommands {
 
     static final int ITEMS_PER_PAGE = 10;
     static final String NOT_YOUR_PANEL = "You can only use your own punishment interface!";
-    static final String OUTDATED_PANEL = "This punishment panel is out of date. Run the command again.";
+
+    static final String TYPE_PREFIX = "punish-type";
+    static final String MODAL_PREFIX = "punish-modal";
+    static final String DETAIL_PREFIX = "punish-detail";
+    static final String NAV_PREFIX = "punish-nav";
+    static final String DELETE_PREFIX = "punish-delete";
+    static final String CONFIRM_YES_PREFIX = "punish-confirm-yes";
+    static final String CONFIRM_NO_PREFIX = "punish-confirm-no";
+    static final String BACK_PREFIX = "punish-back";
+
+    static final PanelId TYPE = PanelId.of(TYPE_PREFIX, 2, 0);
+    static final PanelId MODAL = PanelId.of(MODAL_PREFIX, 3, 0);
+    static final PanelId DETAIL = PanelId.of(DETAIL_PREFIX, 2, 0);
+    static final PanelId NAV = PanelId.of(NAV_PREFIX, 4, 2);
+    static final PanelId DELETE = PanelId.of(DELETE_PREFIX, 2, 0);
+    static final PanelId CONFIRM_YES = PanelId.of(CONFIRM_YES_PREFIX, 2, 0);
+    static final PanelId CONFIRM_NO = PanelId.of(CONFIRM_NO_PREFIX, 2, 0);
+    static final PanelId BACK = PanelId.of(BACK_PREFIX, 2, 0);
 
     private final PunishmentService punishments;
     private final LogChannel logChannel;
@@ -94,42 +103,42 @@ public class PunishmentCommands {
         showStats(event, member);
     }
 
-    @SlashComponentHandler(id = TYPE, patterns = {TYPE + "-*"})
+    @SlashComponentHandler(id = TYPE_PREFIX, patterns = {TYPE_PREFIX + "-*"})
     public void handleTypeSelect(StringSelectInteractionEvent event) {
         chooseType(event);
     }
 
-    @SlashModalHandler(id = MODAL, patterns = {MODAL + "-*"})
+    @SlashModalHandler(id = MODAL_PREFIX, patterns = {MODAL_PREFIX + "-*"})
     public void handleModalSubmit(ModalInteractionEvent event) {
         submit(event);
     }
 
-    @SlashComponentHandler(id = DETAIL, patterns = {DETAIL + "-*"})
+    @SlashComponentHandler(id = DETAIL_PREFIX, patterns = {DETAIL_PREFIX + "-*"})
     public void handleDetailSelect(StringSelectInteractionEvent event) {
         selectDetail(event);
     }
 
-    @SlashComponentHandler(id = NAV, patterns = {NAV + "-*"})
+    @SlashComponentHandler(id = NAV_PREFIX, patterns = {NAV_PREFIX + "-*"})
     public void handleNavigation(ButtonInteractionEvent event) {
         navigate(event);
     }
 
-    @SlashComponentHandler(id = DELETE, patterns = {DELETE + "-*"})
+    @SlashComponentHandler(id = DELETE_PREFIX, patterns = {DELETE_PREFIX + "-*"})
     public void handleDelete(ButtonInteractionEvent event) {
         askToDelete(event);
     }
 
-    @SlashComponentHandler(id = CONFIRM_YES, patterns = {CONFIRM_YES + "-*"})
+    @SlashComponentHandler(id = CONFIRM_YES_PREFIX, patterns = {CONFIRM_YES_PREFIX + "-*"})
     public void handleConfirmDelete(ButtonInteractionEvent event) {
         confirmDelete(event);
     }
 
-    @SlashComponentHandler(id = CONFIRM_NO, patterns = {CONFIRM_NO + "-*"})
+    @SlashComponentHandler(id = CONFIRM_NO_PREFIX, patterns = {CONFIRM_NO_PREFIX + "-*"})
     public void handleCancelDelete(ButtonInteractionEvent event) {
         cancelDelete(event);
     }
 
-    @SlashComponentHandler(id = BACK, patterns = {BACK + "-*"})
+    @SlashComponentHandler(id = BACK_PREFIX, patterns = {BACK_PREFIX + "-*"})
     public void handleBack(ButtonInteractionEvent event) {
         back(event);
     }
@@ -139,7 +148,7 @@ public class PunishmentCommands {
         String modId = interaction.getUser().getId();
         String targetId = member.getId();
 
-        StringSelectMenu.Builder selectBuilder = StringSelectMenu.create(PunishmentComponentIds.build(TYPE, modId, targetId))
+        StringSelectMenu.Builder selectBuilder = StringSelectMenu.create(TYPE.build(modId, targetId))
             .setPlaceholder("Select punishment type...")
             .setRequiredRange(1, 1);
 
@@ -216,7 +225,7 @@ public class PunishmentCommands {
     }
 
     void chooseType(StringSelectInteraction interaction) {
-        Optional<List<String>> parts = ownedParts(interaction, TYPE, interaction.getComponentId(), 2, 0);
+        Optional<List<String>> parts = TYPE.parseFor(interaction, interaction.getComponentId(), NOT_YOUR_PANEL);
         if (parts.isEmpty() || interaction.getValues().isEmpty()) {
             return;
         }
@@ -234,7 +243,7 @@ public class PunishmentCommands {
             .setMaxLength(1024)
             .build();
 
-        Modal modal = Modal.create(PunishmentComponentIds.build(MODAL, modId, targetId, interaction.getValues().getFirst()), "Record Punishment")
+        Modal modal = Modal.create(MODAL.build(modId, targetId, interaction.getValues().getFirst()), "Record Punishment")
             .addComponents(ActionRow.of(reasonInput), ActionRow.of(notesInput))
             .build();
 
@@ -242,7 +251,7 @@ public class PunishmentCommands {
     }
 
     void submit(ModalInteraction interaction) {
-        Optional<List<String>> parts = ownedParts(interaction, MODAL, interaction.getModalId(), 3, 0);
+        Optional<List<String>> parts = MODAL.parseFor(interaction, interaction.getModalId(), NOT_YOUR_PANEL);
         if (parts.isEmpty()) {
             return;
         }
@@ -254,7 +263,7 @@ public class PunishmentCommands {
 
         PunishmentType type = PunishmentType.fromName(parts.get().get(2));
         if (type == null) {
-            hook.editOriginal(OUTDATED_PANEL).queue();
+            hook.editOriginal(PanelId.OUTDATED).queue();
             return;
         }
 
@@ -293,7 +302,7 @@ public class PunishmentCommands {
     }
 
     void selectDetail(StringSelectInteraction interaction) {
-        Optional<List<String>> parts = ownedParts(interaction, DETAIL, interaction.getComponentId(), 2, 0);
+        Optional<List<String>> parts = DETAIL.parseFor(interaction, interaction.getComponentId(), NOT_YOUR_PANEL);
         if (parts.isEmpty() || interaction.getValues().isEmpty()) {
             return;
         }
@@ -303,14 +312,14 @@ public class PunishmentCommands {
     }
 
     void navigate(ButtonInteraction interaction) {
-        Optional<List<String>> parts = ownedParts(interaction, NAV, interaction.getComponentId(), 4, 2);
+        Optional<List<String>> parts = NAV.parseFor(interaction, interaction.getComponentId(), NOT_YOUR_PANEL);
         if (parts.isEmpty()) {
             return;
         }
 
         Integer page = parsePage(parts.get().get(1));
         if (page == null) {
-            interaction.reply(OUTDATED_PANEL).setEphemeral(true).queue();
+            interaction.reply(PanelId.OUTDATED).setEphemeral(true).queue();
             return;
         }
 
@@ -325,7 +334,7 @@ public class PunishmentCommands {
     }
 
     void askToDelete(ButtonInteraction interaction) {
-        Optional<List<String>> parts = ownedParts(interaction, DELETE, interaction.getComponentId(), 2, 0);
+        Optional<List<String>> parts = DELETE.parseFor(interaction, interaction.getComponentId(), NOT_YOUR_PANEL);
         if (parts.isEmpty()) {
             return;
         }
@@ -335,8 +344,8 @@ public class PunishmentCommands {
         interaction.deferEdit().queue();
 
         ActionRow confirmRow = ActionRow.of(
-            Button.danger(PunishmentComponentIds.build(CONFIRM_YES, modId, punishmentId), "Confirm Delete"),
-            Button.secondary(PunishmentComponentIds.build(CONFIRM_NO, modId, punishmentId), "Cancel")
+            Button.danger(CONFIRM_YES.build(modId, punishmentId), "Confirm Delete"),
+            Button.secondary(CONFIRM_NO.build(modId, punishmentId), "Cancel")
         );
 
         interaction.getHook().editOriginal("Are you sure you want to delete this punishment record? This cannot be undone.")
@@ -346,7 +355,7 @@ public class PunishmentCommands {
     }
 
     void confirmDelete(ButtonInteraction interaction) {
-        Optional<List<String>> parts = ownedParts(interaction, CONFIRM_YES, interaction.getComponentId(), 2, 0);
+        Optional<List<String>> parts = CONFIRM_YES.parseFor(interaction, interaction.getComponentId(), NOT_YOUR_PANEL);
         if (parts.isEmpty()) {
             return;
         }
@@ -387,7 +396,7 @@ public class PunishmentCommands {
     }
 
     void cancelDelete(ButtonInteraction interaction) {
-        Optional<List<String>> parts = ownedParts(interaction, CONFIRM_NO, interaction.getComponentId(), 2, 0);
+        Optional<List<String>> parts = CONFIRM_NO.parseFor(interaction, interaction.getComponentId(), NOT_YOUR_PANEL);
         if (parts.isEmpty()) {
             return;
         }
@@ -397,33 +406,13 @@ public class PunishmentCommands {
     }
 
     void back(ButtonInteraction interaction) {
-        Optional<List<String>> parts = ownedParts(interaction, BACK, interaction.getComponentId(), 2, 0);
+        Optional<List<String>> parts = BACK.parseFor(interaction, interaction.getComponentId(), NOT_YOUR_PANEL);
         if (parts.isEmpty()) {
             return;
         }
 
         interaction.deferEdit().queue();
         renderHistory(interaction.getHook(), parts.get().get(0), parts.get().get(1), 1, null);
-    }
-
-    /**
-     * The parts of a panel id, or empty after telling the user why not: the id isn't one this class
-     * made, or someone other than the moderator who opened the panel clicked it.
-     */
-    private static Optional<List<String>> ownedParts(IReplyCallback interaction, String prefix, String id, int count, int moderatorIndex) {
-        Optional<List<String>> parts = PunishmentComponentIds.parse(prefix, id, count);
-        if (parts.isEmpty()) {
-            log.warn("Ignoring malformed punishment panel id '{}'", id);
-            interaction.reply(OUTDATED_PANEL).setEphemeral(true).queue();
-            return Optional.empty();
-        }
-
-        if (!interaction.getUser().getId().equals(parts.get().get(moderatorIndex))) {
-            interaction.reply(NOT_YOUR_PANEL).setEphemeral(true).queue();
-            return Optional.empty();
-        }
-
-        return parts;
     }
 
     @Nullable
@@ -462,7 +451,7 @@ public class PunishmentCommands {
         }
         content.append("\n\nSelect a punishment below to view details.");
 
-        StringSelectMenu.Builder selectBuilder = StringSelectMenu.create(PunishmentComponentIds.build(DETAIL, modId, targetId))
+        StringSelectMenu.Builder selectBuilder = StringSelectMenu.create(DETAIL.build(modId, targetId))
             .setPlaceholder("Select a punishment to view...")
             .setRequiredRange(1, 1);
 
@@ -480,9 +469,9 @@ public class PunishmentCommands {
 
         if (totalPages > 1) {
             actionRows.add(ActionRow.of(
-                Button.secondary(PunishmentComponentIds.build(NAV, "prev", shownPage, modId, targetId), "Previous")
+                Button.secondary(NAV.build("prev", shownPage, modId, targetId), "Previous")
                     .withDisabled(shownPage <= 1),
-                Button.secondary(PunishmentComponentIds.build(NAV, "next", shownPage, modId, targetId), "Next")
+                Button.secondary(NAV.build("next", shownPage, modId, targetId), "Next")
                     .withDisabled(shownPage >= totalPages)
             ));
         }
@@ -524,8 +513,8 @@ public class PunishmentCommands {
         }
 
         ActionRow actionRow = ActionRow.of(
-            Button.danger(PunishmentComponentIds.build(DELETE, modId, punishmentId), "Delete"),
-            Button.secondary(PunishmentComponentIds.build(BACK, modId, targetId), "Back to List")
+            Button.danger(DELETE.build(modId, punishmentId), "Delete"),
+            Button.secondary(BACK.build(modId, targetId), "Back to List")
         );
 
         hook.editOriginal("").setEmbeds(embed.build()).setComponents(actionRow).queue();
