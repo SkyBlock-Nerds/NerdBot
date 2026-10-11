@@ -14,7 +14,6 @@ import net.hypixel.nerdbot.discord.cache.EmojiCache;
 import net.hypixel.nerdbot.app.suggestion.Suggestion;
 import net.hypixel.nerdbot.discord.config.EmojiConfig;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
-import net.hypixel.nerdbot.discord.util.DiscordUtils;
 import net.hypixel.nerdbot.discord.util.StringUtils;
 import net.hypixel.nerdbot.discord.util.pagination.PaginatedResponse;
 import net.hypixel.nerdbot.marmalade.format.DiscordTimestamp;
@@ -85,13 +84,7 @@ public class SuggestionCommandUtils {
         return allSuggestions.stream()
             .filter(suggestion -> suggestion.getChannelType() == channelType)
             .filter(Suggestion::notDeleted)
-            .filter(suggestion -> {
-                if (userId != null) {
-                    Member user = DiscordUtils.getMainGuild().retrieveMemberById(userId).complete();
-                    return user != null && suggestion.getOwnerIdLong() == userId && suggestion.canSee(member);
-                }
-                return true;
-            })
+            .filter(suggestion -> userId == null || (suggestion.getOwnerIdLong() == userId && suggestion.canSee(member)))
             // Include filter: suggestion must have ALL specified include tags
             .filter(suggestion -> includeTags.isEmpty() || includeTags.stream().allMatch(tag -> suggestion.getAppliedTags()
                 .stream()
