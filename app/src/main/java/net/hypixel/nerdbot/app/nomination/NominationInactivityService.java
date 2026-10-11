@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.nomination;
 
+import net.hypixel.nerdbot.app.role.SpecialRoles;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
@@ -19,7 +20,6 @@ import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepo
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
 import net.hypixel.nerdbot.discord.util.StringUtils;
-import net.hypixel.nerdbot.discord.util.Utils;
 
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
@@ -83,7 +83,7 @@ public class NominationInactivityService {
                 continue;
             }
 
-            if (Arrays.stream(Utils.SPECIAL_ROLES).anyMatch(role -> highestRole.getName().equalsIgnoreCase(role))) {
+            if (Arrays.stream(SpecialRoles.NAMES).anyMatch(role -> highestRole.getName().equalsIgnoreCase(role))) {
                 ineligible++;
                 log.info("Skipping inactivity check for {} (ID: {}) as they have a special role: {} (ID: {})", member.getEffectiveName(), member.getId(), highestRole.getName(), highestRole.getId());
                 continue;

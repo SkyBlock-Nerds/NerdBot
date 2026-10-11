@@ -3,13 +3,10 @@ package net.hypixel.nerdbot.discord;
 import com.google.gson.Gson;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import net.hypixel.nerdbot.marmalade.UUIDUtils;
 import net.hypixel.nerdbot.discord.api.bot.Bot;
 import net.hypixel.nerdbot.marmalade.json.DataSerialization;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -45,10 +42,6 @@ public final class BotEnvironment {
         }
 
         return type.cast(botInstance);
-    }
-
-    public static Optional<UUID> getHypixelAPIKey() {
-        return Optional.ofNullable(System.getProperty("hypixel.key")).map(UUIDUtils::toUUID);
     }
 
     private static ThreadFactory createThreadFactory() {

@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.util;
 
+import java.util.Optional;
 import com.google.gson.JsonObject;
 import io.prometheus.client.Summary;
 import lombok.experimental.UtilityClass;
@@ -77,6 +78,10 @@ public class HttpUtils {
             });
     }
 
+    private static Optional<UUID> hypixelApiKey() {
+        return Optional.ofNullable(System.getProperty("hypixel.key")).map(UUIDUtils::toUUID);
+    }
+
     @NotNull
     public static Result<MojangProfile, HttpException> getMojangProfile(UUID uniqueId) {
         return getMojangProfile(uniqueId.toString());
@@ -88,7 +93,7 @@ public class HttpUtils {
 
         try {
             return Result.of(() -> Retry.<HypixelPlayerResponse>of(() -> {
-                    String hypixelApiKey = BotEnvironment.getHypixelAPIKey().map(UUID::toString).orElse("");
+                    String hypixelApiKey = hypixelApiKey().map(UUID::toString).orElse("");
                     HttpResponse<String> response = getHttpResponse(HYPIXEL_PLAYER_ENDPOINT, url, Pair.of("API-Key", hypixelApiKey));
                     return BotEnvironment.GSON.fromJson(response.body(), HypixelPlayerResponse.class);
                 })
@@ -106,7 +111,7 @@ public class HttpUtils {
         String url = String.format("https://api.hypixel.net/player?uuid=%s", uniqueId);
         Summary.Timer requestTimer = PrometheusMetrics.HTTP_REQUEST_LATENCY.labels(HYPIXEL_PLAYER_ENDPOINT).startTimer();
 
-        String hypixelApiKey = BotEnvironment.getHypixelAPIKey().map(UUID::toString).orElse("");
+        String hypixelApiKey = hypixelApiKey().map(UUID::toString).orElse("");
 
         return Retry.<HypixelPlayerResponse>of(() -> {
                 HttpResponse<String> response = getHttpResponse(HYPIXEL_PLAYER_ENDPOINT, url, Pair.of("API-Key", hypixelApiKey));

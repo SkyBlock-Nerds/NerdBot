@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.command;
 
+import net.hypixel.nerdbot.app.role.SpecialRoles;
 import com.google.gson.JsonArray;
 import lombok.extern.slf4j.Slf4j;
 import net.aerh.slashcommands.api.annotations.SlashCommand;
@@ -28,7 +29,6 @@ import net.hypixel.nerdbot.marmalade.storage.database.model.user.stats.LastActiv
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.stats.MojangProfile;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.GreenlitMessageRepository;
-import net.hypixel.nerdbot.discord.util.Utils;
 
 import java.io.File;
 import java.io.IOException;
@@ -289,7 +289,7 @@ public class ExportCommands {
                 return !highestRole.getName().equalsIgnoreCase(role);
             }
 
-            return RoleManager.hasAnyRole(member, Utils.SPECIAL_ROLES);
+            return RoleManager.hasAnyRole(member, SpecialRoles.NAMES);
         });
 
         CSVData csvData = new CSVData(memberActivityHeaders(inactivityDays), ";");

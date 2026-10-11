@@ -8,11 +8,6 @@ import java.util.Locale;
 @UtilityClass
 public class StringUtils {
 
-    @Deprecated
-    static final String MINECRAFT_USERNAME_REGEX = "^[a-zA-Z0-9_]{2,16}";
-    @Deprecated
-    static final String SURROUND_REGEX = "\\|([^|]+)\\||\\[([^\\[]+)\\]|\\{([^\\{]+)\\}|\\(([^\\(]+)\\)";
-
     /** @deprecated A shared DecimalFormat isn't thread-safe; use {@link #formatWithCommas(long)}. */
     @Deprecated(forRemoval = true)
     public static final DecimalFormat COMMA_SEPARATED_FORMAT = new DecimalFormat("#,###");

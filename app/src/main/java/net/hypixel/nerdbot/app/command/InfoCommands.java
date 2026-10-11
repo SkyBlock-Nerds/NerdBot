@@ -1,5 +1,6 @@
 package net.hypixel.nerdbot.app.command;
 
+import net.hypixel.nerdbot.app.role.SpecialRoles;
 import lombok.extern.slf4j.Slf4j;
 import net.aerh.slashcommands.api.annotations.SlashCommand;
 import net.aerh.slashcommands.api.annotations.SlashComponentHandler;
@@ -21,7 +22,6 @@ import net.hypixel.nerdbot.marmalade.storage.database.model.greenlit.GreenlitMes
 import net.hypixel.nerdbot.marmalade.storage.database.repository.GreenlitMessageRepository;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.StringUtils;
-import net.hypixel.nerdbot.discord.util.Utils;
 import net.hypixel.nerdbot.discord.util.pagination.PaginatedResponse;
 import net.hypixel.nerdbot.discord.util.pagination.PaginationManager;
 import net.hypixel.nerdbot.marmalade.discord.EmbedFactory;
@@ -153,7 +153,7 @@ public class InfoCommands {
         AtomicInteger grapes = new AtomicInteger();
         AtomicInteger nerds = new AtomicInteger();
 
-        for (String roleName : Utils.SPECIAL_ROLES) {
+        for (String roleName : SpecialRoles.NAMES) {
             RoleManager.getRole(roleName).ifPresentOrElse(role -> staff.addAndGet(guild.getMembersWithRoles(role).size()),
                 () -> log.warn("Role {} not found", roleName)
             );
