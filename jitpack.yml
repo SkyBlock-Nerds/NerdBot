@@ -1,0 +1,9 @@
+# JitPack installs any JDK other than its preinstalled OpenJDK 8 through SDKMAN, which has been
+# failing, so ask for openjdk8 and build on Temurin 25 downloaded from Adoptium instead (same as
+# Marmalade). Only discord-framework is built: it's the module TicketBot depends on.
+jdk:
+  - openjdk8
+install:
+  - curl -fsSL -o /tmp/jdk25.tar.gz "https://api.adoptium.net/v3/binary/latest/25/ga/linux/x64/jdk/hotspot/normal/eclipse"
+  - mkdir -p /tmp/jdk25 && tar -xzf /tmp/jdk25.tar.gz -C /tmp/jdk25 --strip-components=1
+  - bash -c 'export JAVA_HOME=/tmp/jdk25 PATH=/tmp/jdk25/bin:$PATH MAVEN_USER_HOME="$PWD/.jitpack-maven" && ./mvnw -B install -pl discord-framework -am -DskipTests'
