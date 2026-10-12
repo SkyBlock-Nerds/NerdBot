@@ -24,6 +24,9 @@ public interface BotState {
 
     Path configFile();
 
+    /** Set with {@code -Dbot.readOnly=true}, for running against live data without the scheduled work writing to it. */
+    boolean isReadOnly();
+
     /** @throws IllegalStateException when the file can't be read or parsed; the live config is left alone */
     void loadConfig();
 
