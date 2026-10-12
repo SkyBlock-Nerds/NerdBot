@@ -10,31 +10,35 @@ import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.hypixel.nerdbot.app.command.util.CommandReplies;
 import net.hypixel.nerdbot.app.command.util.ProgressUpdates;
-import net.hypixel.nerdbot.app.curator.Curator;
+import net.hypixel.nerdbot.app.curator.Curation;
 import net.hypixel.nerdbot.app.curator.ForumChannelCurator;
 import net.hypixel.nerdbot.marmalade.format.TimeUtils;
-import net.hypixel.nerdbot.marmalade.storage.database.model.greenlit.GreenlitMessage;
 
 import java.time.Duration;
-import java.util.List;
 import java.util.concurrent.Executor;
-import java.util.function.Function;
 
 /** /curate: greenlights the suggestions in a forum that have enough votes. */
 public class CurateCommands {
 
+    static final String BUSY_MESSAGE = "A curation is already running. Try again once it's finished.";
     private static final Duration PROGRESS_INTERVAL = Duration.ofSeconds(1);
 
-    private final Function<Boolean, Curator<ForumChannel, ThreadChannel>> curators;
+    /** {@link ForumChannelCurator#curate}, so tests can stand in for it. */
+    @FunctionalInterface
+    interface Curate {
+        boolean curate(ForumChannel forum, Curation curation);
+    }
+
+    private final Curate curator;
     private final Executor backgroundWork;
 
     @Inject
-    public CurateCommands(Executor backgroundWork) {
-        this(ForumChannelCurator::new, backgroundWork);
+    public CurateCommands(ForumChannelCurator curator, Executor backgroundWork) {
+        this(curator::curate, backgroundWork);
     }
 
-    CurateCommands(Function<Boolean, Curator<ForumChannel, ThreadChannel>> curators, Executor backgroundWork) {
-        this.curators = curators;
+    CurateCommands(Curate curator, Executor backgroundWork) {
+        this.curator = curator;
         this.backgroundWork = backgroundWork;
     }
 
@@ -43,27 +47,27 @@ public class CurateCommands {
         run(event, channel, Boolean.TRUE.equals(readOnly));
     }
 
-    void run(IReplyCallback event, ForumChannel channel, boolean readOnly) {
+    void run(IReplyCallback event, ForumChannel channel, boolean dryRun) {
         InteractionHook hook = CommandReplies.deferPrivately(event);
-        Curator<ForumChannel, ThreadChannel> curator = curators.apply(readOnly);
+        Curation curation = new Curation(dryRun);
 
         backgroundWork.execute(() -> {
             ProgressUpdates progress = ProgressUpdates.every(PROGRESS_INTERVAL, "curate-progress", () -> {
-                ThreadChannel current = curator.getCurrentObject();
+                ThreadChannel current = curation.current();
                 if (current != null) {
-                    hook.editOriginal(progressMessage(curator.getIndex(), curator.getTotal(), System.currentTimeMillis() - curator.getStartTime(), current.getJumpUrl())).queue();
+                    hook.editOriginal(progressMessage(curation.index(), curation.total(), System.currentTimeMillis() - curation.startedAt(), current.getJumpUrl())).queue();
                 }
             });
 
-            List<GreenlitMessage> greenlit;
+            boolean ran;
             try {
-                greenlit = curator.curate(channel);
+                ran = curator.curate(channel, curation);
             } catch (RuntimeException exception) {
                 progress.finish(() -> CommandReplies.fail(hook, "Curation failed. Please try again later.", exception));
                 return;
             }
 
-            progress.finish(() -> hook.editOriginal(resultMessage(greenlit.size(), curator.getEndTime() - curator.getStartTime())).queue());
+            progress.finish(() -> hook.editOriginal(ran ? resultMessage(curation.greenlit().size(), curation.durationMs()) : BUSY_MESSAGE).queue());
         });
     }
 

@@ -1,7 +1,7 @@
 package net.hypixel.nerdbot.app.command;
 
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
-import net.hypixel.nerdbot.app.curator.Curator;
+import net.hypixel.nerdbot.app.curator.Curation;
 import net.hypixel.nerdbot.app.testsupport.DiscordFakes;
 import net.hypixel.nerdbot.discord.testsupport.CallRecorder;
 import net.hypixel.nerdbot.discord.testsupport.Fakes;
@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -22,20 +21,26 @@ class CurateCommandsTest {
 
     private final CallRecorder recorder = new CallRecorder();
     private final ForumChannel forum = Fakes.of(ForumChannel.class, Map.of());
-    private final List<Boolean> readOnlyRequests = new ArrayList<>();
+    private final List<Curation> curations = new ArrayList<>();
     private final List<Runnable> queued = new ArrayList<>();
-    private Supplier<List<GreenlitMessage>> outcome = List::of;
+    private int greenlit;
+    private boolean busy;
+    private RuntimeException failure;
 
-    private final CurateCommands commands = new CurateCommands(readOnly -> {
-        readOnlyRequests.add(readOnly);
-        return new Curator<>(readOnly) {
-            @Override
-            public List<GreenlitMessage> curate(ForumChannel channel) {
-                setStartTime(1_000);
-                setEndTime(1_250);
-                return outcome.get();
-            }
-        };
+    private final CurateCommands commands = new CurateCommands((channel, curation) -> {
+        curations.add(curation);
+        if (failure != null) {
+            throw failure;
+        }
+        if (busy) {
+            return false;
+        }
+        curation.start(1_000, greenlit);
+        for (int i = 0; i < greenlit; i++) {
+            curation.addGreenlit(new GreenlitMessage());
+        }
+        curation.finish(1_250);
+        return true;
     }, queued::add);
 
     @AfterEach
@@ -49,17 +54,26 @@ class CurateCommandsTest {
 
         assertTrue(recorder.called("deferReply"));
         assertEquals(1, queued.size());
-        assertEquals(List.of(true), readOnlyRequests);
+        assertTrue(curations.isEmpty());
         assertFalse(recorder.called("editOriginal"));
     }
 
     @Test
+    void aReadOnlyRequestIsADryRun() {
+        commands.run(DiscordFakes.slash(recorder, "1"), forum, true);
+        queued.getFirst().run();
+
+        assertTrue(curations.getFirst().isDryRun());
+    }
+
+    @Test
     void greenlitSuggestionsAreCounted() {
-        outcome = () -> List.of(new GreenlitMessage(), new GreenlitMessage());
+        greenlit = 2;
 
         commands.run(DiscordFakes.slash(recorder, "1"), forum, false);
         queued.getFirst().run();
 
+        assertFalse(curations.getFirst().isDryRun());
         assertEquals("Greenlit 2 suggestions in 250ms!", DiscordFakes.lastEditText(recorder));
     }
 
@@ -72,10 +86,18 @@ class CurateCommandsTest {
     }
 
     @Test
+    void aCurationAlreadyRunningSaysSo() {
+        busy = true;
+
+        commands.run(DiscordFakes.slash(recorder, "1"), forum, false);
+        queued.getFirst().run();
+
+        assertEquals(CurateCommands.BUSY_MESSAGE, DiscordFakes.lastEditText(recorder));
+    }
+
+    @Test
     void aCuratorThatThrowsGetsTheFailureMessage() {
-        outcome = () -> {
-            throw new IllegalStateException("forum vanished");
-        };
+        failure = new IllegalStateException("forum vanished");
 
         commands.run(DiscordFakes.slash(recorder, "1"), forum, false);
         queued.getFirst().run();

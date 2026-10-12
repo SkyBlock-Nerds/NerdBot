@@ -460,6 +460,11 @@ public abstract class AbstractDiscordBot implements DiscordBot {
     }
 
     private void saveRepositories() {
+        if (isReadOnly()) {
+            log.info("Not saving repositories; the bot is in read-only mode");
+            return;
+        }
+
         Map<Class<?>, Object> repositories = database.getRepositoryManager().getRepositories();
         log.info("Saving data from {} repositories...", repositories.size());
 

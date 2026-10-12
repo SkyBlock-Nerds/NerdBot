@@ -1,27 +1,21 @@
 package net.hypixel.nerdbot.app.feature;
 
 import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import lombok.extern.slf4j.Slf4j;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
-import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.hypixel.nerdbot.app.config.NerdBotConfig;
+import net.hypixel.nerdbot.app.curator.Curation;
 import net.hypixel.nerdbot.app.curator.ForumChannelCurator;
-import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
-import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
 import net.hypixel.nerdbot.discord.api.feature.SchedulableFeature;
-import net.hypixel.nerdbot.discord.cache.ChannelCache;
 import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
-import net.hypixel.nerdbot.app.config.SuggestionConfig;
-import net.hypixel.nerdbot.app.curator.Curator;
-import net.hypixel.nerdbot.marmalade.storage.database.Database;
-import net.hypixel.nerdbot.marmalade.storage.database.model.greenlit.GreenlitMessage;
-import net.hypixel.nerdbot.marmalade.storage.database.repository.GreenlitMessageRepository;
-import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 
 import java.time.Duration;
-import java.util.List;
 import java.util.Optional;
 
+/** Curates the main suggestion forum on a schedule. */
 @Slf4j
 public class CurateFeature extends BotFeature implements SchedulableFeature {
 
@@ -30,8 +24,15 @@ public class CurateFeature extends BotFeature implements SchedulableFeature {
      */
     private static final long DEFAULT_PERIOD_MS = Duration.ofHours(12).toMillis();
 
+    private final ForumChannelCurator curator;
+    private final Provider<NerdBotConfig> config;
+    private final JDA jda;
+
     @Inject
-    public CurateFeature() {
+    public CurateFeature(ForumChannelCurator curator, Provider<NerdBotConfig> config, JDA jda) {
+        this.curator = curator;
+        this.config = config;
+        this.jda = jda;
     }
 
     @Override
@@ -40,39 +41,20 @@ public class CurateFeature extends BotFeature implements SchedulableFeature {
 
     @Override
     public void executeTask() {
-        SuggestionConfig suggestionConfig = SkyBlockNerdsBot.config().getSuggestionConfig();
-
-        if (suggestionConfig.getForumChannelId() == null) {
-            log.info("Not running CurateFeature: forumChannelId missing in config");
+        String forumId = config.get().getSuggestionConfig().getForumChannelId();
+        // JDA throws on an id that isn't a number, which a missing config value would be
+        Optional<ForumChannel> forum = Optional.ofNullable(forumId)
+            .filter(id -> id.matches("\\d+"))
+            .map(jda::getForumChannelById);
+        if (forum.isEmpty()) {
+            log.warn("Not curating; the suggestion forum ({}) can't be found", forumId);
             return;
         }
 
-        Optional<ForumChannel> forumChannel = ChannelCache.getForumChannelById(suggestionConfig.getForumChannelId());
-        if (forumChannel.isEmpty()) {
-            log.info("Not running CurateFeature: forumChannel not found for configured forumChannelId");
-            return;
+        Curation curation = new Curation(false);
+        if (curator.curate(forum.get(), curation)) {
+            log.info("Greenlit {} suggestions in {}ms", curation.greenlit().size(), curation.durationMs());
         }
-
-        // Curating here rather than handing it off means a slow run can't overlap the next one
-        Database database = BotEnvironment.getBot().getDatabase();
-        Curator<ForumChannel, ThreadChannel> forumChannelCurator = new ForumChannelCurator(BotEnvironment.getBot().isReadOnly());
-        ForumChannel channel = forumChannel.get();
-        log.info("Processing suggestion forum channel '{}' (ID: {})", channel.getName(), channel.getId());
-
-        List<GreenlitMessage> result = forumChannelCurator.curate(channel);
-        if (result.isEmpty()) {
-            log.info("No new suggestions were greenlit from ID {} this time!", channel.getId());
-        } else {
-            log.info("Greenlit {} new suggestions from ID {}. Took {}ms!", result.size(), channel.getId(), forumChannelCurator.getEndTime() - forumChannelCurator.getStartTime());
-        }
-
-        result.forEach(greenlitMessage -> {
-            GreenlitMessageRepository greenlitMessageRepository = database.getRepositoryManager().getRepository(GreenlitMessageRepository.class);
-            greenlitMessageRepository.cacheObject(greenlitMessage);
-            PrometheusMetrics.GREENLIT_SUGGESTION_LENGTH.observe(greenlitMessage.getSuggestionContent().length());
-        });
-        log.info("Inserted {} new greenlit messages into the database!", result.size());
-        PrometheusMetrics.TOTAL_GREENLIT_MESSAGES_AMOUNT.inc(result.size());
     }
 
     @Override

@@ -1,10 +1,11 @@
 package net.hypixel.nerdbot.app.curator;
 
-import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import io.prometheus.client.Summary;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Message;
-import net.hypixel.nerdbot.marmalade.discord.EmbedFactory;
 import net.dv8tion.jda.api.entities.MessageHistory;
 import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.User;
@@ -14,37 +15,70 @@ import net.dv8tion.jda.api.entities.channel.forums.BaseForumTag;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
-import net.hypixel.nerdbot.marmalade.functional.Pair;
-import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
-import net.hypixel.nerdbot.discord.BotEnvironment;
-import net.hypixel.nerdbot.discord.cache.EmojiCache;
 import net.hypixel.nerdbot.app.config.NerdBotConfig;
+import net.hypixel.nerdbot.app.config.SuggestionConfig;
+import net.hypixel.nerdbot.app.inject.BotState;
+import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
+import net.hypixel.nerdbot.app.storage.GreenlitStore;
+import net.hypixel.nerdbot.app.suggestion.SuggestionCache;
+import net.hypixel.nerdbot.discord.cache.EmojiCache;
 import net.hypixel.nerdbot.discord.config.EmojiConfig;
 import net.hypixel.nerdbot.discord.config.objects.ForumAutoTag;
-import net.hypixel.nerdbot.app.config.SuggestionConfig;
-import net.hypixel.nerdbot.app.curator.Curator;
-import net.hypixel.nerdbot.marmalade.storage.database.Database;
-import net.hypixel.nerdbot.marmalade.storage.database.model.greenlit.GreenlitMessage;
-import net.hypixel.nerdbot.marmalade.storage.database.repository.GreenlitMessageRepository;
-import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
 import net.hypixel.nerdbot.discord.util.EmojiConfigUtils;
+import net.hypixel.nerdbot.marmalade.discord.EmbedFactory;
+import net.hypixel.nerdbot.marmalade.storage.database.model.greenlit.GreenlitMessage;
 
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Optional;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 
+/**
+ * Greenlights the suggestions in a forum with enough votes, and stores every greenlit suggestion's
+ * latest votes. One curation runs at a time, whether it was scheduled or started with
+ * {@code /curate}, so the same suggestion can't be greenlit twice at once.
+ */
 @Slf4j
-public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
+@Singleton
+public class ForumChannelCurator {
 
-    public ForumChannelCurator(boolean readOnly) {
-        super(readOnly);
+    // Discord allows a forum post at most 5 tags
+    private static final int MAX_TAGS = 5;
+
+    private final Provider<NerdBotConfig> config;
+    private final GreenlitStore greenlit;
+    private final SuggestionCache suggestions;
+    private final Provider<BotState> state;
+    private final Clock clock;
+    private final ReentrantLock running = new ReentrantLock();
+
+    @Inject
+    public ForumChannelCurator(Provider<NerdBotConfig> config, GreenlitStore greenlit, SuggestionCache suggestions, Provider<BotState> state, Clock clock) {
+        this.config = config;
+        this.greenlit = greenlit;
+        this.suggestions = suggestions;
+        this.state = state;
+        this.clock = clock;
     }
 
-    public static GreenlitMessage createGreenlitMessage(Message message, ThreadChannel thread, int agree, int neutral, int disagree) {
-        return createGreenlitMessage(message, thread, agree, neutral, disagree, DiscordBotEnvironment.getBot().getConfig().getEmojiConfig());
+    public static double getRatio(double positiveReactions, double negativeReactions) {
+        if (positiveReactions == 0 && negativeReactions == 0) {
+            return 0;
+        }
+        return positiveReactions / (positiveReactions + negativeReactions) * 100;
+    }
+
+    /**
+     * Whether a suggestion's votes qualify it to be greenlit: it needs at least {@code agreeThreshold}
+     * agree reactions <em>and</em> an agree/disagree {@link #getRatio(double, double) ratio} of at
+     * least {@code ratioThreshold} percent.
+     */
+    public static boolean meetsGreenlitThreshold(int agree, int disagree, int agreeThreshold, double ratioThreshold) {
+        return agree >= agreeThreshold && getRatio(agree, disagree) >= ratioThreshold;
     }
 
     /**
@@ -74,193 +108,166 @@ public class ForumChannelCurator extends Curator<ForumChannel, ThreadChannel> {
             .build();
     }
 
-    @Override
-    public List<GreenlitMessage> curate(ForumChannel forumChannel) {
-        setStartTime(System.currentTimeMillis());
+    /**
+     * Curates the forum's open posts, recording progress in {@code curation} as it goes. In read-only
+     * mode every curation is a dry run.
+     *
+     * @return false, without curating, when another curation is already running
+     */
+    public boolean curate(ForumChannel forum, Curation curation) {
+        if (!running.tryLock()) {
+            log.warn("Not curating '{}'; another curation is still running", forum.getName());
+            return false;
+        }
 
-        try (Summary.Timer timer = PrometheusMetrics.CURATOR_LENGTH_SECONDS.labels(forumChannel.getName()).startTimer()) {
-            List<GreenlitMessage> output = new ArrayList<>();
-            Database database = BotEnvironment.getBot().getDatabase();
+        try (Summary.Timer timer = PrometheusMetrics.CURATOR_LENGTH_SECONDS.labels(forum.getName()).startTimer()) {
+            curateOpenPosts(forum, curation, curation.isDryRun() || state.get().isReadOnly());
+            return true;
+        } finally {
+            curation.finish(clock.millis());
+            running.unlock();
+        }
+    }
 
-            if (!database.isConnected()) {
-                setEndTime(System.currentTimeMillis());
-                timer.observeDuration();
-                log.error("Couldn't curate messages as the database is not connected!");
-                return output;
+    private void curateOpenPosts(ForumChannel forum, Curation curation, boolean dryRun) {
+        NerdBotConfig current = config.get();
+        SuggestionConfig suggestionConfig = current.getSuggestionConfig();
+        EmojiConfig emojiConfig = current.getEmojiConfig();
+        List<ThreadChannel> threads = forum.getThreadChannels().stream()
+            .filter(thread -> !thread.isLocked() && !thread.isArchived())
+            .toList();
+        curation.start(clock.millis(), threads.size());
+
+        Optional<ForumTag> greenlitTag = DiscordUtils.findTagByName(forum, suggestionConfig.getGreenlitTag());
+        if (greenlitTag.isEmpty()) {
+            log.error("Not curating '{}' ({}); it has no '{}' tag", forum.getName(), forum.getId(), suggestionConfig.getGreenlitTag());
+            return;
+        }
+        if (!votingEmojisExist(emojiConfig)) {
+            log.error("Not curating '{}' ({}); the greenlit, agree, neutral or disagree emoji in the emoji config can't be found", forum.getName(), forum.getId());
+            return;
+        }
+
+        log.info("Curating {} open posts in '{}' ({}){}", threads.size(), forum.getName(), forum.getId(), dryRun ? " without changing anything" : "");
+        PrometheusMetrics.CURATOR_MESSAGES_AMOUNT.labels(forum.getName()).inc(threads.size());
+
+        for (int index = 0; index < threads.size(); index++) {
+            ThreadChannel thread = threads.get(index);
+            curation.moveTo(index + 1, thread);
+            try {
+                curateThread(forum, thread, greenlitTag.get(), current, dryRun).ifPresent(message -> {
+                    curation.addGreenlit(message);
+                    PrometheusMetrics.TOTAL_GREENLIT_MESSAGES_AMOUNT.inc();
+                    PrometheusMetrics.GREENLIT_SUGGESTION_LENGTH.observe(message.getSuggestionContent().length());
+                });
+            } catch (RuntimeException exception) {
+                log.error("Failed to curate thread '{}' ({}); carrying on with the rest", thread.getName(), thread.getId(), exception);
             }
+        }
 
-            NerdBotConfig botConfig = SkyBlockNerdsBot.config();
-            SuggestionConfig suggestionConfig = botConfig.getSuggestionConfig();
+        log.info("Curated '{}' ({}): greenlit {} of {} posts", forum.getName(), forum.getId(), curation.greenlit().size(), threads.size());
+    }
 
-            if (suggestionConfig == null) {
-                log.error("Couldn't find the suggestion config from the bot config!");
-                timer.observeDuration();
-                return output;
+    private static boolean votingEmojisExist(EmojiConfig emojiConfig) {
+        return Stream.of(emojiConfig.getGreenlitEmojiId(), emojiConfig.getAgreeEmojiId(), emojiConfig.getNeutralEmojiId(), emojiConfig.getDisagreeEmojiId())
+            .allMatch(id -> id != null && EmojiCache.getEmojiById(id).isPresent());
+    }
+
+    /** The newly greenlit suggestion, if this thread was greenlit now. */
+    private Optional<GreenlitMessage> curateThread(ForumChannel forum, ThreadChannel thread, ForumTag greenlitTag, NerdBotConfig current, boolean dryRun) {
+        SuggestionConfig suggestionConfig = current.getSuggestionConfig();
+        EmojiConfig emojiConfig = current.getEmojiConfig();
+
+        Optional<Message> firstMessage = firstMessageOf(thread);
+        if (firstMessage.isEmpty()) {
+            log.warn("Thread '{}' ({}) has no first message", thread.getName(), thread.getId());
+            return Optional.empty();
+        }
+
+        Message message = firstMessage.get();
+        int agree = countReactions(message, emojiConfig.getAgreeEmojiId());
+        int neutral = countReactions(message, emojiConfig.getNeutralEmojiId());
+        int disagree = countReactions(message, emojiConfig.getDisagreeEmojiId());
+
+        if (DiscordUtils.hasTagByName(thread, suggestionConfig.getGreenlitTag())) {
+            if (!dryRun) {
+                // Already greenlit, so only its votes are brought up to date
+                save(describe(message, thread, agree, neutral, disagree, emojiConfig));
             }
+            return Optional.empty();
+        }
 
-            EmojiConfig emojiConfig = botConfig.getEmojiConfig();
+        log.debug("Thread '{}' ({}) has {} agrees, {} neutrals and {} disagrees ({}%)",
+            thread.getName(), thread.getId(), agree, neutral, disagree, getRatio(agree, disagree));
+        if (!meetsGreenlitThreshold(agree, disagree, suggestionConfig.getGreenlitThreshold(), suggestionConfig.getGreenlitRatio())) {
+            return Optional.empty();
+        }
 
-            if (emojiConfig == null) {
-                log.error("Couldn't find the emoji config from the bot config!");
-                timer.observeDuration();
-                return output;
-            }
+        if (dryRun) {
+            log.info("Thread '{}' ({}) would be greenlit", thread.getName(), thread.getId());
+            return Optional.empty();
+        }
 
-            ForumTag greenlitTag = DiscordUtils.findTagByName(forumChannel, suggestionConfig.getGreenlitTag()).orElse(null);
+        List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
+        if (tags.size() >= MAX_TAGS) {
+            log.warn("Thread '{}' ({}) already has {} tags, so the greenlit tag can't be added", thread.getName(), thread.getId(), MAX_TAGS);
+            thread.sendMessageEmbeds(EmbedFactory.error("Error",
+                    "This suggestion could not be automatically greenlit because the thread already has the maximum number of tags (5). Please remove a tag to allow the greenlit tag to be applied.").build())
+                .setContent("<@" + thread.getOwnerId() + ">")
+                .queue();
+            return Optional.empty();
+        }
 
-            if (greenlitTag == null) {
-                log.error("Couldn't find the greenlit tag for the forum channel {} (ID: {})!", forumChannel.getName(), forumChannel.getId());
-                timer.observeDuration();
-                return output;
-            }
+        tags.add(greenlitTag);
+        removeDefaultTag(forum, tags, current);
+        ThreadChannelManager manager = thread.getManager().setAppliedTags(tags);
+        if (suggestionConfig.isArchiveOnGreenlit()) {
+            manager = manager.setArchived(true);
+        }
+        if (suggestionConfig.isLockOnGreenlit()) {
+            manager = manager.setLocked(true);
+        }
+        manager.complete();
 
-            if (emojiConfig.getGreenlitEmojiId() == null || emojiConfig.getAgreeEmojiId() == null || emojiConfig.getNeutralEmojiId() == null || emojiConfig.getDisagreeEmojiId() == null
-                || EmojiCache.getEmojiById(emojiConfig.getGreenlitEmojiId()).isEmpty() || EmojiCache.getEmojiById(emojiConfig.getAgreeEmojiId()).isEmpty()
-                || EmojiCache.getEmojiById(emojiConfig.getNeutralEmojiId()).isEmpty() || EmojiCache.getEmojiById(emojiConfig.getDisagreeEmojiId()).isEmpty()) {
-                log.error("Couldn't find the greenlit, agree, neutral, or disagree emoji in the channel {} (ID: {})! Check the emojiConfig values!", forumChannel.getName(), forumChannel.getId());
-                timer.observeDuration();
-                return output;
-            }
+        GreenlitMessage greenlitMessage = describe(message, thread, agree, neutral, disagree, emojiConfig);
+        save(greenlitMessage);
+        suggestions.requestUpdate(thread);
+        log.info("Greenlit thread '{}' ({})", thread.getName(), thread.getId());
+        return Optional.of(greenlitMessage);
+    }
 
-            log.info("Curating forum channel: {} (Channel ID: {})", forumChannel.getName(), forumChannel.getId());
+    // This and describe are overridden in tests, which can't build JDA's message history or voter lists
+    Optional<Message> firstMessageOf(ThreadChannel thread) {
+        MessageHistory history = thread.getHistoryFromBeginning(1).complete();
+        return history.isEmpty() ? Optional.empty() : Optional.of(history.getRetrievedHistory().getFirst());
+    }
 
-            long start = System.currentTimeMillis();
-            List<ThreadChannel> threads = forumChannel.getThreadChannels().stream()
-                .filter(thread -> !thread.isLocked() && !thread.isArchived())
-                .toList();
+    GreenlitMessage describe(Message message, ThreadChannel thread, int agree, int neutral, int disagree, EmojiConfig emojiConfig) {
+        return createGreenlitMessage(message, thread, agree, neutral, disagree, emojiConfig);
+    }
 
-            log.info("Found {} forum post(s) in {}ms", threads.size(), System.currentTimeMillis() - start);
-            PrometheusMetrics.CURATOR_MESSAGES_AMOUNT.labels(forumChannel.getName()).inc(threads.size());
-            setIndex(0);
-            setTotal(threads.size());
+    private static int countReactions(Message message, String emojiId) {
+        return message.getReactions().stream()
+            .filter(reaction -> reaction.getEmoji().getType() == Emoji.Type.CUSTOM)
+            .filter(reaction -> reaction.getEmoji().asCustom().getId().equals(emojiId))
+            .mapToInt(MessageReaction::getCount)
+            .findFirst()
+            .orElse(0);
+    }
 
-            for (ThreadChannel thread : threads) {
-                setIndex(getIndex() + 1);
-                setCurrentObject(thread);
+    // When the greenlit tag is the forum's review tag, the default tag it replaces comes off
+    private static void removeDefaultTag(ForumChannel forum, List<ForumTag> tags, NerdBotConfig current) {
+        ForumAutoTag autoTag = current.getChannelConfig().getForumAutoTagConfig(forum.getId());
+        if (autoTag != null && autoTag.getReviewTagName().equalsIgnoreCase(current.getSuggestionConfig().getGreenlitTag())) {
+            DiscordUtils.findTagByName(forum, autoTag.getDefaultTagName()).ifPresent(tags::remove);
+        }
+    }
 
-                log.info("[{}/{}] Curating thread '{}' (ID: {})", getIndex(), threads.size(), thread.getName(), thread.getId());
-
-                MessageHistory history = thread.getHistoryFromBeginning(1).complete();
-                Message message = history.isEmpty() ? null : history.getRetrievedHistory().get(0);
-
-                if (message == null) {
-                    log.error("Message for thread '{}' (ID: {}) is null!", thread.getName(), thread.getId());
-                    continue;
-                }
-
-                try {
-                    log.info("Checking reaction counts for message ID: {}", message.getId());
-
-                    List<MessageReaction> reactions = message.getReactions()
-                        .stream()
-                        .filter(reaction -> reaction.getEmoji().getType() == Emoji.Type.CUSTOM)
-                        .toList();
-
-                    Map<String, Integer> votes = Stream.of(
-                            emojiConfig.getAgreeEmojiId(),
-                            emojiConfig.getNeutralEmojiId(),
-                            emojiConfig.getDisagreeEmojiId()
-                        )
-                        .map(emojiId -> Pair.of(
-                            emojiId,
-                            reactions.stream()
-                                .filter(reaction -> reaction.getEmoji()
-                                    .asCustom()
-                                    .getId()
-                                    .equalsIgnoreCase(emojiId)
-                                )
-                                .mapToInt(MessageReaction::getCount)
-                                .findFirst()
-                                .orElse(0)
-                        ))
-                        .collect(Collectors.toMap(Pair::first, Pair::second));
-
-                    int agree = votes.get(emojiConfig.getAgreeEmojiId());
-                    int neutral = votes.get(emojiConfig.getNeutralEmojiId());
-                    int disagree = votes.get(emojiConfig.getDisagreeEmojiId());
-                    List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
-                    ThreadChannelManager threadManager = thread.getManager();
-
-                    // Upsert into database if already greenlit
-                    if (DiscordUtils.hasTagByName(thread, suggestionConfig.getGreenlitTag())) {
-                        log.info("Thread '{}' (ID: {}) is already greenlit/reviewed!", thread.getName(), thread.getId());
-                        GreenlitMessage greenlitMessage = createGreenlitMessage(message, thread, agree, neutral, disagree);
-                        database.getRepositoryManager().getRepository(GreenlitMessageRepository.class).cacheObject(greenlitMessage);
-                        continue;
-                    }
-
-                    double ratio = getRatio(agree, disagree);
-                    log.info("Thread '{}' (ID: {}) has {} agree reactions, {} neutral reactions, and {} disagree reactions with a ratio of {}%", thread.getName(), thread.getId(), agree, neutral, disagree, ratio);
-
-                    if (!meetsGreenlitThreshold(agree, disagree, suggestionConfig.getGreenlitThreshold(), suggestionConfig.getGreenlitRatio())) {
-                        log.info("Thread '{}' (ID: {}) does not meet the minimum threshold of {} agree reactions to be greenlit!", thread.getName(), thread.getId(), suggestionConfig.getGreenlitThreshold());
-                        continue;
-                    }
-
-                    log.info("Thread '{}' (ID: {}) meets the minimum requirements to be greenlit!", thread.getName(), thread.getId());
-
-                    if (isReadOnly()) {
-                        log.info("Skipping thread '{}' (ID: {}) as the curator is in read-only mode!", thread.getName(), thread.getId());
-                        continue;
-                    }
-
-                    log.info("Thread '{}' (ID: {}) has tags: {}", thread.getName(), thread.getId(), thread.getAppliedTags().stream().map(BaseForumTag::getName).toList());
-
-                    // Discord only allows a maximum of 5 tags per thread
-                    if (tags.size() >= 5 && !tags.contains(greenlitTag)) {
-                        log.warn("Thread '{}' (ID: {}) already has the maximum of 5 tags. Cannot apply greenlit tag.", thread.getName(), thread.getId());
-                        thread.sendMessageEmbeds(EmbedFactory.error(
-                            "Error",
-                            "This suggestion could not be automatically greenlit because the thread already has the maximum number of tags (5). Please remove a tag to allow the greenlit tag to be applied."
-                        ).build()).setContent("<@" + thread.getOwnerId() + ">").queue();
-                        continue;
-                    }
-
-                    if (!tags.contains(greenlitTag)) {
-                        tags.add(greenlitTag);
-                    }
-
-                    ForumAutoTag autoTagConfig = DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getForumAutoTagConfig(forumChannel.getId());
-                    if (autoTagConfig != null && autoTagConfig.getReviewTagName().equalsIgnoreCase(suggestionConfig.getGreenlitTag())) {
-                        // Remove the default tag if it exists
-                        ForumTag defaultTag = DiscordUtils.findTagByName(forumChannel, autoTagConfig.getDefaultTagName()).orElse(null);
-                        if (defaultTag != null && tags.contains(defaultTag)) {
-                            tags.remove(defaultTag);
-                            log.info("Removed auto-tag '{}' from thread '{}' (ID: {}) when greenlit via curator", autoTagConfig.getDefaultTagName(), thread.getName(), thread.getId());
-                        }
-                    }
-
-                    threadManager = threadManager.setAppliedTags(tags);
-
-                    // Handle Archiving and Locking
-                    if (suggestionConfig.isArchiveOnGreenlit()) {
-                        threadManager = threadManager.setArchived(true);
-                    }
-
-                    if (suggestionConfig.isLockOnGreenlit()) {
-                        threadManager = threadManager.setLocked(true);
-                    }
-
-                    // Send Changes
-                    threadManager.queue();
-
-                    log.info("Thread '{}' (ID: {}) has been greenlit!", thread.getName(), thread.getId());
-                    GreenlitMessage greenlitMessage = createGreenlitMessage(message, thread, agree, neutral, disagree);
-                    SkyBlockNerdsBot.suggestionCache().requestUpdate(thread);
-                    output.add(greenlitMessage);
-                } catch (Exception exception) {
-                    log.error("Failed to curate thread '{}' (ID: {})!", thread.getName(), thread.getId(), exception);
-                }
-            }
-
-            setEndTime(System.currentTimeMillis());
-            timer.observeDuration();
-            log.info("Curated forum channel: {} (Channel ID: {}) in {}ms", forumChannel.getName(), forumChannel.getId(), getEndTime() - getStartTime());
-            setCompleted(true);
-            setCurrentObject(null);
-            setIndex(0);
-
-            return output;
+    private void save(GreenlitMessage message) {
+        try {
+            greenlit.save(message).join();
+        } catch (CompletionException exception) {
+            log.error("Failed to save greenlit suggestion {}; the autosave will retry", message.getMessageId(), exception);
         }
     }
 }
