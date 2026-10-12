@@ -60,6 +60,11 @@ public class RepositoryDiscordUserStore implements DiscordUserStore {
     }
 
     @Override
+    public CompletableFuture<Void> delete(String discordId) {
+        return repository.get().deleteFromDatabaseAsync(discordId).thenApply(result -> null);
+    }
+
+    @Override
     public void clearDriveAccess(DiscordUser user) {
         DiscordUserRepository users = repository.get();
         users.cacheObject(user);

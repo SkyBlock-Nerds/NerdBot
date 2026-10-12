@@ -41,6 +41,9 @@ public interface DiscordUserStore {
 
     CompletableFuture<Void> save(DiscordUser user);
 
+    /** Removes the record from the database and the cache. */
+    CompletableFuture<Void> delete(String discordId);
+
     /** Caches the user, whose Drive access has already been cleared, and removes it from the stored copy. */
     void clearDriveAccess(DiscordUser user);
 }

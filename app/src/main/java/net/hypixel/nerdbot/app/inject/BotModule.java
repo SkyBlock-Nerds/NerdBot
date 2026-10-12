@@ -21,6 +21,7 @@ import net.hypixel.nerdbot.app.profile.HttpMinecraftAccounts;
 import net.hypixel.nerdbot.app.profile.MinecraftAccounts;
 import net.hypixel.nerdbot.app.reminder.DiscordReminderSender;
 import net.hypixel.nerdbot.app.reminder.ReminderSender;
+import net.hypixel.nerdbot.discord.cache.MessageCache;
 
 import java.time.Clock;
 import java.util.Optional;
@@ -38,6 +39,7 @@ public interface BotModule {
     int SCHEDULER_THREADS = 2;
     int BACKGROUND_WORK_THREADS = 4;
     int IMAGE_RENDERING_THREADS = Math.max(2, Runtime.getRuntime().availableProcessors());
+    int MEMBER_WORK_THREADS = 4;
 
     @Binds
     LogChannel logChannel(DiscordLogChannel channel);
@@ -100,6 +102,23 @@ public interface BotModule {
     @ImageRendering
     static ExecutorService imageRenderingPool() {
         return Executors.newFixedThreadPool(IMAGE_RENDERING_THREADS, daemonThreads("image-render-"));
+    }
+
+    @Binds
+    @MemberWork
+    Executor memberWork(@MemberWork ExecutorService pool);
+
+    @Provides
+    @Singleton
+    @MemberWork
+    static ExecutorService memberWorkPool() {
+        return Executors.newFixedThreadPool(MEMBER_WORK_THREADS, daemonThreads("member-work-"));
+    }
+
+    @Provides
+    @Singleton
+    static MessageCache messageCache() {
+        return new MessageCache();
     }
 
     @Provides

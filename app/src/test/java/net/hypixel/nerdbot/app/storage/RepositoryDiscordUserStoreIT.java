@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -58,6 +59,18 @@ class RepositoryDiscordUserStoreIT {
         List<String> ids = storeWithEmptyCache().getAllFromDatabase().stream().map(DiscordUser::getDiscordId).sorted().toList();
 
         assertEquals(List.of(MEMBER, "100000000000000002"), ids);
+    }
+
+    @Test
+    void deletingRemovesTheRecordFromTheDatabaseAndTheCache() {
+        store.save(new DiscordUser(MEMBER)).join();
+        store.save(new DiscordUser("100000000000000002")).join();
+
+        store.delete(MEMBER).join();
+
+        assertEquals(Optional.empty(), store.findById(MEMBER));
+        assertEquals(Optional.empty(), storeWithEmptyCache().findById(MEMBER));
+        assertEquals(List.of("100000000000000002"), storeWithEmptyCache().getAllFromDatabase().stream().map(DiscordUser::getDiscordId).toList());
     }
 
     @Test

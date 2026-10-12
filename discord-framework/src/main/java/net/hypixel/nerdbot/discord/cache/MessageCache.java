@@ -4,23 +4,20 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
-import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.message.MessageBulkDeleteEvent;
-import net.dv8tion.jda.api.events.message.MessageDeleteEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.api.events.message.MessageUpdateEvent;
-import net.dv8tion.jda.api.hooks.EventListener;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
-import net.dv8tion.jda.api.requests.RestAction;
-import net.dv8tion.jda.internal.requests.CompletedRestAction;
-import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
-import org.jetbrains.annotations.NotNull;
 
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Recent messages, so a deleted or edited message can still be shown as it was. It caches what's
+ * sent; whatever handles deletes and edits takes the old copy out with {@link #remove} or
+ * {@link #replace}, which also means it always sees the old copy whatever order listeners run in.
+ */
 @Slf4j
-public class MessageCache implements EventListener {
+public class MessageCache {
 
     private final Cache<String, Message> cache = Caffeine.newBuilder()
         .maximumSize(5_000)
@@ -31,37 +28,27 @@ public class MessageCache implements EventListener {
         .recordStats()
         .build();
 
-    public MessageCache() {
-        DiscordBotEnvironment.getBot().getJDA().addEventListener(this);
-        log.info("Message cache initialized");
+    public Optional<Message> get(String messageId) {
+        return Optional.ofNullable(cache.getIfPresent(messageId));
     }
 
-    public RestAction<Message> getMessage(MessageChannel channel, String messageId) {
-        Message message = getMessage(messageId);
-        return message == null ? channel.retrieveMessageById(messageId) : new CompletedRestAction<>(DiscordBotEnvironment.getBot().getJDA(), message);
+    /** Takes a deleted message out, returning it as it was. */
+    public Optional<Message> remove(String messageId) {
+        return Optional.ofNullable(cache.asMap().remove(messageId));
     }
 
-    public Message getMessage(String id) {
-        return cache.asMap().get(id);
+    /** Stores the edited message, returning the copy from before the edit. */
+    public Optional<Message> replace(Message edited) {
+        return Optional.ofNullable(cache.asMap().replace(edited.getId(), edited));
     }
 
     @SubscribeEvent
-    public void onEvent(@NotNull GenericEvent event) {
+    public void onMessageReceived(MessageReceivedEvent event) {
+        cache.put(event.getMessage().getId(), event.getMessage());
+    }
 
-        if (event instanceof MessageReceivedEvent messageReceivedEvent) {
-            cache.put(messageReceivedEvent.getMessage().getId(), messageReceivedEvent.getMessage());
-        }
-
-        if (event instanceof MessageUpdateEvent messageUpdateEvent) {
-            cache.put(messageUpdateEvent.getMessage().getId(), messageUpdateEvent.getMessage());
-        }
-
-        if (event instanceof MessageDeleteEvent messageDeleteEvent) {
-            cache.asMap().remove(messageDeleteEvent.getMessageId());
-        }
-
-        if (event instanceof MessageBulkDeleteEvent messageBulkDeleteEvent) {
-            messageBulkDeleteEvent.getMessageIds().forEach(cache.asMap().keySet()::remove);
-        }
+    @SubscribeEvent
+    public void onMessageBulkDelete(MessageBulkDeleteEvent event) {
+        event.getMessageIds().forEach(cache.asMap().keySet()::remove);
     }
 }

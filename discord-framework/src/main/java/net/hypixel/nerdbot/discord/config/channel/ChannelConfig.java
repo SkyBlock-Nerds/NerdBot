@@ -118,18 +118,13 @@ public class ChannelConfig {
             .orElse(null);
     }
 
-    public boolean addOrUpdateForumAutoTagConfig(String forumChannelId, String defaultTagName, String reviewTagName) {
-        List<ForumAutoTag> autoTags = new ArrayList<>(forumAutoTags);
-
-        for (int i = 0; i < autoTags.size(); i++) {
-            ForumAutoTag tag = autoTags.get(i);
-            if (tag != null && tag.getForumChannelId().equals(forumChannelId)) {
-                autoTags.set(i, new ForumAutoTag(forumChannelId, defaultTagName, reviewTagName));
-                this.forumAutoTags = autoTags;
-                return false;
-            }
+    /** Adds auto-tagging for the forum unless it has some already, which may have been customised. */
+    public boolean addForumAutoTagConfigIfAbsent(String forumChannelId, String defaultTagName, String reviewTagName) {
+        if (getForumAutoTagConfig(forumChannelId) != null) {
+            return false;
         }
 
+        List<ForumAutoTag> autoTags = new ArrayList<>(forumAutoTags);
         autoTags.add(new ForumAutoTag(forumChannelId, defaultTagName, reviewTagName));
         this.forumAutoTags = autoTags;
         return true;

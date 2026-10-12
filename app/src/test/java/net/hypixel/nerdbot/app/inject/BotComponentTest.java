@@ -12,6 +12,7 @@ import net.aerh.slashcommands.api.annotations.SlashModalHandler;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
+import net.hypixel.nerdbot.discord.cache.MessageCache;
 import net.hypixel.nerdbot.discord.testsupport.Fakes;
 import net.hypixel.nerdbot.marmalade.storage.database.Database;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.PunishmentRepository;
@@ -22,6 +23,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -59,8 +61,10 @@ class BotComponentTest {
     @Test
     void registersEveryEventListenerExactlyOnce() {
         Set<Class<?>> registered = component.eventListeners().stream().map(Object::getClass).collect(Collectors.toSet());
+        Set<Class<?>> expected = new HashSet<>(appClasses(type -> Arrays.stream(type.getDeclaredMethods()).anyMatch(method -> method.isAnnotationPresent(SubscribeEvent.class))));
+        expected.add(MessageCache.class);
 
-        assertEquals(appClasses(type -> Arrays.stream(type.getDeclaredMethods()).anyMatch(method -> method.isAnnotationPresent(SubscribeEvent.class))), registered);
+        assertEquals(expected, registered);
         assertEquals(registered.size(), component.eventListeners().size());
     }
 
@@ -109,5 +113,6 @@ class BotComponentTest {
         component.scheduler().shutdownNow();
         component.backgroundWorkPool().shutdownNow();
         component.imageRenderingPool().shutdownNow();
+        component.memberWorkPool().shutdownNow();
     }
 }

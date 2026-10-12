@@ -18,4 +18,11 @@ public class EmojiConfigUtils {
 
         return Objects.equals(reaction.getEmoji().asCustom().getId(), emojiIdSupplier.apply(config));
     }
+
+    /** Whether the reaction is an agree, disagree or neutral vote. */
+    public static boolean isVote(EmojiConfig config, MessageReaction reaction) {
+        return isReactionEquals(config, reaction, EmojiConfig::getAgreeEmojiId)
+            || isReactionEquals(config, reaction, EmojiConfig::getDisagreeEmojiId)
+            || isReactionEquals(config, reaction, EmojiConfig::getNeutralEmojiId);
+    }
 }

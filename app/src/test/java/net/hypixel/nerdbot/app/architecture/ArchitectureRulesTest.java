@@ -49,8 +49,9 @@ class ArchitectureRulesTest {
      * Code that gets what it needs through its constructor. Add to these as more of the bot moves
      * over; nothing in them may go back to looking things up through the global bot.
      */
-    private static final String[] INJECTED_PACKAGES = {"..app.inject..", "..app.profile..", "..app.punishment..", "..app.reminder.."};
+    private static final String[] INJECTED_PACKAGES = {"..app.inject..", "..app.listener..", "..app.profile..", "..app.punishment..", "..app.reminder.."};
     private static final String[] INJECTED_CLASSES = {
+        "net.hypixel.nerdbot.app.activity.ActivityListener",
         "net.hypixel.nerdbot.app.badge.BadgeCatalog",
         "net.hypixel.nerdbot.app.badge.BadgeService",
         "net.hypixel.nerdbot.app.badge.ConfiguredBadgeCatalog",
@@ -98,7 +99,8 @@ class ArchitectureRulesTest {
         "net.hypixel.nerdbot.app.suggestion.SuggestionAutoArchiver",
         "net.hypixel.nerdbot.app.suggestion.SuggestionCache",
         "net.hypixel.nerdbot.app.suggestion.SuggestionFactory",
-        "net.hypixel.nerdbot.app.user.BirthdayService"
+        "net.hypixel.nerdbot.app.user.BirthdayService",
+        "net.hypixel.nerdbot.app.user.MemberQueue"
     };
 
     @Test
