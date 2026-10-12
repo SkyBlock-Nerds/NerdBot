@@ -64,6 +64,11 @@ public class FakeDiscordUserStore implements DiscordUserStore {
     }
 
     @Override
+    public List<String> findAllIds() {
+        return List.copyOf(users.keySet());
+    }
+
+    @Override
     public Optional<DiscordUser> findById(String discordId) {
         if (throwingFinds.contains(discordId)) {
             throw new IllegalStateException("find failed");

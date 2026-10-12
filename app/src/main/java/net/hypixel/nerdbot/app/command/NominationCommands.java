@@ -10,9 +10,8 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.hypixel.nerdbot.app.command.util.CommandReplies;
-import net.hypixel.nerdbot.app.nomination.InactivitySweepReport;
-import net.hypixel.nerdbot.app.nomination.NominationSweepReport;
 import net.hypixel.nerdbot.app.nomination.NominationSweeps;
+import net.hypixel.nerdbot.app.nomination.SweepReport;
 import net.hypixel.nerdbot.app.storage.DiscordUserStore;
 import net.hypixel.nerdbot.marmalade.discord.EmbedFactory;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
@@ -20,15 +19,20 @@ import net.hypixel.nerdbot.marmalade.storage.database.model.user.stats.Nominatio
 
 import java.awt.Color;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /** Forcing the nomination and inactivity sweeps, and clearing inactivity warnings. */
 @Slf4j
 public class NominationCommands {
 
-    private static final String SWEEP_FAILED_MESSAGE = "The sweep failed. Check the logs for details.";
+    static final String SWEEP_FAILED_MESSAGE = "The sweep failed. Check the logs for details.";
+    static final String SWEEP_BUSY_MESSAGE = "Another sweep is still running. Try again once it's finished.";
+    // Discord allows an embed 25 fields
+    private static final int MAX_GROUP_FIELDS = 25;
 
     private final NominationSweeps sweeps;
     private final DiscordUserStore users;
@@ -47,9 +51,8 @@ public class NominationCommands {
     }
 
     CompletableFuture<Void> nominate(IReplyCallback event, boolean newMembersOnly) {
-        return runSweep(event, "run the nomination sweep", newMembersOnly
-            ? () -> nominationReport("Nomination Sweep Complete (New Member)", sweeps.nominateNewMembers())
-            : () -> nominationReport("Nomination Sweep Complete (Member)", sweeps.nominateMembers()));
+        return runSweep(event, "run the nomination sweep", newMembersOnly ? sweeps::nominateNewMembers : sweeps::nominateMembers,
+            report -> nominationReport("Nomination Sweep Complete (" + (newMembersOnly ? "New Member" : "Member") + ")", report));
     }
 
     @SlashCommand(name = "force", subcommand = "inactivity-check", description = "Forcefully run the inactivity check", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
@@ -58,9 +61,8 @@ public class NominationCommands {
     }
 
     CompletableFuture<Void> checkInactivity(IReplyCallback event, boolean newMembersOnly) {
-        return runSweep(event, "run the inactivity sweep", newMembersOnly
-            ? () -> inactivityReport("Inactivity Sweep Complete (New Member)", sweeps.checkNewMemberInactivity())
-            : () -> inactivityReport("Inactivity Sweep Complete (Member)", sweeps.checkMemberInactivity()));
+        return runSweep(event, "run the inactivity sweep", newMembersOnly ? sweeps::checkNewMemberInactivity : sweeps::checkMemberInactivity,
+            report -> inactivityReport("Inactivity Sweep Complete (" + (newMembersOnly ? "New Member" : "Member") + ")", report));
     }
 
     @SlashCommand(name = "force", subcommand = "restricted-inactivity-check", description = "Forcefully run the restricted inactivity check", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
@@ -69,9 +71,7 @@ public class NominationCommands {
     }
 
     CompletableFuture<Void> checkRestrictedInactivity(IReplyCallback event) {
-        InteractionHook hook = CommandReplies.deferPrivately(event);
-        return CommandReplies.finish(CompletableFuture.runAsync(sweeps::checkRestrictedChannelInactivity, backgroundWork), hook,
-            "run the restricted inactivity sweep", SWEEP_FAILED_MESSAGE, done -> hook.editOriginal("Forced restricted inactivity check!").queue());
+        return runSweep(event, "run the restricted inactivity sweep", sweeps::checkRestrictedChannelInactivity, NominationCommands::restrictedReport);
     }
 
     @SlashCommand(name = "reset-inactivity-check-data", description = "Reset the inactivity check data", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
@@ -109,35 +109,54 @@ public class NominationCommands {
         nominationInfo.setLastInactivityWarningTimestamp(null);
     }
 
-    private CompletableFuture<Void> runSweep(IReplyCallback event, String action, Supplier<MessageEmbed> sweep) {
+    private <T> CompletableFuture<Void> runSweep(IReplyCallback event, String action, Supplier<Optional<T>> sweep, Function<T, MessageEmbed> report) {
         InteractionHook hook = CommandReplies.deferPrivately(event);
         return CommandReplies.finish(CompletableFuture.supplyAsync(sweep, backgroundWork), hook, action, SWEEP_FAILED_MESSAGE,
-            report -> hook.editOriginalEmbeds(report).queue());
+            result -> result.ifPresentOrElse(
+                done -> hook.editOriginalEmbeds(report.apply(done)).queue(),
+                () -> hook.editOriginal(SWEEP_BUSY_MESSAGE).queue()));
     }
 
-    static MessageEmbed nominationReport(String title, NominationSweepReport report) {
+    static MessageEmbed nominationReport(String title, SweepReport report) {
         return EmbedFactory.success(title, null)
             .addField("Scanned", String.valueOf(report.scanned()), true)
-            .addField("Eligible", String.valueOf(report.eligible()), true)
-            .addField("Nominated", String.valueOf(report.nominated()), true)
-            .addField("Below Threshold", String.valueOf(report.belowThreshold()), true)
+            .addField("Eligible", String.valueOf(report.scanned() - report.ineligible() - report.missingMember()), true)
+            .addField("Nominated", String.valueOf(report.acted()), true)
+            .addField("Below Threshold", String.valueOf(report.notDue()), true)
             .addField("Already This Month", String.valueOf(report.alreadyThisMonth()), true)
             .addField("Ineligible", String.valueOf(report.ineligible()), true)
             .addField("Missing Member", String.valueOf(report.missingMember()), true)
+            .addField("Failed", String.valueOf(report.failed()), true)
             .addField("Duration", report.durationMs() + "ms", true)
             .build();
     }
 
-    static MessageEmbed inactivityReport(String title, InactivitySweepReport report) {
+    static MessageEmbed inactivityReport(String title, SweepReport report) {
         return new EmbedBuilder()
             .setTitle(title)
             .setColor(Color.ORANGE)
             .addField("Scanned", String.valueOf(report.scanned()), true)
-            .addField("Warned This Month", String.valueOf(report.warnedThisMonth()), true)
-            .addField("Skipped Already This Month", String.valueOf(report.skippedAlreadyThisMonth()), true)
+            .addField("Warned", String.valueOf(report.acted()), true)
+            .addField("Active", String.valueOf(report.notDue()), true)
+            .addField("Already Warned This Month", String.valueOf(report.alreadyThisMonth()), true)
             .addField("Ineligible", String.valueOf(report.ineligible()), true)
             .addField("Missing Member", String.valueOf(report.missingMember()), true)
+            .addField("Failed", String.valueOf(report.failed()), true)
             .addField("Duration", report.durationMs() + "ms", true)
             .build();
+    }
+
+    static MessageEmbed restrictedReport(List<SweepReport> reports) {
+        EmbedBuilder embed = new EmbedBuilder()
+            .setTitle("Restricted Inactivity Sweep Complete")
+            .setColor(Color.ORANGE);
+        if (reports.isEmpty()) {
+            return embed.setDescription("No restricted channel groups have inactivity warnings turned on.").build();
+        }
+
+        reports.stream().limit(MAX_GROUP_FIELDS).forEach(report -> embed.addField(report.label(), String.format(
+            "Warned: %d\nActive: %d\nAlready warned this month: %d\nFailed: %d",
+            report.acted(), report.notDue(), report.alreadyThisMonth(), report.failed()), true));
+        return embed.build();
     }
 }

@@ -1,15 +1,21 @@
 package net.hypixel.nerdbot.app.nomination;
 
-/** The nomination and inactivity sweeps moderators can force, behind an interface so the commands can be tested. */
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * The nomination and inactivity sweeps, run monthly and forced by moderators. Only one runs at a
+ * time; each returns empty when another one is already running.
+ */
 public interface NominationSweeps {
 
-    NominationSweepReport nominateMembers();
+    Optional<SweepReport> nominateMembers();
 
-    NominationSweepReport nominateNewMembers();
+    Optional<SweepReport> nominateNewMembers();
 
-    InactivitySweepReport checkMemberInactivity();
+    Optional<SweepReport> checkMemberInactivity();
 
-    InactivitySweepReport checkNewMemberInactivity();
+    Optional<SweepReport> checkNewMemberInactivity();
 
-    void checkRestrictedChannelInactivity();
+    Optional<List<SweepReport>> checkRestrictedChannelInactivity();
 }

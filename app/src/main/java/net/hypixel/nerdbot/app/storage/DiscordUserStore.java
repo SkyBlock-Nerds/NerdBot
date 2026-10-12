@@ -21,6 +21,9 @@ public interface DiscordUserStore {
     // Every stored user, including ones the cache has dropped after a day of inactivity
     List<DiscordUser> getAllFromDatabase();
 
+    // Read from the database without loading the documents, so it covers members the cache has dropped
+    List<String> findAllIds();
+
     Optional<DiscordUser> findById(String discordId);
 
     /**
