@@ -4,6 +4,7 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
@@ -81,7 +82,7 @@ public final class SuggestionFixtures {
         answers.put("getTimeCreated", created);
         ForumChannel forum = Fakes.of(ForumChannel.class, Map.of("getId", forumId, "getName", "forum " + forumId,
             "getAvailableTags", List.of(tag("Greenlit"), tag("Reviewed"))));
-        answers.put("getParentChannel", Fakes.of(IThreadContainerUnion.class, Map.of("getId", forumId, "asForumChannel", forum)));
+        answers.put("getParentChannel", Fakes.of(IThreadContainerUnion.class, Map.of("getId", forumId, "getType", ChannelType.FORUM, "asForumChannel", forum)));
         answers.put("getAppliedTags", tags);
         answers.put("getLatestMessageIdLong", 0L);
         answers.put("isArchived", archived);

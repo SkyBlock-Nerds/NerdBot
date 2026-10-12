@@ -26,6 +26,7 @@ public class FakeDiscordUserStore implements DiscordUserStore {
     private final List<String> cachedIds = new ArrayList<>();
     private final List<String> savedIds = new ArrayList<>();
     private final List<String> clearedDriveAccessIds = new ArrayList<>();
+    private final List<String> deletedIds = new ArrayList<>();
     private final Set<String> failingSaves = new HashSet<>();
     private final Set<String> throwingSaves = new HashSet<>();
     private final Set<String> throwingFinds = new HashSet<>();
@@ -96,6 +97,17 @@ public class FakeDiscordUserStore implements DiscordUserStore {
         savedIds.add(user.getDiscordId());
         persistedAnnouncedYears.put(user.getDiscordId(), announcedYearOf(user));
         return CompletableFuture.completedFuture(null);
+    }
+
+    @Override
+    public CompletableFuture<Void> delete(String discordId) {
+        users.remove(discordId);
+        deletedIds.add(discordId);
+        return CompletableFuture.completedFuture(null);
+    }
+
+    public List<String> deletedIds() {
+        return List.copyOf(deletedIds);
     }
 
     @Override

@@ -4,15 +4,16 @@ import dagger.Binds;
 import dagger.Module;
 import dagger.multibindings.IntoSet;
 import net.hypixel.nerdbot.app.activity.ActivityListener;
-import net.hypixel.nerdbot.app.listener.DrivePermissionListener;
 import net.hypixel.nerdbot.app.listener.FunListener;
+import net.hypixel.nerdbot.app.listener.MemberLifecycleListener;
+import net.hypixel.nerdbot.app.listener.MemberRolesListener;
 import net.hypixel.nerdbot.app.listener.MetricsListener;
 import net.hypixel.nerdbot.app.listener.ModLogListener;
 import net.hypixel.nerdbot.app.listener.PinListener;
 import net.hypixel.nerdbot.app.listener.ReactionChannelListener;
 import net.hypixel.nerdbot.app.listener.RoleRestrictedChannelListener;
-import net.hypixel.nerdbot.app.listener.RoleSyncListener;
 import net.hypixel.nerdbot.app.listener.SuggestionListener;
+import net.hypixel.nerdbot.discord.cache.MessageCache;
 
 /** Every JDA event listener the bot registers. */
 @Module
@@ -61,10 +62,15 @@ public interface ListenersModule {
     @Binds
     @IntoSet
     @EventListeners
-    Object roleSyncListener(RoleSyncListener listener);
+    Object memberLifecycleListener(MemberLifecycleListener listener);
 
     @Binds
     @IntoSet
     @EventListeners
-    Object drivePermissionListener(DrivePermissionListener listener);
+    Object memberRolesListener(MemberRolesListener listener);
+
+    @Binds
+    @IntoSet
+    @EventListeners
+    Object messageCache(MessageCache cache);
 }

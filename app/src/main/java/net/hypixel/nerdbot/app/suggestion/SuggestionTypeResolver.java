@@ -1,16 +1,18 @@
 package net.hypixel.nerdbot.app.suggestion;
 
+import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.StandardGuildChannel;
+import net.dv8tion.jda.api.entities.channel.unions.IThreadContainerUnion;
 import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import net.hypixel.nerdbot.app.config.AlphaProjectConfig;
 import net.hypixel.nerdbot.app.config.NerdBotConfig;
-import net.hypixel.nerdbot.app.config.SuggestionConfig;
 import net.hypixel.nerdbot.marmalade.collections.ArrayUtils;
 
 import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * Resolves which kind of suggestion channel (normal / alpha / project) a thread, forum, or channel
@@ -27,7 +29,10 @@ public final class SuggestionTypeResolver {
     }
 
     public static Suggestion.ChannelType getThreadSuggestionType(ThreadChannel threadChannel, NerdBotConfig config) {
-        return getForumSuggestionType(threadChannel.getParentChannel().asForumChannel(), config);
+        IThreadContainerUnion parent = threadChannel.getParentChannel();
+        return parent.getType() == ChannelType.FORUM
+            ? getForumSuggestionType(parent.asForumChannel(), config)
+            : getChannelSuggestionTypeFromName(parent.getName(), config);
     }
 
     public static Suggestion.ChannelType getForumSuggestionType(ForumChannel forumChannel) {
@@ -35,16 +40,9 @@ public final class SuggestionTypeResolver {
     }
 
     public static Suggestion.ChannelType getForumSuggestionType(ForumChannel forumChannel, NerdBotConfig config) {
-        SuggestionConfig suggestionConfig = config.getSuggestionConfig();
-        AlphaProjectConfig alphaProjectConfig = config.getAlphaProjectConfig();
-        String parentChannelId = forumChannel.getId();
-
-        if (ArrayUtils.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(parentChannelId::equalsIgnoreCase)) {
-            return Suggestion.ChannelType.ALPHA;
-        } else if (ArrayUtils.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(parentChannelId::equalsIgnoreCase)) {
-            return Suggestion.ChannelType.PROJECT;
-        } else if (parentChannelId.equals(suggestionConfig.getForumChannelId())) {
-            return Suggestion.ChannelType.NORMAL;
+        Optional<Suggestion.ChannelType> configured = getConfiguredForumType(forumChannel.getId(), config);
+        if (configured.isPresent()) {
+            return configured.get();
         }
 
         Category parentCategory = forumChannel.getParentCategory();
@@ -61,6 +59,21 @@ public final class SuggestionTypeResolver {
         }
 
         return Suggestion.ChannelType.UNKNOWN;
+    }
+
+    /** The type of a forum named in the config, without the guessing from names the other lookups fall back to. */
+    public static Optional<Suggestion.ChannelType> getConfiguredForumType(String forumId, NerdBotConfig config) {
+        AlphaProjectConfig alphaProjectConfig = config.getAlphaProjectConfig();
+
+        if (ArrayUtils.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(forumId::equals)) {
+            return Optional.of(Suggestion.ChannelType.ALPHA);
+        } else if (ArrayUtils.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(forumId::equals)) {
+            return Optional.of(Suggestion.ChannelType.PROJECT);
+        } else if (forumId.equals(config.getSuggestionConfig().getForumChannelId())) {
+            return Optional.of(Suggestion.ChannelType.NORMAL);
+        }
+
+        return Optional.empty();
     }
 
     public static Suggestion.ChannelType getChannelSuggestionType(StandardGuildChannel channel) {

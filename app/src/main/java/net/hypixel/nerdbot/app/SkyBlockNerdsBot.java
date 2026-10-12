@@ -29,7 +29,6 @@ import net.hypixel.nerdbot.app.sentry.SentryManager;
 import net.hypixel.nerdbot.app.suggestion.SuggestionCache;
 import net.hypixel.nerdbot.discord.AbstractDiscordBot;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
-import net.hypixel.nerdbot.discord.cache.MessageCache;
 import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
@@ -39,12 +38,15 @@ import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
 import java.time.Clock;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -54,7 +56,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class SkyBlockNerdsBot extends AbstractDiscordBot implements BotState {
 
-    private MessageCache messageCache;
+    private static final Duration MEMBER_WORK_GRACE = Duration.ofSeconds(10);
 
     /**
      * Constructed eagerly (dependency-free) so it is never null on the interaction threads that
@@ -68,14 +70,6 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot implements BotState {
 
     /** Null when no pack opts into auto-update or the cache directory is unusable. */
     private volatile PackUpdater packUpdater;
-
-
-    /**
-     * Static helper to get the MessageCache from the current bot instance.
-     */
-    public static MessageCache messageCache() {
-        return ((SkyBlockNerdsBot) DiscordBotEnvironment.getBot()).messageCache;
-    }
 
     /**
      * Static helper for the Drive permission service. Empty whenever the feature
@@ -191,7 +185,6 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot implements BotState {
 
         component = DaggerBotComponent.factory().create(jda, getDatabase(), this, resourcePackService);
 
-        messageCache = new MessageCache();
         component.suggestionCache().start();
 
         NerdBotConfig config = getConfig();
@@ -232,8 +225,10 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot implements BotState {
             log.error("Glyph override data failed validation; /gen parse will reject NBT input until the data is fixed", e);
         }
 
-        // Update forum IDs for alpha/project channels
-        AlphaProjectConfigUpdater.updateForumIds(config, true, true, jda.getForumChannels());
+        jda.getGuilds().stream()
+            .filter(guild -> guild.getId().equals(config.getGuildId()))
+            .findFirst()
+            .ifPresent(guild -> AlphaProjectConfigUpdater.updateForumIds(config, guild.getForumChannels()));
 
         // Load badges
         if (config.getBadgeConfig().getBadges() != null) {
@@ -275,12 +270,27 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot implements BotState {
     @Override
     protected void onShutdown() {
         if (component != null) {
+            // JDA has stopped, so nothing new is queued; let members' pending changes land before the final save
+            drain(component.memberWorkPool(), MEMBER_WORK_GRACE);
             component.scheduler().shutdownNow();
             component.backgroundWorkPool().shutdownNow();
             component.imageRenderingPool().shutdownNow();
         }
         PrometheusMetrics.setMetricsEnabled(false);
         SentryManager.close();
+    }
+
+    private static void drain(ExecutorService pool, Duration grace) {
+        pool.shutdown();
+        try {
+            if (!pool.awaitTermination(grace.toMillis(), TimeUnit.MILLISECONDS)) {
+                log.warn("Member updates were still running after {} seconds, stopping them", grace.toSeconds());
+                pool.shutdownNow();
+            }
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            pool.shutdownNow();
+        }
     }
 
     private void restoreReminders() {

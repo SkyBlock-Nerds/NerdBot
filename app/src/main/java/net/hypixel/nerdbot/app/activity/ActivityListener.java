@@ -1,406 +1,284 @@
 package net.hypixel.nerdbot.app.activity;
 
 import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import lombok.extern.slf4j.Slf4j;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.entities.GuildVoiceState;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
-import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
-import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
-import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
-import net.dv8tion.jda.api.entities.channel.unions.GuildMessageChannelUnion;
-import net.dv8tion.jda.api.entities.emoji.Emoji;
+import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
 import net.dv8tion.jda.api.events.channel.ChannelCreateEvent;
-import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
-import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
-import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
+import net.hypixel.nerdbot.app.config.NerdBotConfig;
+import net.hypixel.nerdbot.app.listener.GuildScope;
 import net.hypixel.nerdbot.app.metrics.PrometheusMetrics;
-import net.hypixel.nerdbot.marmalade.collections.ArrayUtils;
-import net.hypixel.nerdbot.discord.BotEnvironment;
 import net.hypixel.nerdbot.app.suggestion.Suggestion;
 import net.hypixel.nerdbot.app.suggestion.SuggestionTypeResolver;
-import net.hypixel.nerdbot.discord.config.EmojiConfig;
-import net.hypixel.nerdbot.app.config.AlphaProjectConfig;
+import net.hypixel.nerdbot.app.user.MemberQueue;
 import net.hypixel.nerdbot.discord.config.objects.RoleRestrictedChannelGroup;
-import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
-import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.EmojiConfigUtils;
-import org.jetbrains.annotations.NotNull;
+import net.hypixel.nerdbot.marmalade.collections.ArrayUtils;
+import net.hypixel.nerdbot.marmalade.storage.database.model.user.stats.LastActivity;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.time.Clock;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
+/**
+ * Records the messages, suggestions, votes and voice time the nomination and inactivity sweeps
+ * judge members on. Each change goes through the member's queue, so it can't race their other
+ * updates.
+ */
 @Slf4j
 public class ActivityListener {
-    private final Map<Long, Long> voiceActivity = new HashMap<>();
+
+    private static final CompletableFuture<Void> NOTHING_RECORDED = CompletableFuture.completedFuture(null);
+
+    private final GuildScope guildScope;
+    private final MemberQueue queue;
+    private final Provider<NerdBotConfig> config;
+    private final Clock clock;
+    // When each member joined the voice channel they're in, in epoch millis
+    private final Map<String, Long> voiceSessions = new ConcurrentHashMap<>();
 
     @Inject
-    public ActivityListener() {
+    public ActivityListener(GuildScope guildScope, MemberQueue queue, Provider<NerdBotConfig> config, Clock clock, JDA jda) {
+        this.guildScope = guildScope;
+        this.queue = queue;
+        this.config = config;
+        this.clock = clock;
+        startSessionsForConnectedMembers(jda);
     }
 
-    @SubscribeEvent
-    public void onGuildMemberJoin(GuildMemberJoinEvent event) {
-        DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-
-        if (event.getUser().isBot()) {
-            return;
-        }
-
-        log.info("User {} (ID: {}) joined {} (ID: {})", event.getUser().getName(), event.getUser().getId(), event.getGuild().getName(), event.getGuild().getId());
-
-        discordUserRepository.findByIdAsync(event.getUser().getId())
-            .thenAccept(user -> {
-                if (user == null) {
-                    DiscordUser newUser = new DiscordUser(event.getUser().getId());
-                    discordUserRepository.cacheObject(newUser);
-                    log.info("Creating and caching new DiscordUser for user {} ({})", event.getUser().getName(), event.getUser().getId());
-                }
-            });
-    }
-
-    @SubscribeEvent
-    public void onGuildMemberLeave(GuildMemberRemoveEvent event) {
-        DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-
-        log.info("User {} (ID: {}) left {} (ID: {})", event.getUser().getName(), event.getUser().getId(), event.getGuild().getName(), event.getGuild().getId());
-
-        discordUserRepository.deleteFromDatabaseAsync(event.getUser().getId())
-            .thenAccept(result -> {
-                if (result.getDeletedCount() == 0) {
-                    log.warn("Failed to delete user {} ({}) from the database!", event.getUser().getName(), event.getUser().getId());
-                }
-            });
-    }
-
-    @SubscribeEvent
-    public void onChannelCreate(@NotNull ChannelCreateEvent event) {
-        if (event.getChannelType() == net.dv8tion.jda.api.entities.channel.ChannelType.GUILD_PUBLIC_THREAD) {
-            Member member = event.getChannel().asThreadChannel().getOwner();
-            if (member == null || member.getUser().isBot()) {
-                return; // Ignore Empty Member
-            }
-
-            DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-
-            discordUserRepository.findByIdAsync(member.getId())
-                .thenAccept(discordUser -> {
-                    if (discordUser == null) {
-                        return; // Ignore Empty User
-                    }
-
-                    String forumChannelId = event.getChannel().asThreadChannel().getParentChannel().getId();
-                    long time = System.currentTimeMillis();
-
-                    // New Suggestion
-                    if (forumChannelId.equals(SkyBlockNerdsBot.config().getSuggestionConfig().getForumChannelId())) {
-                        discordUser.getLastActivity().getSuggestionCreationHistory().add(0, time);
-                        log.debug("Updating new suggestion activity date for {} (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
-                    }
-
-                    // New Alpha Suggestion
-                    AlphaProjectConfig alphaProjectConfig = SkyBlockNerdsBot.config().getAlphaProjectConfig();
-                    if (ArrayUtils.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
-                        discordUser.getLastActivity().getAlphaSuggestionCreationHistory().add(0, time);
-                        discordUser.getLastActivity().setLastAlphaActivity(time);
-                        log.debug("Updating new alpha suggestion activity date for {} (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
-                    }
-
-                    // New Project Suggestion
-                    if (ArrayUtils.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
-                        discordUser.getLastActivity().getProjectSuggestionCreationHistory().add(0, time);
-                        discordUser.getLastActivity().setLastProjectActivity(time);
-                        log.debug("Updating new project suggestion activity date for {} (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
-                    }
-                });
-        }
+    // Listeners register once the bot is ready, so members already in voice never send a join event
+    private void startSessionsForConnectedMembers(JDA jda) {
+        long now = clock.millis();
+        jda.getGuilds().stream()
+            .filter(guildScope::isMainGuild)
+            .flatMap(guild -> guild.getVoiceStates().stream())
+            .filter(GuildVoiceState::inAudioChannel)
+            .map(GuildVoiceState::getMember)
+            .filter(member -> !member.getUser().isBot())
+            .forEach(member -> voiceSessions.put(member.getId(), now));
     }
 
     @SubscribeEvent
     public void onMessageReceived(MessageReceivedEvent event) {
-        if (!event.isFromGuild()) {
-            return; // Ignore Non Guild
-        }
-
         Member member = event.getMember();
-        if (member == null || member.getUser().isBot()) {
-            return; // Ignore Empty Member
-        }
-
-        DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-
-        discordUserRepository.findByIdAsync(member.getId())
-            .thenAccept(discordUser -> {
-                if (discordUser == null) {
-                    return; // Ignore Empty User
-                }
-
-                processMessageActivity(event, member, discordUser);
-            });
-    }
-
-    private void processMessageActivity(MessageReceivedEvent event, Member member, DiscordUser discordUser) {
-        GuildMessageChannelUnion guildChannel = event.getGuildChannel();
-        // Ignore channel if blacklisted for activity tracking
-        if (Arrays.stream(DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getBlacklistedChannels()).anyMatch(guildChannel.getId()::equalsIgnoreCase)) {
+        if (!event.isFromGuild() || !guildScope.isMainGuild(event.getGuild()) || event.isWebhookMessage()
+            || member == null || member.getUser().isBot()) {
             return;
         }
 
-        long time = System.currentTimeMillis();
-        Suggestion.ChannelType channelType;
-
-        if (guildChannel instanceof ThreadChannel threadChannel) {
-            channelType = SuggestionTypeResolver.getThreadSuggestionType(threadChannel);
-        } else if (guildChannel instanceof TextChannel) {
-            channelType = SuggestionTypeResolver.getChannelSuggestionType(guildChannel.asTextChannel());
-        } else {
-            channelType = SuggestionTypeResolver.getChannelSuggestionTypeFromName(guildChannel.getName());
-        }
-
-        Optional<RoleRestrictedChannelGroup> matchingGroup = findMatchingRoleRestrictedGroup(guildChannel.getId(), member);
-        if (matchingGroup.isPresent()) {
-            String groupIdentifier = matchingGroup.get().getIdentifier();
-
-            // Handle thread comments in role-restricted channels
-            if (guildChannel instanceof ThreadChannel && event.getChannel().getIdLong() != event.getMessage().getIdLong()) {
-                discordUser.getLastActivity().addRoleRestrictedChannelComment(groupIdentifier, time);
-                log.debug("Updating role-restricted channel group '{}' comment activity for {} (ID: {}) to {}",
-                    groupIdentifier, member.getEffectiveName(), member.getId(), time);
-            }
-
-            // Handle regular messages in role-restricted channels
-            GuildChannel targetChannel = guildChannel instanceof ThreadChannel threadChannel
-                ? threadChannel.getParentChannel()
-                : guildChannel;
-
-            discordUser.getLastActivity().addRoleRestrictedChannelActivity(groupIdentifier, targetChannel.getId(), targetChannel.getName(), 1, time);
-            log.debug("Updating role-restricted channel group '{}' message activity for {} (ID: {}) to {}",
-                groupIdentifier, member.getEffectiveName(), member.getId(), time);
-        }
-
-        // New Suggestion Comments
-        if (guildChannel instanceof ThreadChannel && event.getChannel().getIdLong() != event.getMessage().getIdLong()) {
-            ForumChannel forumChannel = guildChannel.asThreadChannel().getParentChannel().asForumChannel();
-            channelType = SuggestionTypeResolver.getForumSuggestionType(forumChannel);
-
-            // New Suggestion Comments
-            if (channelType == Suggestion.ChannelType.NORMAL) {
-                discordUser.getLastActivity().getSuggestionCommentHistory().add(0, time);
-                log.debug("Updating suggestion comment activity date for {} (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
-            }
-
-            // New Alpha Suggestion Comments
-            if (channelType == Suggestion.ChannelType.ALPHA) {
-                discordUser.getLastActivity().getAlphaSuggestionCommentHistory().add(0, time);
-                log.debug("Updating alpha suggestion comment activity and last alpha activity date for {} (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
-            }
-
-            // New Project Suggestion Comments
-            if (channelType == Suggestion.ChannelType.PROJECT) {
-                discordUser.getLastActivity().getProjectSuggestionCommentHistory().add(0, time);
-                log.debug("Updating project suggestion comment activity and last project activity date for {} (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
-            }
-        }
-
-        // Alpha/Project-specific Messages
-        if (channelType == Suggestion.ChannelType.ALPHA) {
-            discordUser.getLastActivity().setLastAlphaActivity(time);
-            log.debug("Updating last alpha activity date for {} (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
-        } else if (channelType == Suggestion.ChannelType.PROJECT) {
-            discordUser.getLastActivity().setLastProjectActivity(time);
-            log.debug("Updating last project activity date for {} (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
-        }
-
-        // Global Messages
-        log.debug("Updating last global activity date for {} (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
-        discordUser.getLastActivity().setLastGlobalActivity(time);
-
-        // Update Channel Message History (only if not already tracked in role-restricted channels)
-        if (matchingGroup.isEmpty()) {
-            if (!(guildChannel instanceof ThreadChannel threadChannel)) {
-                log.debug("Updating channel message history for {} (ID: {}) in channel '{}' (ID: {})", member.getEffectiveName(), member.getId(), guildChannel.getName(), guildChannel.getId());
-                discordUser.getLastActivity().addChannelHistory(guildChannel.getId(), guildChannel.getName(), time);
-            } else {
-                GuildChannel parentChannel = threadChannel.getParentChannel();
-                log.debug("Updating channel message history for {} (ID: {}) in thread '{}' (Parent Channel Name: {}, Parent Channel ID: {}, Thread Channel ID: {})", member.getEffectiveName(), member.getId(), threadChannel.getName(), parentChannel.getName(), parentChannel.getId(), threadChannel.getId());
-                discordUser.getLastActivity().addChannelHistory(parentChannel.getId(), parentChannel.getName(), time);
-            }
-        }
-    }
-
-    @SubscribeEvent
-    public void onVoiceChannelUpdate(GuildVoiceUpdateEvent event) {
-        Member member = event.getMember();
-
-        if (member.getUser().isBot()) {
-            return; // Ignore Bots
-        }
-
-        DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-
-        discordUserRepository.findByIdAsync(member.getId())
-            .thenAccept(discordUser -> {
-                if (discordUser == null) {
-                    return; // Ignore Empty User
-                }
-
-                processVoiceActivity(event, member, discordUser);
-            });
-    }
-
-    private void processVoiceActivity(GuildVoiceUpdateEvent event, Member member, DiscordUser discordUser) {
-        long time = System.currentTimeMillis();
-
-        if (this.voiceActivity.containsKey(member.getIdLong())) {
-            AudioChannelUnion channelLeft = event.getChannelLeft();
-
-            if (channelLeft != null) {
-                long timeSpent = time - this.voiceActivity.get(member.getIdLong());
-
-                PrometheusMetrics.VOICE_TIME_SECONDS.labels(channelLeft.getName()).inc(TimeUnit.MILLISECONDS.toSeconds(timeSpent));
-
-                if ((timeSpent / 1_000L) > SkyBlockNerdsBot.config().getVoiceThreshold()) {
-                    Suggestion.ChannelType channelType = SuggestionTypeResolver.getChannelSuggestionType(channelLeft.asVoiceChannel());
-
-                    if (channelType == Suggestion.ChannelType.ALPHA) {
-                        discordUser.getLastActivity().setAlphaVoiceJoinDate(time);
-                        log.debug("Updating last alpha voice activity for {} (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
-                    } else if (channelType == Suggestion.ChannelType.PROJECT) {
-                        discordUser.getLastActivity().setProjectVoiceJoinDate(time);
-                        log.debug("Updating last project voice activity for {} (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
-                    } else {
-                        discordUser.getLastActivity().setLastVoiceChannelJoinDate(time);
-                        log.debug("Updating last global voice activity for {} (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
-                    }
-
-                    // Check if voice channel belongs to a role-restricted group
-                    Optional<RoleRestrictedChannelGroup> matchingGroup = findMatchingRoleRestrictedGroup(channelLeft.getId(), member);
-                    if (matchingGroup.isPresent()) {
-                        String groupIdentifier = matchingGroup.get().getIdentifier();
-                        discordUser.getLastActivity().getRoleRestrictedChannelLastActivity().put(groupIdentifier, time);
-                        log.debug("Updating role-restricted channel group '{}' voice activity for {} (ID: {}) to {}",
-                            groupIdentifier, member.getEffectiveName(), member.getId(), time);
-                    }
-                }
-            }
-
-            this.voiceActivity.remove(member.getIdLong());
-        }
-
-        if (event.getChannelJoined() != null) {
-            this.voiceActivity.put(member.getIdLong(), time);
-            PrometheusMetrics.VOICE_CONNECTIONS.labels(event.getChannelJoined().getName()).inc();
-        }
-    }
-
-    @SubscribeEvent
-    public void onActivityReactionAdd(MessageReactionAddEvent event) {
-        if (!event.isFromGuild() || event.getReaction().getEmoji().getType() != Emoji.Type.CUSTOM) {
-            return; // Ignore non-guild and native emojis
-        }
-
-        Member member = event.getMember();
-        if (member == null || member.getUser().isBot()) {
-            return; // Ignore Empty Member
-        }
-
-        DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-
-        discordUserRepository.findByIdAsync(member.getId())
-            .thenAccept(discordUser -> {
-                if (discordUser == null) {
-                    return; // Ignore Empty User
-                }
-
-                processReactionActivity(event, member, discordUser);
-            });
-    }
-
-    private void processReactionActivity(MessageReactionAddEvent event, Member member, DiscordUser discordUser) {
-        if (event.getChannelType() != net.dv8tion.jda.api.entities.channel.ChannelType.GUILD_PUBLIC_THREAD) {
-            return; // Not A Thread
-        }
-
-        if (!event.getMessageId().equals(event.getChannel().getId())) {
-            return; // Not Original Message
-        }
-
-        EmojiConfig emojiConfig = DiscordBotEnvironment.getBot().getConfig().getEmojiConfig();
-
-        if (EmojiConfigUtils.isReactionEquals(emojiConfig, event.getReaction(), EmojiConfig::getAgreeEmojiId)
-            || EmojiConfigUtils.isReactionEquals(emojiConfig, event.getReaction(), EmojiConfig::getDisagreeEmojiId)
-            || EmojiConfigUtils.isReactionEquals(emojiConfig, event.getReaction(), EmojiConfig::getNeutralEmojiId)) {
-
-            ThreadChannel threadChannel = event.getChannel().asThreadChannel();
-            String forumChannelId = threadChannel.getParentChannel().getId();
-            long time = System.currentTimeMillis();
-
-            // Check role-restricted channel groups for voting
-            Optional<RoleRestrictedChannelGroup> matchingGroup = findMatchingRoleRestrictedGroup(forumChannelId, member);
-            if (matchingGroup.isPresent()) {
-                String groupIdentifier = matchingGroup.get().getIdentifier();
-                discordUser.getLastActivity().addRoleRestrictedChannelVote(groupIdentifier, threadChannel.getId(), time);
-                log.debug("Updating role-restricted channel group '{}' voting activity for {} (ID: {}) to {}",
-                    groupIdentifier, member.getEffectiveName(), member.getId(), time);
-            }
-
-            // New Suggestion Voting
-            if (forumChannelId.equals(SkyBlockNerdsBot.config().getSuggestionConfig().getForumChannelId())) {
-                discordUser.getLastActivity().getSuggestionVoteHistoryMap().putIfAbsent(threadChannel.getId(), time);
-                SkyBlockNerdsBot.suggestionCache().requestUpdate(threadChannel);
-                log.debug("Updating suggestion voting activity date for {} (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
-            }
-
-            // New Alpha Suggestion Voting
-            AlphaProjectConfig alphaProjectConfig = SkyBlockNerdsBot.config().getAlphaProjectConfig();
-            if (ArrayUtils.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
-                discordUser.getLastActivity().getAlphaSuggestionVoteHistoryMap().putIfAbsent(threadChannel.getId(), time);
-                SkyBlockNerdsBot.suggestionCache().requestUpdate(threadChannel);
-                log.debug("Updating alpha suggestion voting activity date for {} (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
-            }
-
-            // New Project Suggestion Voting
-            if (ArrayUtils.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(forumChannelId::equalsIgnoreCase)) {
-                discordUser.getLastActivity().getProjectSuggestionVoteHistoryMap().putIfAbsent(threadChannel.getId(), time);
-                SkyBlockNerdsBot.suggestionCache().requestUpdate(threadChannel);
-                log.debug("Updating project suggestion voting activity date for {} (ID: {}) to {}", member.getEffectiveName(), member.getId(), time);
-            }
-        }
+        boolean threadStarter = event.getMessageIdLong() == event.getChannel().getIdLong();
+        recordMessage(member, event.getGuildChannel(), threadStarter);
     }
 
     /**
-     * Find a matching role-restricted channel group for the given channel and member
+     * @param threadStarter whether this is the message a thread was started from, which isn't a
+     *                      comment on it
      */
-    private Optional<RoleRestrictedChannelGroup> findMatchingRoleRestrictedGroup(String channelId, Member member) {
-        List<RoleRestrictedChannelGroup> groups = DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getRoleRestrictedChannelGroups();
+    CompletableFuture<Void> recordMessage(Member member, GuildMessageChannel channel, boolean threadStarter) {
+        NerdBotConfig current = config.get();
+        GuildChannel home = channel instanceof ThreadChannel thread ? thread.getParentChannel() : channel;
+        String[] blacklist = current.getChannelConfig().getBlacklistedChannels();
+        if (ArrayUtils.safeArrayStream(blacklist).anyMatch(id -> id.equals(channel.getId()) || id.equals(home.getId()))) {
+            return NOTHING_RECORDED;
+        }
 
-        for (RoleRestrictedChannelGroup group : groups) {
-            boolean channelMatches = Arrays.stream(group.getChannelIds())
-                .anyMatch(groupChannelId -> groupChannelId.equalsIgnoreCase(channelId));
+        Suggestion.ChannelType type = channel instanceof ThreadChannel thread
+            ? SuggestionTypeResolver.getThreadSuggestionType(thread, current)
+            : SuggestionTypeResolver.getChannelSuggestionTypeFromName(channel.getName(), current);
+        boolean comment = channel instanceof ThreadChannel && !threadStarter;
+        boolean forumComment = comment && home.getType() == ChannelType.FORUM;
+        Optional<String> group = restrictedGroup(home.getId(), member, current);
+        String homeId = home.getId();
+        String homeName = home.getName();
+        long time = clock.millis();
 
-            if (!channelMatches) {
-                continue;
+        return queue.withRecord(member.getId(), "message activity", user -> {
+            LastActivity activity = user.getLastActivity();
+
+            if (forumComment) {
+                switch (type) {
+                    case NORMAL -> activity.getSuggestionCommentHistory().add(0, time);
+                    case ALPHA -> activity.getAlphaSuggestionCommentHistory().add(0, time);
+                    case PROJECT -> activity.getProjectSuggestionCommentHistory().add(0, time);
+                    default -> {
+                    }
+                }
             }
 
-            boolean hasRequiredRole = Arrays.stream(group.getRequiredRoleIds())
-                .anyMatch(roleId -> member.getRoles().stream()
-                    .map(Role::getId)
-                    .anyMatch(memberRoleId -> memberRoleId.equalsIgnoreCase(roleId)));
+            if (type == Suggestion.ChannelType.ALPHA) {
+                activity.setLastAlphaActivity(time);
+            } else if (type == Suggestion.ChannelType.PROJECT) {
+                activity.setLastProjectActivity(time);
+            }
 
-            if (hasRequiredRole) {
-                return Optional.of(group);
+            activity.setLastGlobalActivity(time);
+
+            group.ifPresentOrElse(identifier -> {
+                if (comment) {
+                    activity.addRoleRestrictedChannelComment(identifier, time);
+                }
+                activity.addRoleRestrictedChannelActivity(identifier, homeId, homeName, 1, time);
+            }, () -> activity.addChannelHistory(homeId, homeName, time));
+
+            log.debug("Recorded a {} message from {} in {} ({})", type, member.getId(), homeName, homeId);
+        });
+    }
+
+    @SubscribeEvent
+    public void onChannelCreate(ChannelCreateEvent event) {
+        if (event.getChannelType() != ChannelType.GUILD_PUBLIC_THREAD || !guildScope.isMainGuild(event.getGuild())) {
+            return;
+        }
+
+        ThreadChannel thread = event.getChannel().asThreadChannel();
+        Member owner = thread.getOwner();
+        boolean ownedByBot = owner != null ? owner.getUser().isBot() : thread.getOwnerIdLong() == thread.getJDA().getSelfUser().getIdLong();
+        if (!ownedByBot) {
+            recordSuggestionCreated(thread.getOwnerId(), thread);
+        }
+    }
+
+    CompletableFuture<Void> recordSuggestionCreated(String ownerId, ThreadChannel thread) {
+        Optional<Suggestion.ChannelType> type = SuggestionTypeResolver.getConfiguredForumType(thread.getParentChannel().getId(), config.get());
+        if (type.isEmpty()) {
+            return NOTHING_RECORDED;
+        }
+
+        long time = clock.millis();
+        return queue.withRecord(ownerId, "new suggestion", user -> {
+            LastActivity activity = user.getLastActivity();
+            switch (type.get()) {
+                case NORMAL -> activity.getSuggestionCreationHistory().add(0, time);
+                case ALPHA -> {
+                    activity.getAlphaSuggestionCreationHistory().add(0, time);
+                    activity.setLastAlphaActivity(time);
+                }
+                case PROJECT -> {
+                    activity.getProjectSuggestionCreationHistory().add(0, time);
+                    activity.setLastProjectActivity(time);
+                }
+                default -> {
+                }
+            }
+            log.debug("Recorded a {} suggestion from {}", type.get(), ownerId);
+        });
+    }
+
+    @SubscribeEvent
+    public void onReactionAdd(MessageReactionAddEvent event) {
+        Member member = event.getMember();
+        if (!event.isFromGuild() || !guildScope.isMainGuild(event.getGuild()) || member == null || member.getUser().isBot()) {
+            return;
+        }
+
+        boolean onSuggestionPost = event.getChannelType() == ChannelType.GUILD_PUBLIC_THREAD
+            && event.getMessageId().equals(event.getChannel().getId());
+        if (onSuggestionPost && EmojiConfigUtils.isVote(config.get().getEmojiConfig(), event.getReaction())) {
+            recordVote(member, event.getChannel().asThreadChannel());
+        }
+    }
+
+    CompletableFuture<Void> recordVote(Member member, ThreadChannel thread) {
+        NerdBotConfig current = config.get();
+        String forumId = thread.getParentChannel().getId();
+        Optional<String> group = restrictedGroup(forumId, member, current);
+        Optional<Suggestion.ChannelType> type = SuggestionTypeResolver.getConfiguredForumType(forumId, current);
+        if (group.isEmpty() && type.isEmpty()) {
+            return NOTHING_RECORDED;
+        }
+
+        String threadId = thread.getId();
+        long time = clock.millis();
+        return queue.withRecord(member.getId(), "vote", user -> {
+            LastActivity activity = user.getLastActivity();
+            group.ifPresent(identifier -> activity.addRoleRestrictedChannelVote(identifier, threadId, time));
+            type.ifPresent(kind -> {
+                switch (kind) {
+                    case NORMAL -> activity.getSuggestionVoteHistoryMap().putIfAbsent(threadId, time);
+                    case ALPHA -> activity.getAlphaSuggestionVoteHistoryMap().putIfAbsent(threadId, time);
+                    case PROJECT -> activity.getProjectSuggestionVoteHistoryMap().putIfAbsent(threadId, time);
+                    default -> {
+                    }
+                }
+            });
+            log.debug("Recorded a vote from {} on {}", member.getId(), threadId);
+        });
+    }
+
+    @SubscribeEvent
+    public void onVoiceUpdate(GuildVoiceUpdateEvent event) {
+        if (guildScope.isMainGuild(event.getGuild()) && !event.getMember().getUser().isBot()) {
+            recordVoiceUpdate(event.getMember(), event.getChannelLeft(), event.getChannelJoined());
+        }
+    }
+
+    /** Moving between channels is a leave and a join. */
+    CompletableFuture<Void> recordVoiceUpdate(Member member, @Nullable AudioChannel left, @Nullable AudioChannel joined) {
+        long time = clock.millis();
+        CompletableFuture<Void> recorded = NOTHING_RECORDED;
+
+        if (left != null) {
+            Long joinedAt = voiceSessions.remove(member.getId());
+            if (joinedAt != null) {
+                recorded = recordVoiceSession(member, left, time - joinedAt, time);
             }
         }
 
-        return Optional.empty();
+        if (joined != null) {
+            voiceSessions.put(member.getId(), time);
+            PrometheusMetrics.VOICE_CONNECTIONS.labels(joined.getName()).inc();
+        }
+
+        return recorded;
+    }
+
+    private CompletableFuture<Void> recordVoiceSession(Member member, AudioChannel channel, long spentMs, long time) {
+        PrometheusMetrics.VOICE_TIME_SECONDS.labels(channel.getName()).inc(TimeUnit.MILLISECONDS.toSeconds(spentMs));
+
+        NerdBotConfig current = config.get();
+        if (TimeUnit.MILLISECONDS.toSeconds(spentMs) <= current.getVoiceThreshold()) {
+            return NOTHING_RECORDED;
+        }
+
+        Suggestion.ChannelType type = SuggestionTypeResolver.getChannelSuggestionTypeFromName(channel.getName(), current);
+        Optional<String> group = restrictedGroup(channel.getId(), member, current);
+        return queue.withRecord(member.getId(), "voice activity", user -> {
+            LastActivity activity = user.getLastActivity();
+            switch (type) {
+                case ALPHA -> activity.setAlphaVoiceJoinDate(time);
+                case PROJECT -> activity.setProjectVoiceJoinDate(time);
+                default -> activity.setLastVoiceChannelJoinDate(time);
+            }
+            group.ifPresent(identifier -> activity.getRoleRestrictedChannelLastActivity().put(identifier, time));
+            log.debug("Recorded {}s of {} voice time for {}", TimeUnit.MILLISECONDS.toSeconds(spentMs), type, member.getId());
+        });
+    }
+
+    /** The restricted channel group {@code channelId} belongs to, if the member has one of its roles. */
+    private static Optional<String> restrictedGroup(String channelId, Member member, NerdBotConfig config) {
+        Set<String> roleIds = member.getRoles().stream().map(Role::getId).collect(Collectors.toSet());
+        return config.getChannelConfig().getRoleRestrictedChannelGroups().stream()
+            .filter(group -> ArrayUtils.safeArrayStream(group.getChannelIds()).anyMatch(channelId::equals))
+            .filter(group -> ArrayUtils.safeArrayStream(group.getRequiredRoleIds()).anyMatch(roleIds::contains))
+            .map(RoleRestrictedChannelGroup::getIdentifier)
+            .findFirst();
     }
 }

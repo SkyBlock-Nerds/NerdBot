@@ -1,7 +1,11 @@
 package net.hypixel.nerdbot.app.listener;
 
 import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import lombok.extern.slf4j.Slf4j;
+import net.dv8tion.jda.api.entities.MessageReaction;
+import net.dv8tion.jda.api.entities.channel.Channel;
+import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.BaseForumTag;
@@ -9,221 +13,230 @@ import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTagData;
 import net.dv8tion.jda.api.events.channel.ChannelCreateEvent;
 import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
-import net.dv8tion.jda.api.events.channel.GenericChannelEvent;
 import net.dv8tion.jda.api.events.channel.update.ChannelUpdateAppliedTagsEvent;
 import net.dv8tion.jda.api.events.channel.update.ChannelUpdateNameEvent;
+import net.dv8tion.jda.api.events.message.react.GenericMessageReactionEvent;
+import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
+import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
-import net.dv8tion.jda.api.managers.channel.concrete.ForumChannelManager;
-import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
-import net.hypixel.nerdbot.marmalade.collections.ArrayUtils;
-import net.hypixel.nerdbot.app.suggestion.Suggestion;
-import net.hypixel.nerdbot.app.suggestion.SuggestionTypeResolver;
 import net.hypixel.nerdbot.app.config.AlphaProjectConfigUpdater;
+import net.hypixel.nerdbot.app.config.ConfigStore;
 import net.hypixel.nerdbot.app.config.NerdBotConfig;
-import net.hypixel.nerdbot.app.config.AlphaProjectConfig;
+import net.hypixel.nerdbot.app.suggestion.Suggestion;
+import net.hypixel.nerdbot.app.suggestion.SuggestionCache;
+import net.hypixel.nerdbot.app.suggestion.SuggestionTypeResolver;
 import net.hypixel.nerdbot.discord.config.objects.ForumAutoTag;
-import net.hypixel.nerdbot.app.config.SuggestionConfig;
-import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
-import org.jetbrains.annotations.NotNull;
+import net.hypixel.nerdbot.discord.util.EmojiConfigUtils;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+/**
+ * Keeps suggestion posts, the suggestion cache and the alpha and project forum config in step with
+ * the guild's forums.
+ */
 @Slf4j
 public class SuggestionListener {
 
+    static final String SUBMITTED_TAG = "Submitted";
+
+    private final GuildScope guildScope;
+    private final SuggestionCache suggestions;
+    private final Provider<NerdBotConfig> config;
+    private final ConfigStore configStore;
+
     @Inject
-    public SuggestionListener() {
+    public SuggestionListener(GuildScope guildScope, SuggestionCache suggestions, Provider<NerdBotConfig> config, ConfigStore configStore) {
+        this.guildScope = guildScope;
+        this.suggestions = suggestions;
+        this.config = config;
+        this.configStore = configStore;
     }
 
     @SubscribeEvent
-    public void onChannelCreate(@NotNull ChannelCreateEvent event) {
-        updateConfigForumIds(event);
-
-        if (isInSuggestionChannel(event)) {
-            ThreadChannel thread = event.getChannel().asThreadChannel();
-            SkyBlockNerdsBot.suggestionCache().requestUpdate(thread);
-
-            // Apply auto-tag if configured for this forum
-            applyAutoTag(thread);
-        }
-    }
-
-    @SubscribeEvent
-    public void onChannelUpdate(@NotNull ChannelUpdateNameEvent event) {
-        updateConfigForumIds(event);
-    }
-
-    @SubscribeEvent
-    public void onChannelUpdateAppliedTags(@NotNull ChannelUpdateAppliedTagsEvent event) {
-        if (!(event.getChannel() instanceof ThreadChannel thread) || !(thread.getParentChannel() instanceof ForumChannel forum)) {
+    public void onChannelCreate(ChannelCreateEvent event) {
+        if (!guildScope.isMainGuild(event.getGuild())) {
             return;
         }
 
-        List<Long> oldTagIds = event.getOldValue();
-        List<ForumTag> currentTags = thread.getAppliedTags();
+        if (event.getChannelType() == ChannelType.FORUM) {
+            forumChanged(event.getChannel().asForumChannel());
+        }
 
-        for (ForumTag currentTag : currentTags) {
-            if (!oldTagIds.contains(currentTag.getIdLong())) {
-                swapAutoTag(thread, currentTag.getName());
-            }
+        suggestionThread(event.getChannel()).ifPresent(thread -> {
+            suggestions.requestUpdate(thread);
+            applyAutoTag(thread);
+        });
+    }
+
+    @SubscribeEvent
+    public void onChannelUpdateName(ChannelUpdateNameEvent event) {
+        if (guildScope.isMainGuild(event.getGuild()) && event.getChannelType() == ChannelType.FORUM) {
+            forumChanged(event.getChannel().asForumChannel());
         }
     }
 
     @SubscribeEvent
     public void onChannelDelete(ChannelDeleteEvent event) {
-        if (event.getChannelType() == net.dv8tion.jda.api.entities.channel.ChannelType.FORUM) {
-            Suggestion.ChannelType channelType = SuggestionTypeResolver.getForumSuggestionType(event.getChannel().asForumChannel());
+        if (!guildScope.isMainGuild(event.getGuild())) {
+            return;
+        }
 
-            if (channelType == Suggestion.ChannelType.ALPHA || channelType == Suggestion.ChannelType.PROJECT) {
-                NerdBotConfig botConfig = SkyBlockNerdsBot.config();
-                AlphaProjectConfigUpdater.updateForumIds(botConfig, channelType == Suggestion.ChannelType.ALPHA, channelType == Suggestion.ChannelType.PROJECT, event.getGuild().getForumChannels());
+        if (event.getChannelType() == ChannelType.FORUM) {
+            forumDeleted(event.getChannel().asForumChannel());
+        }
 
-                boolean removed = botConfig.getChannelConfig().removeForumAutoTagConfig(event.getChannel().getId());
-                if (removed) {
-                    DiscordBotEnvironment.getBot().writeConfig(botConfig);
-                    log.info("Removed forum auto-tagging config for deleted forum '{}' (ID: {})", event.getChannel().getName(), event.getChannel().getId());
-                }
+        suggestionThread(event.getChannel()).ifPresent(thread -> suggestions.remove(thread.getId()));
+    }
 
-                log.info("Removed {} suggestion forum from bot config: {} (ID: {})", channelType.getName(), event.getChannel().getName(), event.getChannel().getId());
+    @SubscribeEvent
+    public void onChannelUpdateAppliedTags(ChannelUpdateAppliedTagsEvent event) {
+        if (!guildScope.isMainGuild(event.getGuild()) || !(event.getChannel() instanceof ThreadChannel thread)
+            || thread.getParentChannel().getType() != ChannelType.FORUM) {
+            return;
+        }
+
+        List<Long> oldTagIds = event.getOldValue();
+        thread.getAppliedTags().stream()
+            .filter(tag -> !oldTagIds.contains(tag.getIdLong()))
+            .forEach(tag -> swapAutoTag(thread, tag.getName()));
+    }
+
+    @SubscribeEvent
+    public void onReactionAdd(MessageReactionAddEvent event) {
+        voteChanged(event, event.getReaction());
+    }
+
+    @SubscribeEvent
+    public void onReactionRemove(MessageReactionRemoveEvent event) {
+        voteChanged(event, event.getReaction());
+    }
+
+    private void voteChanged(GenericMessageReactionEvent event, MessageReaction reaction) {
+        if (!event.isFromGuild() || !guildScope.isMainGuild(event.getGuild())
+            || !event.getMessageId().equals(event.getChannel().getId())
+            || !EmojiConfigUtils.isVote(config.get().getEmojiConfig(), reaction)) {
+            return;
+        }
+
+        suggestionThread(event.getChannel()).ifPresent(suggestions::requestUpdate);
+    }
+
+    Optional<ThreadChannel> suggestionThread(Channel channel) {
+        if (!(channel instanceof ThreadChannel thread) || channel.getType() != ChannelType.GUILD_PUBLIC_THREAD) {
+            return Optional.empty();
+        }
+
+        return SuggestionTypeResolver.getConfiguredForumType(thread.getParentChannel().getId(), config.get()).map(type -> thread);
+    }
+
+    void forumChanged(ForumChannel forum) {
+        NerdBotConfig current = config.get();
+        boolean changed = AlphaProjectConfigUpdater.updateForumIds(current, forum.getGuild().getForumChannels());
+        Suggestion.ChannelType type = SuggestionTypeResolver.getForumSuggestionType(forum, current);
+
+        if (type == Suggestion.ChannelType.ALPHA || type == Suggestion.ChannelType.PROJECT) {
+            String reviewedTag = current.getSuggestionConfig().getReviewedTag();
+            if (current.getAlphaProjectConfig().isAutoCreateTags()) {
+                addMissingTags(forum, List.of(SUBMITTED_TAG, reviewedTag));
+            }
+
+            if (current.getChannelConfig().addForumAutoTagConfigIfAbsent(forum.getId(), SUBMITTED_TAG, reviewedTag)) {
+                log.info("Auto-tagging {} forum '{}' ({}): {} -> {}", type.getName(), forum.getName(), forum.getId(), SUBMITTED_TAG, reviewedTag);
+                changed = true;
             }
         }
 
-        if (isInSuggestionChannel(event)) {
-            SkyBlockNerdsBot.suggestionCache().remove(event.getChannel().getId());
+        if (changed) {
+            save(current, "forum '" + forum.getName() + "' changed");
         }
     }
 
-    private void updateConfigForumIds(GenericChannelEvent event) {
-        if (event.getChannelType() == net.dv8tion.jda.api.entities.channel.ChannelType.FORUM) {
-            ForumChannel forumChannel = event.getChannel().asForumChannel();
-            Suggestion.ChannelType channelType = SuggestionTypeResolver.getForumSuggestionType(forumChannel);
+    void forumDeleted(ForumChannel forum) {
+        NerdBotConfig current = config.get();
+        boolean changed = AlphaProjectConfigUpdater.updateForumIds(current, forum.getGuild().getForumChannels());
 
-            log.info("Forum channel event detected: '{}' (ID: {}), detected type: {}, parent category: {}",
-                forumChannel.getName(),
-                forumChannel.getId(),
-                channelType.getName(),
-                forumChannel.getParentCategory() != null ? forumChannel.getParentCategory().getName() : "none");
+        if (current.getChannelConfig().removeForumAutoTagConfig(forum.getId())) {
+            log.info("Removed auto-tagging for deleted forum '{}' ({})", forum.getName(), forum.getId());
+            changed = true;
+        }
 
-            if (channelType == Suggestion.ChannelType.ALPHA || channelType == Suggestion.ChannelType.PROJECT) {
-                NerdBotConfig botConfig = SkyBlockNerdsBot.config();
-                AlphaProjectConfig alphaProjectConfig = botConfig.getAlphaProjectConfig();
-                AlphaProjectConfigUpdater.updateForumIds(botConfig, channelType == Suggestion.ChannelType.ALPHA, channelType == Suggestion.ChannelType.PROJECT, forumChannel.getGuild().getForumChannels());
-
-                if (alphaProjectConfig.isAutoCreateTags()) {
-                    ForumChannelManager forumChannelManager = forumChannel.getManager();
-                    List<BaseForumTag> currentTags = new ArrayList<>(forumChannelManager.getChannel().getAvailableTags());
-
-                    String submittedTag = "Submitted";
-                    String reviewedTag = botConfig.getSuggestionConfig().getReviewedTag();
-
-                    if (currentTags.stream().noneMatch(baseForumTag -> baseForumTag.getName().equalsIgnoreCase(submittedTag))) {
-                        currentTags.add(new ForumTagData(submittedTag).setModerated(true));
-                        log.info("Auto-created '{}' tag for forum '{}' (ID: {})", submittedTag, forumChannel.getName(), forumChannel.getId());
-                    }
-
-                    if (currentTags.stream().noneMatch(baseForumTag -> baseForumTag.getName().equalsIgnoreCase(reviewedTag))) {
-                        currentTags.add(new ForumTagData(reviewedTag).setModerated(true));
-                        log.info("Auto-created '{}' tag for forum '{}' (ID: {})", reviewedTag, forumChannel.getName(), forumChannel.getId());
-                    }
-
-                    forumChannelManager.setAvailableTags(currentTags).queue();
-                }
-
-                boolean added = botConfig.getChannelConfig().addOrUpdateForumAutoTagConfig(
-                    forumChannel.getId(),
-                    "Submitted",
-                    botConfig.getSuggestionConfig().getReviewedTag()
-                );
-
-                if (added) {
-                    DiscordBotEnvironment.getBot().writeConfig(botConfig);
-                    log.info("Auto-configured forum auto-tagging for '{}' (ID: {}): Submitted -> {}",
-                        forumChannel.getName(), forumChannel.getId(), botConfig.getSuggestionConfig().getReviewedTag());
-                }
-
-                log.info("New {} suggestion forum created and added to bot config: {} (ID: {})", channelType.getName(), event.getChannel().getName(), event.getChannel().getId());
-            }
+        if (changed) {
+            save(current, "forum '" + forum.getName() + "' was deleted");
         }
     }
 
-    private boolean isInSuggestionChannel(GenericChannelEvent event) {
-        if (event.getChannelType() == net.dv8tion.jda.api.entities.channel.ChannelType.GUILD_PUBLIC_THREAD) {
-            SuggestionConfig suggestionConfig = SkyBlockNerdsBot.config().getSuggestionConfig();
-            AlphaProjectConfig alphaProjectConfig = SkyBlockNerdsBot.config().getAlphaProjectConfig();
-            String forumChannelId = event.getChannel().asThreadChannel().getParentChannel().getId();
-
-            return forumChannelId.equals(suggestionConfig.getForumChannelId())
-                || ArrayUtils.safeArrayStream(alphaProjectConfig.getAlphaForumIds()).anyMatch(forumChannelId::equals)
-                || ArrayUtils.safeArrayStream(alphaProjectConfig.getProjectForumIds()).anyMatch(forumChannelId::equals);
+    private void addMissingTags(ForumChannel forum, List<String> tagNames) {
+        List<BaseForumTag> tags = new ArrayList<>(forum.getAvailableTags());
+        List<String> missing = tagNames.stream()
+            .distinct()
+            .filter(name -> !DiscordUtils.hasTagByName(forum, name))
+            .toList();
+        if (missing.isEmpty()) {
+            return;
         }
 
-        return false;
+        missing.forEach(name -> tags.add(new ForumTagData(name).setModerated(true)));
+        forum.getManager().setAvailableTags(tags).queue(
+            success -> log.info("Created tags {} in forum '{}' ({})", missing, forum.getName(), forum.getId()),
+            error -> log.error("Failed to create tags {} in forum '{}' ({})", missing, forum.getName(), forum.getId(), error)
+        );
     }
 
-    /**
-     * Applies the configured auto-tag to a newly created forum post
-     */
+    private void save(NerdBotConfig current, String reason) {
+        try {
+            configStore.save(current);
+            log.info("Saved the config after {}", reason);
+        } catch (IOException exception) {
+            log.error("Couldn't save the config after {}; the change only lasts until the bot restarts", reason, exception);
+        }
+    }
+
+    private Optional<ForumAutoTag> autoTag(ForumChannel forum) {
+        return Optional.ofNullable(config.get().getChannelConfig().getForumAutoTagConfig(forum.getId()));
+    }
+
     private void applyAutoTag(ThreadChannel thread) {
-        ForumChannel forumChannel = thread.getParentChannel().asForumChannel();
-        ForumAutoTag autoTagConfig = DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getForumAutoTagConfig(forumChannel.getId());
+        ForumChannel forum = thread.getParentChannel().asForumChannel();
+        autoTag(forum).ifPresent(autoTag -> {
+            Optional<ForumTag> defaultTag = DiscordUtils.findTagByName(forum, autoTag.getDefaultTagName());
+            if (defaultTag.isEmpty()) {
+                log.warn("Auto-tag '{}' not found in forum '{}' ({})", autoTag.getDefaultTagName(), forum.getName(), forum.getId());
+                return;
+            }
 
-        if (autoTagConfig == null) {
-            return;
-        }
+            if (thread.getAppliedTags().contains(defaultTag.get())) {
+                return;
+            }
 
-        if (!DiscordUtils.hasTagByName(forumChannel, autoTagConfig.getDefaultTagName())) {
-            log.warn("Auto-tag '{}' not found in forum '{}' (ID: {})", autoTagConfig.getDefaultTagName(), forumChannel.getName(), forumChannel.getId());
-            return;
-        }
-
-        ForumTag defaultTag = DiscordUtils.getTagByName(forumChannel, autoTagConfig.getDefaultTagName());
-
-        if (thread.getAppliedTags().contains(defaultTag)) {
-            return;
-        }
-
-        List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
-        tags.add(defaultTag);
-
-        thread.getManager().setAppliedTags(tags).queue(
-            success -> log.info("Auto-applied tag '{}' to thread '{}' (ID: {})", autoTagConfig.getDefaultTagName(), thread.getName(), thread.getId()),
-            error -> log.error("Failed to auto-apply tag '{}' to thread '{}' (ID: {})", autoTagConfig.getDefaultTagName(), thread.getName(), thread.getId(), error)
-        );
+            List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
+            tags.add(defaultTag.get());
+            thread.getManager().setAppliedTags(tags).queue(
+                success -> log.info("Auto-applied tag '{}' to thread '{}' ({})", autoTag.getDefaultTagName(), thread.getName(), thread.getId()),
+                error -> log.error("Failed to auto-apply tag '{}' to thread '{}' ({})", autoTag.getDefaultTagName(), thread.getName(), thread.getId(), error)
+            );
+        });
     }
 
-    /**
-     * Removes the default auto-tag when a review tag is added to a thread
-     */
-    private void swapAutoTag(ThreadChannel thread, String reviewTagName) {
-        ForumChannel forumChannel = thread.getParentChannel().asForumChannel();
-        ForumAutoTag autoTagConfig = DiscordBotEnvironment.getBot().getConfig().getChannelConfig().getForumAutoTagConfig(forumChannel.getId());
-
-        if (autoTagConfig == null) {
-            return;
-        }
-
-        if (!autoTagConfig.getReviewTagName().equalsIgnoreCase(reviewTagName)) {
-            return;
-        }
-
-        if (!DiscordUtils.hasTagByName(forumChannel, autoTagConfig.getDefaultTagName())) {
-            return;
-        }
-
-        ForumTag defaultTag = DiscordUtils.getTagByName(forumChannel, autoTagConfig.getDefaultTagName());
-
-        if (!thread.getAppliedTags().contains(defaultTag)) {
-            return;
-        }
-
-        List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
-        tags.remove(defaultTag);
-
-        thread.getManager().setAppliedTags(tags).queue(
-            success -> log.info("Removed auto-tag '{}' from thread '{}' (ID: {}) after '{}' tag was added", autoTagConfig.getDefaultTagName(), thread.getName(), thread.getId(), reviewTagName),
-            error -> log.error("Failed to remove auto-tag '{}' from thread '{}' (ID: {})", autoTagConfig.getDefaultTagName(), thread.getName(), thread.getId(), error)
-        );
+    /** Takes the default tag off once the review tag goes on. */
+    private void swapAutoTag(ThreadChannel thread, String addedTagName) {
+        ForumChannel forum = thread.getParentChannel().asForumChannel();
+        autoTag(forum)
+            .filter(autoTag -> autoTag.getReviewTagName().equalsIgnoreCase(addedTagName))
+            .ifPresent(autoTag -> DiscordUtils.findTagByName(forum, autoTag.getDefaultTagName())
+                .filter(thread.getAppliedTags()::contains)
+                .ifPresent(defaultTag -> {
+                    List<ForumTag> tags = new ArrayList<>(thread.getAppliedTags());
+                    tags.remove(defaultTag);
+                    thread.getManager().setAppliedTags(tags).queue(
+                        success -> log.info("Removed auto-tag '{}' from thread '{}' ({}) after '{}' was added",
+                            autoTag.getDefaultTagName(), thread.getName(), thread.getId(), addedTagName),
+                        error -> log.error("Failed to remove auto-tag '{}' from thread '{}' ({})",
+                            autoTag.getDefaultTagName(), thread.getName(), thread.getId(), error)
+                    );
+                }));
     }
 }

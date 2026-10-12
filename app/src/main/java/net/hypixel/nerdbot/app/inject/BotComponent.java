@@ -47,6 +47,9 @@ public interface BotComponent {
     @ImageRendering
     ExecutorService imageRenderingPool();
 
+    @MemberWork
+    ExecutorService memberWorkPool();
+
     @Component.Factory
     interface Factory {
         BotComponent create(@BindsInstance JDA jda, @BindsInstance Database database, @BindsInstance BotState state,
