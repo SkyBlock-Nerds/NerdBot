@@ -1,10 +1,12 @@
 package net.hypixel.nerdbot.app.storage;
 
+import com.mongodb.client.model.Projections;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -16,6 +18,8 @@ import java.util.concurrent.CompletableFuture;
  * Mongo straight away, and {@link #findIdsWithBirthdaySet()} queries Mongo rather than the cache.
  */
 public class RepositoryDiscordUserStore implements DiscordUserStore {
+
+    private static final String ID_FIELD = "discordId";
 
     private final Provider<DiscordUserRepository> repository;
 
@@ -37,6 +41,19 @@ public class RepositoryDiscordUserStore implements DiscordUserStore {
     @Override
     public List<DiscordUser> getAllFromDatabase() {
         return repository.get().getAllDocuments();
+    }
+
+    @Override
+    public List<String> findAllIds() {
+        List<String> ids = new ArrayList<>();
+        repository.get().getMongoCollection().find()
+            .projection(Projections.include(ID_FIELD))
+            .forEach(document -> {
+                if (document.get(ID_FIELD) instanceof String id) {
+                    ids.add(id);
+                }
+            });
+        return ids;
     }
 
     @Override

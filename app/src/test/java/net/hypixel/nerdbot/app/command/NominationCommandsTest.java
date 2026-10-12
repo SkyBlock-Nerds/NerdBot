@@ -1,9 +1,8 @@
 package net.hypixel.nerdbot.app.command;
 
 import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.hypixel.nerdbot.app.nomination.InactivitySweepReport;
-import net.hypixel.nerdbot.app.nomination.NominationSweepReport;
 import net.hypixel.nerdbot.app.nomination.NominationSweeps;
+import net.hypixel.nerdbot.app.nomination.SweepReport;
 import net.hypixel.nerdbot.app.testsupport.DiscordFakes;
 import net.hypixel.nerdbot.app.testsupport.FakeDiscordUserStore;
 import net.hypixel.nerdbot.discord.testsupport.CallRecorder;
@@ -21,47 +20,52 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NominationCommandsTest {
 
-    private static final NominationSweepReport NOMINATIONS = new NominationSweepReport("member", 50, 10, 4, 3, 2, 1, 0, 1234);
-    private static final InactivitySweepReport INACTIVITY = new InactivitySweepReport("member", 40, 5, 2, 1, 0, 987);
+    private static final SweepReport NOMINATIONS = new SweepReport("Member nominations", 50, 4, 2, 3, 30, 10, 1, 1234);
+    private static final SweepReport INACTIVITY = new SweepReport("Member inactivity", 40, 5, 2, 20, 10, 3, 0, 987);
 
     private final CallRecorder recorder = new CallRecorder();
     private final List<String> ran = new ArrayList<>();
     private final List<Runnable> queued = new ArrayList<>();
     private final FakeDiscordUserStore users = new FakeDiscordUserStore();
     private boolean sweepFails;
+    private boolean anotherSweepRunning;
+    private List<SweepReport> groupReports = List.of();
 
     private final NominationSweeps sweeps = new NominationSweeps() {
         @Override
-        public NominationSweepReport nominateMembers() {
+        public Optional<SweepReport> nominateMembers() {
             return record("members", NOMINATIONS);
         }
 
         @Override
-        public NominationSweepReport nominateNewMembers() {
+        public Optional<SweepReport> nominateNewMembers() {
             return record("new members", NOMINATIONS);
         }
 
         @Override
-        public InactivitySweepReport checkMemberInactivity() {
+        public Optional<SweepReport> checkMemberInactivity() {
             return record("member inactivity", INACTIVITY);
         }
 
         @Override
-        public InactivitySweepReport checkNewMemberInactivity() {
+        public Optional<SweepReport> checkNewMemberInactivity() {
             return record("new member inactivity", INACTIVITY);
         }
 
         @Override
-        public void checkRestrictedChannelInactivity() {
-            record("restricted inactivity", null);
+        public Optional<List<SweepReport>> checkRestrictedChannelInactivity() {
+            return record("restricted inactivity", groupReports);
         }
 
-        private <T> T record(String sweep, T report) {
+        private <T> Optional<T> record(String sweep, T report) {
             if (sweepFails) {
                 throw new IllegalStateException("guild not loaded");
             }
+            if (anotherSweepRunning) {
+                return Optional.empty();
+            }
             ran.add(sweep);
-            return report;
+            return Optional.of(report);
         }
     };
 
@@ -97,8 +101,30 @@ class NominationCommandsTest {
         assertEquals(List.of("new member inactivity"), ran);
         MessageEmbed report = DiscordFakes.lastCallItems(recorder, "editOriginalEmbeds", MessageEmbed.class).getFirst();
         assertEquals("Inactivity Sweep Complete (New Member)", report.getTitle());
-        assertEquals(List.of("Scanned", "Warned This Month", "Skipped Already This Month", "Ineligible", "Missing Member", "Duration"),
+        assertEquals(List.of("Scanned", "Warned", "Active", "Already Warned This Month", "Ineligible", "Missing Member", "Failed", "Duration"),
             report.getFields().stream().map(MessageEmbed.Field::getName).toList());
+        assertEquals("5", report.getFields().get(1).getValue());
+        assertEquals("20", report.getFields().get(2).getValue());
+    }
+
+    @Test
+    void nominationReportsCountTheEligible() {
+        MessageEmbed report = NominationCommands.nominationReport("title", NOMINATIONS);
+
+        assertEquals("Eligible", report.getFields().get(1).getName());
+        assertEquals("10", report.getFields().get(1).getValue());
+        assertEquals("4", report.getFields().get(2).getValue());
+    }
+
+    @Test
+    void aSweepAlreadyRunningSaysSo() {
+        anotherSweepRunning = true;
+
+        commands.nominate(DiscordFakes.slash(recorder, "1"), false);
+        queued.getFirst().run();
+
+        assertTrue(ran.isEmpty());
+        assertEquals(NominationCommands.SWEEP_BUSY_MESSAGE, DiscordFakes.lastEditText(recorder));
     }
 
     @Test
@@ -112,12 +138,26 @@ class NominationCommandsTest {
     }
 
     @Test
-    void theRestrictedSweepConfirmsWhenDone() {
+    void theRestrictedSweepReportsEachGroup() {
+        groupReports = List.of(new SweepReport("Staff inactivity", 40, 2, 1, 5, 32, 0, 0, 10),
+            new SweepReport("Testers inactivity", 40, 0, 0, 3, 37, 0, 1, 10));
+
         commands.checkRestrictedInactivity(DiscordFakes.slash(recorder, "1"));
         queued.getFirst().run();
 
         assertEquals(List.of("restricted inactivity"), ran);
-        assertEquals("Forced restricted inactivity check!", DiscordFakes.lastEditText(recorder));
+        MessageEmbed report = DiscordFakes.lastCallItems(recorder, "editOriginalEmbeds", MessageEmbed.class).getFirst();
+        assertEquals(List.of("Staff inactivity", "Testers inactivity"), report.getFields().stream().map(MessageEmbed.Field::getName).toList());
+        assertTrue(report.getFields().getFirst().getValue().startsWith("Warned: 2"));
+    }
+
+    @Test
+    void withNoGroupsTheRestrictedSweepSaysSo() {
+        commands.checkRestrictedInactivity(DiscordFakes.slash(recorder, "1"));
+        queued.getFirst().run();
+
+        MessageEmbed report = DiscordFakes.lastCallItems(recorder, "editOriginalEmbeds", MessageEmbed.class).getFirst();
+        assertEquals("No restricted channel groups have inactivity warnings turned on.", report.getDescription());
     }
 
     @Test

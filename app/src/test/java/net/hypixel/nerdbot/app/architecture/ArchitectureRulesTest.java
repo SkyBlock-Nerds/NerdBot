@@ -49,7 +49,7 @@ class ArchitectureRulesTest {
      * Code that gets what it needs through its constructor. Add to these as more of the bot moves
      * over; nothing in them may go back to looking things up through the global bot.
      */
-    private static final String[] INJECTED_PACKAGES = {"..app.inject..", "..app.listener..", "..app.profile..", "..app.punishment..", "..app.reminder.."};
+    private static final String[] INJECTED_PACKAGES = {"..app.inject..", "..app.listener..", "..app.nomination..", "..app.profile..", "..app.punishment..", "..app.reminder.."};
     private static final String[] INJECTED_CLASSES = {
         "net.hypixel.nerdbot.app.activity.ActivityListener",
         "net.hypixel.nerdbot.app.badge.BadgeCatalog",
@@ -90,8 +90,6 @@ class ArchitectureRulesTest {
         "net.hypixel.nerdbot.app.config.ConfigStore",
         "net.hypixel.nerdbot.app.generation.DiscordGenerationContexts",
         "net.hypixel.nerdbot.app.metrics.MetricsServer",
-        "net.hypixel.nerdbot.app.nomination.ActivityRequirements",
-        "net.hypixel.nerdbot.app.nomination.NominationSweeps",
         "net.hypixel.nerdbot.app.storage.GreenlitStore",
         "net.hypixel.nerdbot.app.storage.MissingUserRecordException",
         "net.hypixel.nerdbot.app.storage.RepositoryDiscordUserStore",

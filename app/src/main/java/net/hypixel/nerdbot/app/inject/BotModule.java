@@ -15,8 +15,12 @@ import net.hypixel.nerdbot.app.drive.DriveSyncSweep;
 import net.hypixel.nerdbot.app.generation.pack.update.PackUpdater;
 import net.hypixel.nerdbot.app.metrics.MetricsServer;
 import net.hypixel.nerdbot.app.metrics.PrometheusMetricsServer;
+import net.hypixel.nerdbot.app.nomination.DiscordVotingChannel;
+import net.hypixel.nerdbot.app.nomination.MongoOpenTickets;
 import net.hypixel.nerdbot.app.nomination.NominationSweeps;
+import net.hypixel.nerdbot.app.nomination.OpenTickets;
 import net.hypixel.nerdbot.app.nomination.ServiceNominationSweeps;
+import net.hypixel.nerdbot.app.nomination.VotingChannel;
 import net.hypixel.nerdbot.app.profile.HttpMinecraftAccounts;
 import net.hypixel.nerdbot.app.profile.MinecraftAccounts;
 import net.hypixel.nerdbot.app.reminder.DiscordReminderSender;
@@ -61,6 +65,12 @@ public interface BotModule {
 
     @Binds
     NominationSweeps nominationSweeps(ServiceNominationSweeps sweeps);
+
+    @Binds
+    VotingChannel votingChannel(DiscordVotingChannel channel);
+
+    @Binds
+    OpenTickets openTickets(MongoOpenTickets tickets);
 
     @Provides
     static Clock clock() {

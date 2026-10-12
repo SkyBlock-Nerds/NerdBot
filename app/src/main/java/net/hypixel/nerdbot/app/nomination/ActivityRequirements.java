@@ -1,6 +1,7 @@
 package net.hypixel.nerdbot.app.nomination;
 
 import net.hypixel.nerdbot.discord.config.RoleConfig;
+import net.hypixel.nerdbot.discord.config.objects.RoleRestrictedChannelGroup;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.stats.LastActivity;
 
 /**
@@ -18,11 +19,35 @@ public record ActivityRequirements(int windowDays, int requiredMessages, int req
             roleConfig.getMinimumCommentsRequiredForPromotion());
     }
 
+    public static ActivityRequirements forInactivity(RoleConfig roleConfig) {
+        return new ActivityRequirements(
+            roleConfig.getDaysRequiredForInactivityCheck(),
+            roleConfig.getMessagesRequiredForInactivityCheck(),
+            roleConfig.getVotesRequiredForInactivityCheck(),
+            roleConfig.getCommentsRequiredForInactivityCheck());
+    }
+
+    public static ActivityRequirements forGroup(RoleRestrictedChannelGroup group) {
+        return new ActivityRequirements(
+            group.getActivityCheckDays(),
+            group.getMinimumMessagesForActivity(),
+            group.getMinimumVotesForActivity(),
+            group.getMinimumCommentsForActivity());
+    }
+
     public Progress measure(LastActivity activity) {
         return new Progress(this,
             activity.getTotalMessageCount(windowDays),
             activity.getTotalVotes(windowDays),
             activity.getTotalComments(windowDays));
+    }
+
+    /** Counts only the activity in a restricted channel group's channels. */
+    public Progress measureInGroup(LastActivity activity, String groupIdentifier) {
+        return new Progress(this,
+            activity.getRoleRestrictedChannelMessageCount(groupIdentifier, windowDays),
+            activity.getRoleRestrictedChannelVoteCount(groupIdentifier, windowDays),
+            activity.getRoleRestrictedChannelCommentCount(groupIdentifier, windowDays));
     }
 
     public record Progress(ActivityRequirements requirements, int messages, int votes, int comments) {

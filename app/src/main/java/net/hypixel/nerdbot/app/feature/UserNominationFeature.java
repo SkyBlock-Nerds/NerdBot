@@ -4,8 +4,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.app.config.NerdBotConfig;
-import net.hypixel.nerdbot.app.nomination.NominationInactivityService;
-import net.hypixel.nerdbot.app.nomination.NominationService;
+import net.hypixel.nerdbot.app.nomination.NominationSweeps;
 import net.hypixel.nerdbot.app.nomination.SweepLog;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
 
@@ -64,8 +63,8 @@ public class UserNominationFeature extends BotFeature {
     private final Consumer<Sweep> runner;
 
     @Inject
-    public UserNominationFeature(SweepLog sweepLog, Clock clock, Provider<NerdBotConfig> config) {
-        this(sweepLog, clock, config, UserNominationFeature::run);
+    public UserNominationFeature(SweepLog sweepLog, Clock clock, Provider<NerdBotConfig> config, NominationSweeps sweeps) {
+        this(sweepLog, clock, config, sweep -> run(sweeps, sweep));
     }
 
     UserNominationFeature(SweepLog sweepLog, Clock clock, Provider<NerdBotConfig> config, Consumer<Sweep> runner) {
@@ -125,13 +124,18 @@ public class UserNominationFeature extends BotFeature {
         return finished;
     }
 
-    private static void run(Sweep sweep) {
-        switch (sweep) {
-            case MEMBER_NOMINATIONS -> NominationService.getInstance().runMemberNominationSweep();
-            case NEW_MEMBER_NOMINATIONS -> NominationService.getInstance().runNewMemberNominationSweep();
-            case MEMBER_INACTIVITY -> NominationInactivityService.getInstance().runInactivitySweepForMembers();
-            case NEW_MEMBER_INACTIVITY -> NominationInactivityService.getInstance().runInactivitySweepForNewMembers();
-            case ROLE_RESTRICTED_INACTIVITY -> NominationInactivityService.getInstance().runRoleRestrictedInactivitySweep();
+    static void run(NominationSweeps sweeps, Sweep sweep) {
+        Optional<?> ran = switch (sweep) {
+            case MEMBER_NOMINATIONS -> sweeps.nominateMembers();
+            case NEW_MEMBER_NOMINATIONS -> sweeps.nominateNewMembers();
+            case MEMBER_INACTIVITY -> sweeps.checkMemberInactivity();
+            case NEW_MEMBER_INACTIVITY -> sweeps.checkNewMemberInactivity();
+            case ROLE_RESTRICTED_INACTIVITY -> sweeps.checkRestrictedChannelInactivity();
+        };
+
+        // A forced sweep was running; failing leaves the batch to be tried again in an hour
+        if (ran.isEmpty()) {
+            throw new IllegalStateException("Another sweep was already running");
         }
     }
 

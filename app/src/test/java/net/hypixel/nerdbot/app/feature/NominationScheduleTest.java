@@ -2,7 +2,9 @@ package net.hypixel.nerdbot.app.feature;
 
 import net.hypixel.nerdbot.app.config.NerdBotConfig;
 import net.hypixel.nerdbot.app.feature.UserNominationFeature.Sweep;
+import net.hypixel.nerdbot.app.nomination.NominationSweeps;
 import net.hypixel.nerdbot.app.nomination.SweepLog;
+import net.hypixel.nerdbot.app.nomination.SweepReport;
 import net.hypixel.nerdbot.app.testsupport.MutableClock;
 import org.junit.jupiter.api.Test;
 
@@ -17,6 +19,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NominationScheduleTest {
@@ -131,6 +134,40 @@ class NominationScheduleTest {
 
         assertTrue(ran.isEmpty());
         assertEquals(YearMonth.of(2026, 9), sweepLog.runs.get("nominations"));
+    }
+
+    @Test
+    void aSweepThatCouldNotStartFailsTheBatch() {
+        NominationSweeps busy = new NominationSweeps() {
+            @Override
+            public Optional<SweepReport> nominateMembers() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<SweepReport> nominateNewMembers() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<SweepReport> checkMemberInactivity() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<SweepReport> checkNewMemberInactivity() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<List<SweepReport>> checkRestrictedChannelInactivity() {
+                return Optional.empty();
+            }
+        };
+
+        for (Sweep sweep : Sweep.values()) {
+            assertThrows(IllegalStateException.class, () -> UserNominationFeature.run(busy, sweep));
+        }
     }
 
     private static List<Sweep> concat(List<Sweep> first, List<Sweep> second) {

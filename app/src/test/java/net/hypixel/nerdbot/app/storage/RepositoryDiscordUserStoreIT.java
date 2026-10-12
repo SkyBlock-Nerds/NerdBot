@@ -74,6 +74,14 @@ class RepositoryDiscordUserStoreIT {
     }
 
     @Test
+    void allIdsComeFromTheDatabase() {
+        store.save(new DiscordUser(MEMBER)).join();
+        store.save(new DiscordUser("100000000000000002")).join();
+
+        assertEquals(List.of(MEMBER, "100000000000000002"), storeWithEmptyCache().findAllIds().stream().sorted().toList());
+    }
+
+    @Test
     void requireFailsForAMemberWithoutARecord() {
         assertThrows(IllegalStateException.class, () -> store.require("100000000000000009"));
     }

@@ -2,9 +2,12 @@ package net.hypixel.nerdbot.app.listener;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.hypixel.nerdbot.app.config.NerdBotConfig;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Optional;
 
 /**
  * The guild the bot serves. The bot can also sit in other guilds, such as emoji servers, and
@@ -21,5 +24,9 @@ public class GuildScope {
 
     public boolean isMainGuild(@Nullable Guild guild) {
         return guild != null && guild.getId().equals(config.get().getGuildId());
+    }
+
+    public Optional<Guild> mainGuild(JDA jda) {
+        return jda.getGuilds().stream().filter(this::isMainGuild).findFirst();
     }
 }
