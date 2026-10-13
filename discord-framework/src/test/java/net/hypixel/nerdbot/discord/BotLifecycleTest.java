@@ -12,6 +12,8 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BotLifecycleTest {
 
@@ -43,6 +45,23 @@ class BotLifecycleTest {
             }
             events.add("stop " + name);
         }
+    }
+
+    @Test
+    void aReadOnlyBotsRepositoriesDontWrite() {
+        String previous = System.getProperty("bot.readOnly");
+        System.setProperty("bot.readOnly", "true");
+        try {
+            assertTrue(new TestBot(false).getDatabase().getRepositoryManager().isReadOnly());
+        } finally {
+            if (previous == null) {
+                System.clearProperty("bot.readOnly");
+            } else {
+                System.setProperty("bot.readOnly", previous);
+            }
+        }
+
+        assertFalse(new TestBot(false).getDatabase().getRepositoryManager().isReadOnly());
     }
 
     private RecordingFeature feature(String name) {
