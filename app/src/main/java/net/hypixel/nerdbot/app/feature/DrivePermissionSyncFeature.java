@@ -1,51 +1,40 @@
 package net.hypixel.nerdbot.app.feature;
 
 import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import lombok.extern.slf4j.Slf4j;
-import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
 import net.hypixel.nerdbot.app.drive.DriveSyncSweep;
-import net.hypixel.nerdbot.discord.BotEnvironment;
+import net.hypixel.nerdbot.app.inject.BotState;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 /**
- * Hourly Drive permission reconcile: heals role changes missed while offline,
- * members who left unseen, failed grant/revoke calls, and permissions deleted
- * by hand in Drive. Event-driven updates (DrivePermissionListener) are the
- * primary path; this is the safety net. No-ops when the Drive service is
- * unconfigured.
+ * Hourly Drive permission reconcile: heals role changes missed while offline, members who left
+ * unseen, failed grant/revoke calls, and permissions deleted by hand in Drive. The roles listener is
+ * the primary path; this is the safety net. Does nothing when Drive isn't configured.
  */
 @Slf4j
 public class DrivePermissionSyncFeature extends BotFeature {
 
-    private static final long PERIOD_MS = TimeUnit.HOURS.toMillis(1);
+    private static final Duration PERIOD = Duration.ofHours(1);
+
+    private final DriveSyncSweep sweep;
+    private final Provider<BotState> state;
 
     @Inject
-    public DrivePermissionSyncFeature() {
+    public DrivePermissionSyncFeature(DriveSyncSweep sweep, Provider<BotState> state) {
+        this.sweep = sweep;
+        this.state = state;
     }
 
     @Override
     public void onFeatureStart() {
-        if (BotEnvironment.getBot().isReadOnly()) {
-            log.warn("Bot is in read-only mode, skipping Drive permission sync task!");
+        if (state.get().isReadOnly()) {
+            log.warn("Not syncing Drive permissions; the bot is in read-only mode");
             return;
         }
-        scheduleAtFixedRate("drive-permission-sync-task", this::sweep, PERIOD_MS, PERIOD_MS);
-    }
-
-    private void sweep() {
-        if (SkyBlockNerdsBot.drivePermissionService().isEmpty()) {
-            return;
-        }
-        if (!SkyBlockNerdsBot.config().getGoogleDriveConfig().isEnabled()) {
-            return;
-        }
-        if (!BotEnvironment.getBot().getDatabase().isConnected()) {
-            log.error("Skipping Drive permission sweep as the database is not connected!");
-            return;
-        }
-        new DriveSyncSweep().run();
+        scheduleAtFixedRate("drive-permission-sync-task", sweep::run, PERIOD.toMillis(), PERIOD.toMillis());
     }
 
     @Override

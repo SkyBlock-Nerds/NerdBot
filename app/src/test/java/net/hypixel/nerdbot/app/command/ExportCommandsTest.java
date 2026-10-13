@@ -10,6 +10,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 import net.dv8tion.jda.api.utils.concurrent.Task;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
+import net.hypixel.nerdbot.app.export.ArchiveExporter;
 import net.hypixel.nerdbot.app.command.ExportCommands.ActivityFilter;
 import net.hypixel.nerdbot.app.config.NerdBotConfig;
 import net.hypixel.nerdbot.app.role.SpecialRoles;
@@ -56,13 +57,8 @@ class ExportCommandsTest {
     private final FakeSuggestionFactory factory = new FakeSuggestionFactory(config);
     private final JDA jda = Fakes.of(JDA.class, Map.of());
     private final SuggestionCache cache = new SuggestionCache(new ManualScheduledExecutor(), factory, () -> config, jda, Clock.systemUTC());
-    private final ExportCommands commands = new ExportCommands(users, greenlit, cache, factory, () -> config, jda, Runnable::run,
-        Clock.fixed(NOW, ZoneOffset.UTC));
-
-    @Test
-    void quotedDoublesQuotesInside() {
-        assertEquals("\"say \"\"hi\"\"\"", ExportCommands.quoted("say \"hi\""));
-    }
+    private final ExportCommands commands = new ExportCommands(new ArchiveExporter(users, () -> config, Clock.fixed(NOW, ZoneOffset.UTC)),
+        users, greenlit, cache, factory, () -> config, jda, Runnable::run, Clock.fixed(NOW, ZoneOffset.UTC));
 
     @Test
     void greenlitCsvSkipsOlderSuggestionsAndEscapesQuotes() {
@@ -72,7 +68,8 @@ class ExportCommandsTest {
         String csv = ExportCommands.greenlitCsv(List.of(older, newer), 2_000).orElseThrow();
 
         assertTrue(csv.contains("\"Item \"\"rework\"\", QoL\""), csv);
-        assertTrue(csv.contains("The \"\"best\"\" idea"), csv);
+        // Quotes are doubled once for the spreadsheet formula and again for the CSV field around it
+        assertTrue(csv.contains("The \"\"\"\"best\"\"\"\" idea"), csv);
         assertTrue(!csv.contains("Old"), csv);
     }
 
@@ -245,7 +242,8 @@ class ExportCommandsTest {
         SuggestionCache filled = new SuggestionCache(scheduler, suggestionFactory, () -> suggestionConfig, threadJda, Clock.systemUTC());
         filled.requestUpdate(thread);
         scheduler.advance(SuggestionCache.UPDATE_DELAY);
-        ExportCommands withSuggestions = new ExportCommands(users, greenlit, filled, suggestionFactory, () -> suggestionConfig, threadJda, Runnable::run, Clock.systemUTC());
+        ExportCommands withSuggestions = new ExportCommands(new ArchiveExporter(users, () -> suggestionConfig, Clock.systemUTC()),
+            users, greenlit, filled, suggestionFactory, () -> suggestionConfig, threadJda, Runnable::run, Clock.systemUTC());
 
         withSuggestions.exportSuggestionsBy(DiscordFakes.slash(recorder, "1"), "500");
 

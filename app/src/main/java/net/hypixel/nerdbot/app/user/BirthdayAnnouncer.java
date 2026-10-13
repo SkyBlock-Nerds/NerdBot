@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
 
 @Slf4j
 public class BirthdayAnnouncer {
@@ -21,11 +22,22 @@ public class BirthdayAnnouncer {
     private final DiscordUserStore store;
     private final Messenger messenger;
     private final Clock clock;
+    private final Predicate<String> stillMember;
 
+    /** For when everyone with a record is in the guild. */
     public BirthdayAnnouncer(DiscordUserStore store, Messenger messenger, Clock clock) {
+        this(store, messenger, clock, memberId -> true);
+    }
+
+    /**
+     * @param stillMember whether a member is still in the guild; someone who left while the bot was
+     *                    down keeps their record, and isn't wished a happy birthday
+     */
+    public BirthdayAnnouncer(DiscordUserStore store, Messenger messenger, Clock clock, Predicate<String> stillMember) {
         this.store = store;
         this.messenger = messenger;
         this.clock = clock;
+        this.stillMember = stillMember;
     }
 
     public int announceDue() {
@@ -33,6 +45,11 @@ public class BirthdayAnnouncer {
         int started = 0;
 
         for (String id : store.findIdsWithBirthdaySet()) {
+            if (!stillMember.test(id)) {
+                log.debug("Not announcing the birthday of {}; they're no longer in the guild", id);
+                continue;
+            }
+
             try {
                 Optional<DiscordUser> found = store.findById(id);
                 if (found.isEmpty()) {

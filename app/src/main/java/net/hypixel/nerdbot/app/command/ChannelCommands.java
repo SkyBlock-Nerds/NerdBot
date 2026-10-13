@@ -16,7 +16,7 @@ import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
-import net.dv8tion.jda.api.utils.FileUpload;
+import net.hypixel.nerdbot.app.export.ArchiveExporter;
 import net.hypixel.nerdbot.app.command.util.CommandReplies;
 import net.hypixel.nerdbot.app.command.util.ProgressUpdates;
 import net.hypixel.nerdbot.app.config.NerdBotConfig;
@@ -27,7 +27,7 @@ import net.hypixel.nerdbot.discord.config.objects.ForumAutoTag;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
+import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -41,12 +41,17 @@ public class ChannelCommands {
 
     static final Duration PROGRESS_INTERVAL = Duration.ofSeconds(10);
 
+    // Of the threads an archive had to leave out
+    private static final int SKIPPED_NAMES_SHOWN = 10;
+
+    private final ArchiveExporter exporter;
     private final Provider<NerdBotConfig> config;
     private final Executor backgroundWork;
     private final Clock clock;
 
     @Inject
-    public ChannelCommands(Provider<NerdBotConfig> config, Executor backgroundWork, Clock clock) {
+    public ChannelCommands(ArchiveExporter exporter, Provider<NerdBotConfig> config, Executor backgroundWork, Clock clock) {
+        this.exporter = exporter;
         this.config = config;
         this.backgroundWork = backgroundWork;
         this.clock = clock;
@@ -69,17 +74,15 @@ public class ChannelCommands {
         ProgressUpdates progress = ProgressUpdates.throttledReply(hook, PROGRESS_INTERVAL, clock);
         CompletableFuture.runAsync(() -> {
             try {
-                File file = ArchiveExporter.exportTextChannel(channel, progress.loggingReporter());
-                log.info("Finished archiving channel {} (ID: {})! File located at: {}", channel.getName(), channel.getId(), file.getAbsolutePath());
-
+                ArchiveExporter.Export export = exporter.exportTextChannel(channel, progress.loggingReporter());
                 progress.finish(() -> {
                     if (!hook.isExpired()) {
-                        hook.editOriginal(String.format("Finished archiving channel %s! The file should appear below.", channel.getAsMention()))
-                            .setFiles(FileUpload.fromData(file))
+                        hook.editOriginal(String.format("Finished archiving channel %s! The file should appear below.", channel.getAsMention()) + skippedNote(export))
+                            .setFiles(export.file().upload())
                             .queue();
                     }
                 });
-            } catch (Exception exception) {
+            } catch (RuntimeException exception) {
                 CommandReplies.logFailure("An error occurred when archiving the channel " + channel.getId(), exception);
                 progress.finish(() -> {
                     if (!hook.isExpired()) {
@@ -98,14 +101,14 @@ public class ChannelCommands {
         ProgressUpdates progress = ProgressUpdates.throttledReply(hook, PROGRESS_INTERVAL, clock);
         CompletableFuture.runAsync(() -> {
             try {
-                File zipFile = ArchiveExporter.exportCategory(category, progress.loggingReporter());
+                ArchiveExporter.Export export = exporter.exportCategory(category, progress.loggingReporter());
                 progress.finish(() -> {
                     if (!hook.isExpired()) {
                         hook.editOriginal("Finished archiving! Sending the zip file via DM").queue();
                     }
                 });
-                sendZipToUser(user, zipFile, hook, category.getName());
-            } catch (Exception exception) {
+                sendZipToUser(user, export, hook, category.getName());
+            } catch (IOException | RuntimeException exception) {
                 CommandReplies.logFailure("Failed to archive category " + category.getId(), exception);
                 progress.finish(() -> {
                 });
@@ -119,6 +122,18 @@ public class ChannelCommands {
                 }
             }
         }, backgroundWork);
+    }
+
+    /** Names the threads left out of an archive, so a partial archive isn't mistaken for a complete one. */
+    static String skippedNote(ArchiveExporter.Export export) {
+        List<String> skipped = export.skippedThreads();
+        if (skipped.isEmpty()) {
+            return "";
+        }
+
+        String names = String.join(", ", skipped.subList(0, Math.min(SKIPPED_NAMES_SHOWN, skipped.size())));
+        String more = skipped.size() > SKIPPED_NAMES_SHOWN ? " and " + (skipped.size() - SKIPPED_NAMES_SHOWN) + " more" : "";
+        return "\nLeft out because they couldn't be read: " + names + more;
     }
 
     @SlashCommand(name = "lock", description = "Locks the thread that the command is executed in", guildOnly = true, defaultMemberPermissions = {"MANAGE_THREADS"}, requiredPermissions = {"MANAGE_THREADS"})
@@ -208,38 +223,35 @@ public class ChannelCommands {
         return DiscordUtils.findTagByName(forum, autoTag.getDefaultTagName());
     }
 
-    private void sendZipToUser(User user, File zipFile, InteractionHook hook, String categoryName) {
-        user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage("Here is your archive for category **" + categoryName + "**:")
-            .addFiles(FileUpload.fromData(zipFile))
+    private void sendZipToUser(User user, ArchiveExporter.Export export, InteractionHook hook, String categoryName) {
+        String note = skippedNote(export);
+        user.openPrivateChannel().queue(privateChannel -> privateChannel.sendMessage("Here is your archive for category **" + categoryName + "**:" + note)
+            .addFiles(export.file().upload())
             .queue(
                 success -> {
-                    log.info("Successfully sent archive zip for category {} to user {}", categoryName, user.getId());
+                    log.info("Sent the archive of category {} to user {}", categoryName, user.getId());
                     if (!hook.isExpired()) {
                         hook.editOriginal("Finished! Sent you the archive zip via DM.").queue();
                     }
                 },
                 error -> {
-                    log.error("Failed to DM archive zip file to user {}", user.getId(), error);
-                    if (!hook.isExpired()) {
-                        hook.editOriginal("Finished archiving, but failed to DM the zip file. Sending here instead...")
-                            .setFiles(FileUpload.fromData(zipFile))
-                            .queue(
-                                null,
-                                sendError -> hook.editOriginal("Failed to send the zip. File path: " + zipFile.getAbsolutePath()).queue()
-                            );
-                    } else {
-                        log.warn("Hook expired and DM failed. Archive file located at: {}", zipFile.getAbsolutePath());
-                    }
+                    log.error("Failed to DM the archive of category {} to user {}", categoryName, user.getId(), error);
+                    sendZipHere(hook, export, note);
                 }
             ), error -> {
-            log.error("Failed to open DM for user {}", user.getId(), error);
-            if (!hook.isExpired()) {
-                hook.editOriginal("Finished archiving, but could not open DMs to send the zip file. File path: " + zipFile.getAbsolutePath()).queue();
-            } else {
-                log.warn("Hook expired and could not open DM. Archive file located at: {}", zipFile.getAbsolutePath());
-            }
+            log.error("Failed to open a DM with user {}", user.getId(), error);
+            sendZipHere(hook, export, note);
         });
     }
 
+    private static void sendZipHere(InteractionHook hook, ArchiveExporter.Export export, String note) {
+        if (hook.isExpired()) {
+            log.warn("Couldn't DM the archive {} and the interaction has expired, so it wasn't delivered", export.file().name());
+            return;
+        }
 
+        hook.editOriginal("Finished archiving, but couldn't DM you the zip file, so here it is instead." + note)
+            .setFiles(export.file().upload())
+            .queue(null, error -> hook.editOriginal("Finished archiving, but the zip file couldn't be sent. It may be too large for Discord.").queue());
+    }
 }

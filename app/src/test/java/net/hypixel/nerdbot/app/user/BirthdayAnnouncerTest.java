@@ -103,6 +103,18 @@ class BirthdayAnnouncerTest {
     }
 
     @Test
+    void someoneWhoLeftIsNotAnnounced() {
+        DiscordUser stayed = member("1", LocalDate.of(2007, 10, 12), "UTC");
+        DiscordUser left = member("2", LocalDate.of(2007, 10, 12), "UTC");
+        FakeDiscordUserStore store = new FakeDiscordUserStore().seed(stayed).seed(left);
+        BirthdayAnnouncer announcer = new BirthdayAnnouncer(store, messenger::send, onTheDay, "1"::equals);
+
+        assertEquals(1, announcer.announceDue());
+        assertEquals(List.of("Happy birthday <@1>!"), messenger.messages());
+        assertEquals(List.of("1"), store.savedIds());
+    }
+
+    @Test
     void rejectedMessageUndoesTheRecordSoTheNextRunRetries() {
         DiscordUser user = member("1", LocalDate.of(2007, 10, 12), "UTC");
         user.getBirthdayData().setLastAnnouncedYear(2025);

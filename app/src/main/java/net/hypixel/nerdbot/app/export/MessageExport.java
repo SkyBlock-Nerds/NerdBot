@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.app.command.util;
+package net.hypixel.nerdbot.app.export;
 
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.Message.Attachment;

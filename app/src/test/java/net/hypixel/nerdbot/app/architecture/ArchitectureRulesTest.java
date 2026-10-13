@@ -49,7 +49,7 @@ class ArchitectureRulesTest {
      * Code that gets what it needs through its constructor. Add to these as more of the bot moves
      * over; nothing in them may go back to looking things up through the global bot.
      */
-    private static final String[] INJECTED_PACKAGES = {"..app.curator..", "..app.inject..", "..app.listener..", "..app.nomination..", "..app.profile..", "..app.punishment..", "..app.reminder.."};
+    private static final String[] INJECTED_PACKAGES = {"..app.curator..", "..app.export..", "..app.inject..", "..app.listener..", "..app.nomination..", "..app.profile..", "..app.punishment..", "..app.reminder.."};
     private static final String[] INJECTED_CLASSES = {
         "net.hypixel.nerdbot.app.activity.ActivityListener",
         "net.hypixel.nerdbot.app.badge.BadgeCatalog",
@@ -88,9 +88,13 @@ class ArchitectureRulesTest {
         "net.hypixel.nerdbot.app.command.util.SuggestionListings",
         "net.hypixel.nerdbot.app.config.ConfigEditor",
         "net.hypixel.nerdbot.app.config.ConfigStore",
+        "net.hypixel.nerdbot.app.drive.DriveSyncSweep",
         "net.hypixel.nerdbot.app.feature.CurateFeature",
+        "net.hypixel.nerdbot.app.feature.DrivePermissionSyncFeature",
         "net.hypixel.nerdbot.app.feature.HelloGoodbyeFeature",
         "net.hypixel.nerdbot.app.feature.MemberReconcileFeature",
+        "net.hypixel.nerdbot.app.feature.ProfileUpdateFeature",
+        "net.hypixel.nerdbot.app.feature.RepositoryAutosaveFeature",
         "net.hypixel.nerdbot.app.generation.DiscordGenerationContexts",
         "net.hypixel.nerdbot.app.metrics.MetricsServer",
         "net.hypixel.nerdbot.app.storage.GreenlitStore",
@@ -100,6 +104,7 @@ class ArchitectureRulesTest {
         "net.hypixel.nerdbot.app.suggestion.SuggestionAutoArchiver",
         "net.hypixel.nerdbot.app.suggestion.SuggestionCache",
         "net.hypixel.nerdbot.app.suggestion.SuggestionFactory",
+        "net.hypixel.nerdbot.app.user.BirthdayAnnouncementFeature",
         "net.hypixel.nerdbot.app.user.BirthdayService",
         "net.hypixel.nerdbot.app.user.MemberQueue"
     };
