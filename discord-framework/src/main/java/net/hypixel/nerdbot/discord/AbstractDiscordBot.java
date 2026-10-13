@@ -80,6 +80,8 @@ public abstract class AbstractDiscordBot implements DiscordBot {
 
     protected AbstractDiscordBot() {
         this.database = Objects.requireNonNull(createDatabase(), "createDatabase() returned null");
+        // Read-only copies run against live data, so nothing they cache may be written back
+        database.getRepositoryManager().setReadOnly(isReadOnly());
     }
 
     /**
