@@ -10,7 +10,9 @@ import net.dv8tion.jda.api.entities.channel.unions.IThreadContainerUnion;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.managers.channel.concrete.ThreadChannelManager;
 import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
+import net.hypixel.nerdbot.app.export.ArchiveExporter;
 import net.hypixel.nerdbot.app.config.NerdBotConfig;
+import net.hypixel.nerdbot.app.testsupport.FakeDiscordUserStore;
 import net.hypixel.nerdbot.app.testsupport.DiscordFakes;
 import net.hypixel.nerdbot.discord.config.objects.CustomForumTag;
 import net.hypixel.nerdbot.discord.config.objects.ForumAutoTag;
@@ -45,7 +47,8 @@ class ChannelCommandsTest {
 
     private final CallRecorder recorder = new CallRecorder();
     private final NerdBotConfig config = new NerdBotConfig();
-    private final ChannelCommands commands = new ChannelCommands(() -> config, Runnable::run, Clock.systemUTC());
+    private final ChannelCommands commands = new ChannelCommands(new ArchiveExporter(new FakeDiscordUserStore(), () -> config, Clock.systemUTC()),
+        () -> config, Runnable::run, Clock.systemUTC());
     private boolean managerSucceeds = true;
 
     @BeforeEach

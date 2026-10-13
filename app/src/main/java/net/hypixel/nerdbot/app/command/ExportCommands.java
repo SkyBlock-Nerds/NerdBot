@@ -17,10 +17,12 @@ import net.dv8tion.jda.api.entities.channel.forums.BaseForumTag;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
-import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
+import net.hypixel.nerdbot.app.export.ArchiveExporter;
 import net.hypixel.nerdbot.app.command.util.CommandReplies;
+import net.hypixel.nerdbot.app.export.CsvTable;
+import net.hypixel.nerdbot.app.export.ExportFile;
 import net.hypixel.nerdbot.app.command.util.ProgressUpdates;
 import net.hypixel.nerdbot.app.config.NerdBotConfig;
 import net.hypixel.nerdbot.app.role.SpecialRoles;
@@ -30,8 +32,6 @@ import net.hypixel.nerdbot.app.suggestion.Suggestion;
 import net.hypixel.nerdbot.app.suggestion.SuggestionCache;
 import net.hypixel.nerdbot.app.suggestion.SuggestionFactory;
 import net.hypixel.nerdbot.discord.role.RoleManager;
-import net.hypixel.nerdbot.marmalade.csv.CSVData;
-import net.hypixel.nerdbot.marmalade.io.FileUtils;
 import net.hypixel.nerdbot.marmalade.json.DataSerialization;
 import net.hypixel.nerdbot.marmalade.storage.database.model.greenlit.GreenlitMessage;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
@@ -40,12 +40,10 @@ import net.hypixel.nerdbot.marmalade.storage.database.model.user.stats.LastActiv
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.stats.MojangProfile;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -67,6 +65,7 @@ public class ExportCommands {
     static final String NOTHING_TO_EXPORT = "Nothing found to export!";
     static final String FILE_FAILED = "Failed to create the export file. Please try again later.";
 
+    private final ArchiveExporter exporter;
     private final DiscordUserStore users;
     private final GreenlitStore greenlit;
     private final SuggestionCache suggestions;
@@ -77,8 +76,9 @@ public class ExportCommands {
     private final Clock clock;
 
     @Inject
-    public ExportCommands(DiscordUserStore users, GreenlitStore greenlit, SuggestionCache suggestions, SuggestionFactory suggestionFactory,
-                          Provider<NerdBotConfig> config, JDA jda, Executor backgroundWork, Clock clock) {
+    public ExportCommands(ArchiveExporter exporter, DiscordUserStore users, GreenlitStore greenlit, SuggestionCache suggestions,
+                          SuggestionFactory suggestionFactory, Provider<NerdBotConfig> config, JDA jda, Executor backgroundWork, Clock clock) {
+        this.exporter = exporter;
         this.users = users;
         this.greenlit = greenlit;
         this.suggestions = suggestions;
@@ -99,17 +99,17 @@ public class ExportCommands {
         hook.editOriginal(String.format("Exporting threads from %s...", forumChannel.getAsMention())).queue();
 
         ProgressUpdates progress = ProgressUpdates.throttledReply(hook, PROGRESS_INTERVAL, clock);
-        CompletableFuture<File> export = CompletableFuture.supplyAsync(() -> {
+        CompletableFuture<ArchiveExporter.Export> export = CompletableFuture.supplyAsync(() -> {
             try {
-                return ArchiveExporter.exportForumThreadsDetailed(forumChannel, progress.loggingReporter());
+                return exporter.exportForumThreadsDetailed(forumChannel, progress.loggingReporter());
             } catch (IOException exception) {
                 throw new UncheckedIOException(exception);
             }
         }, backgroundWork);
 
-        CommandReplies.finish(export, hook, "export threads from " + forumChannel.getId(), FILE_FAILED, file -> progress.finish(() ->
-            hook.editOriginal(String.format("Finished exporting all threads from %s!", forumChannel.getAsMention()))
-                .setFiles(FileUpload.fromData(file))
+        CommandReplies.finish(export, hook, "export threads from " + forumChannel.getId(), FILE_FAILED, done -> progress.finish(() ->
+            hook.editOriginal(String.format("Finished exporting all threads from %s!", forumChannel.getAsMention()) + ChannelCommands.skippedNote(done))
+                .setFiles(done.file().upload())
                 .queue()));
     }
 
@@ -146,13 +146,13 @@ public class ExportCommands {
     void exportUuids(IReplyCallback interaction, @Nullable String roles) {
         String[] roleNames = roles != null ? roles.split(", ?") : new String[]{"Member"};
         exportFromMembers(interaction, "export Minecraft UUIDs", (members, stored) -> uuidJson(members, stored, roleNames)
-            .map(json -> namedFile("export-uuids-%s.json", json)));
+            .map(json -> ExportFile.of("export-uuids", "json", clock.instant(), json)));
     }
 
     void exportRoleMembers(IReplyCallback interaction, String roles) {
         String[] roleNames = roles.split(", ?");
         exportFromMembers(interaction, "export role members", (members, stored) -> rolesText(members, roleNames)
-            .map(text -> namedFile("export-roles-%s.csv", text)));
+            .map(text -> ExportFile.of("export-roles", "csv", clock.instant(), text)));
     }
 
     void exportGreenlit(IReplyCallback interaction, long suggestionsAfter) {
@@ -167,7 +167,7 @@ public class ExportCommands {
             }
 
             MessageEditData data = MessageEditBuilder.from(MessageEditData.fromContent("To import into Google Sheets, go to File -> Import, Upload the `.csv` document shown below.\nChange `Import Location` to `Append to current sheet` and `Separator Type` should be defaulted to Automatic detection if not, change it to tabs.)"))
-                .setFiles(FileUpload.fromData(namedFile("export-greenlit-%s.csv", csv.get())))
+                .setFiles(ExportFile.of("export-greenlit", "csv", clock.instant(), csv.get()).upload())
                 .build();
             hook.editOriginal(data).queue();
         });
@@ -193,16 +193,16 @@ public class ExportCommands {
                 return;
             }
 
-            CSVData csvData = new CSVData(memberActivityHeaders(filter.days()), ";");
+            CsvTable table = new CsvTable(memberActivityHeaders(filter.days()), ";");
             for (DiscordUser user : selected) {
                 Member member = guild.getMemberById(user.getDiscordId());
                 if (member != null) {
-                    csvData.addRow(memberActivityRow(member.getUser().getName(), user, filter.days()));
+                    table.addRow(memberActivityRow(member.getUser().getName(), user, filter.days()));
                 }
             }
 
             log.info("Exporting member activity for {} members ({})", selected.size(), filter);
-            hook.sendFiles(FileUpload.fromData(namedFile("export-member-activity-%s.csv", csvData.toCSV()))).queue();
+            hook.sendFiles(ExportFile.of("export-member-activity", "csv", clock.instant(), table.toCsv()).upload()).queue();
         });
     }
 
@@ -237,15 +237,15 @@ public class ExportCommands {
             }))
             .toList();
 
-        CompletableFuture<File> file = CompletableFuture.allOf(rows.toArray(CompletableFuture[]::new)).thenApplyAsync(ignored -> {
-            CSVData csvData = new CSVData(USER_SUGGESTION_HEADERS, ";");
-            rows.forEach(row -> csvData.addRow(row.join()));
-            return namedFile("export-user-suggestions-" + ownerId + "-%s.csv", csvData.toCSV());
+        CompletableFuture<ExportFile> file = CompletableFuture.allOf(rows.toArray(CompletableFuture[]::new)).thenApplyAsync(ignored -> {
+            CsvTable table = new CsvTable(USER_SUGGESTION_HEADERS, ";");
+            rows.forEach(row -> table.addRow(row.join()));
+            return ExportFile.of("export-user-suggestions-" + ownerId, "csv", clock.instant(), table.toCsv());
         }, backgroundWork);
 
         CommandReplies.finish(file, hook, "export suggestions by " + ownerId, FILE_FAILED, exported -> progress.finish(() ->
             hook.editOriginal(String.format("Successfully exported %d suggestions for user ID %s", owned.size(), userId))
-                .setFiles(FileUpload.fromData(exported))
+                .setFiles(exported.upload())
                 .queue()));
     }
 
@@ -261,15 +261,15 @@ public class ExportCommands {
         CompletableFuture<List<Member>> members = new CompletableFuture<>();
         guild.loadMembers().onSuccess(members::complete).onError(members::completeExceptionally);
 
-        CompletableFuture<Optional<File>> file = members.thenApplyAsync(loaded -> builder.build(loaded, users.getAllFromDatabase()), backgroundWork);
+        CompletableFuture<Optional<ExportFile>> file = members.thenApplyAsync(loaded -> builder.build(loaded, users.getAllFromDatabase()), backgroundWork);
         CommandReplies.finish(file, hook, action, FILE_FAILED, made -> made.ifPresentOrElse(
-            exported -> hook.sendFiles(FileUpload.fromData(exported)).queue(),
+            exported -> hook.sendFiles(exported.upload()).queue(),
             () -> hook.editOriginal(NOTHING_TO_EXPORT).queue()));
     }
 
     @FunctionalInterface
     private interface MemberExport {
-        Optional<File> build(List<Member> members, List<DiscordUser> storedUsers);
+        Optional<ExportFile> build(List<Member> members, List<DiscordUser> storedUsers);
     }
 
     private CompletableFuture<String> firstMessageContent(Suggestion suggestion) {
@@ -385,21 +385,21 @@ public class ExportCommands {
 
     /** The greenlit suggestions from {@code suggestionsAfter} on, as CSV for Google Sheets; empty when there are none. */
     static Optional<String> greenlitCsv(List<GreenlitMessage> messages, long suggestionsAfter) {
-        CSVData csvData = new CSVData(List.of("Creation Date", "Tags", "Title"), ";");
+        CsvTable table = new CsvTable(List.of("Creation Date", "Tags", "Title"), ";");
 
         for (GreenlitMessage message : messages) {
             if (message.getSuggestionTimestamp() < suggestionsAfter) {
                 continue;
             }
 
-            csvData.addRow(List.of(
+            table.addRow(List.of(
                 formatTimestampSheets(message.getSuggestionTimestamp()),
-                quoted(String.join(", ", message.getTags())),
+                String.join(", ", message.getTags()),
                 "=HYPERLINK(\"" + message.getSuggestionUrl() + "\", \"" + message.getSuggestionTitle().replace("\"", "\"\"") + "\")"
             ));
         }
 
-        return csvData.hasContent() ? Optional.of(csvData.toCSV()) : Optional.empty();
+        return table.isEmpty() ? Optional.empty() : Optional.of(table.toCsv());
     }
 
     static final List<String> USER_SUGGESTION_HEADERS = List.of(
@@ -407,8 +407,8 @@ public class ExportCommands {
 
     static List<String> userSuggestionRow(Suggestion suggestion, String content, List<String> tags) {
         return List.of(
-            quoted(suggestion.getThreadName()),
-            quoted(content.replace("\n", " ").replace("\r", "")),
+            suggestion.getThreadName(),
+            content.replace("\n", " ").replace("\r", ""),
             suggestion.getChannelType().getName(),
             formatTimestampSheets(suggestion.getTimeCreated().toInstant().toEpochMilli()),
             "=HYPERLINK(\"" + suggestion.getJumpUrl() + "\", \"View\")",
@@ -417,7 +417,7 @@ public class ExportCommands {
             String.valueOf(suggestion.getNeutrals()),
             String.format("%.1f%%", suggestion.getRatio()),
             suggestion.isGreenlit() ? "YES" : "NO",
-            quoted(String.join(", ", tags))
+            String.join(", ", tags)
         );
     }
 
@@ -471,15 +471,10 @@ public class ExportCommands {
             formatTimestampSheets(lastActivity.getLastAlphaActivity()),
             formatTimestampSheets(lastActivity.getLastTicketUsage()),
             String.valueOf(lastActivity.getTotalMessageCount(inactivityDays)),
-            quoted(channelActivity),
+            channelActivity,
             "FALSE",
             ""
         );
-    }
-
-    /** A CSV field in quotes, with any quotes inside doubled. */
-    static String quoted(String value) {
-        return "\"" + value.replace("\"", "\"\"") + "\"";
     }
 
     private static String formatTimestampSheets(long timestamp) {
@@ -488,14 +483,5 @@ public class ExportCommands {
         }
 
         return "=EPOCHTODATE(" + timestamp / 1_000 + ")";
-    }
-
-    /** Writes a temp file whose name has the current time in place of {@code %s}. */
-    private static File namedFile(String nameFormat, String content) {
-        try {
-            return FileUtils.createTempFile(String.format(nameFormat, FileUtils.FILE_NAME_DATE_FORMAT.format(Instant.now())), content);
-        } catch (IOException exception) {
-            throw new UncheckedIOException(exception);
-        }
     }
 }

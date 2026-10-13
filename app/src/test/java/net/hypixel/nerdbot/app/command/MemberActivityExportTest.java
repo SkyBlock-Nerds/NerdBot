@@ -48,19 +48,19 @@ class MemberActivityExportTest {
 
         String breakdown = channelBreakdown(user);
 
-        assertEquals("\"suggestions: 10\ngeneral: 3\"", breakdown);
+        assertEquals("suggestions: 10\ngeneral: 3", breakdown);
     }
 
     @Test
-    void quotesInChannelNamesAreEscapedForCsv() {
+    void channelNamesAreKeptAsTheyAreForTheTableToEscape() {
         DiscordUser user = userWithChannels(entry("the \"best\" channel", 1));
 
-        assertEquals("\"the \"\"best\"\" channel: 1\"", channelBreakdown(user));
+        assertEquals("the \"best\" channel: 1", channelBreakdown(user));
     }
 
     @Test
     void noChannelActivityShowsNotApplicable() {
-        assertEquals("\"N/A\"", channelBreakdown(new DiscordUser("1")));
+        assertEquals("N/A", channelBreakdown(new DiscordUser("1")));
     }
 
     private static String channelBreakdown(DiscordUser user) {

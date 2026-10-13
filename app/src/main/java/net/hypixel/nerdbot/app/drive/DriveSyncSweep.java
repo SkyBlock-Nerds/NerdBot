@@ -1,19 +1,24 @@
 package net.hypixel.nerdbot.app.drive;
 
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.exceptions.ErrorResponseException;
 import net.dv8tion.jda.api.requests.ErrorResponse;
-import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
+import net.hypixel.nerdbot.app.channel.LogChannel;
 import net.hypixel.nerdbot.app.config.GoogleDriveConfig;
-import net.hypixel.nerdbot.discord.BotEnvironment;
-import net.hypixel.nerdbot.discord.util.DiscordUtils;
+import net.hypixel.nerdbot.app.config.NerdBotConfig;
+import net.hypixel.nerdbot.app.listener.GuildScope;
+import net.hypixel.nerdbot.app.storage.DiscordUserStore;
+import net.hypixel.nerdbot.app.user.MemberQueue;
 import net.hypixel.nerdbot.marmalade.google.drive.DriveApiException;
 import net.hypixel.nerdbot.marmalade.google.drive.DrivePermission;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.drive.DriveGrant;
-import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -22,7 +27,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Full reconcile pass over every linked member: refresh grants against live
@@ -32,12 +39,32 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * sequentially with a short pause to stay friendly to Drive API quotas.
  */
 @Slf4j
+@Singleton
 public class DriveSyncSweep {
 
     private static final long PAUSE_BETWEEN_USERS_MS = 200;
 
-    /** Guards against two sweeps (hourly schedule + /drive sync) running concurrently over the same users. */
-    private static final AtomicBoolean SWEEP_RUNNING = new AtomicBoolean(false);
+    // Stops the hourly sweep and /drive sync running over the same members at once
+    private final AtomicBoolean running = new AtomicBoolean(false);
+    private final DiscordUserStore users;
+    private final MemberQueue queue;
+    private final Provider<Optional<DrivePermissionService>> drive;
+    private final Provider<NerdBotConfig> config;
+    private final GuildScope guildScope;
+    private final JDA jda;
+    private final LogChannel logChannel;
+
+    @Inject
+    public DriveSyncSweep(DiscordUserStore users, MemberQueue queue, Provider<Optional<DrivePermissionService>> drive, Provider<NerdBotConfig> config,
+                          GuildScope guildScope, JDA jda, LogChannel logChannel) {
+        this.users = users;
+        this.queue = queue;
+        this.drive = drive;
+        this.config = config;
+        this.guildScope = guildScope;
+        this.jda = jda;
+        this.logChannel = logChannel;
+    }
 
     public record Result(int synced, int departed, int failed) {
 
@@ -79,43 +106,56 @@ public class DriveSyncSweep {
         DriveLinkWorkflow workflow = new DriveLinkWorkflow(service, config);
 
         for (DiscordUser user : users) {
-            if (user.getDriveAccess() == null) {
-                continue;
-            }
-
-            Optional<List<String>> roleIds;
-            try {
-                roleIds = lookup.roleIdsFor(user.getDiscordId());
-            } catch (Exception e) {
-                log.warn("Could not resolve member {} this sweep, skipping", user.getDiscordId(), e);
-                failed++;
-                continue;
-            }
-
-            if (roleIds.isEmpty()) {
-                log.info("Member {} no longer in guild; revoking and forgetting their Drive access", user.getDiscordId());
-                List<String> heldFolders = user.getDriveAccess().getGrants().stream().map(DriveGrant::folderId).toList();
-                workflow.revokeAndForget(user);
-                saver.save(user);
-                changeListener.onChange(user.getDiscordId(), List.of(), heldFolders);
-                departed++;
-                continue;
-            }
-
-            dropDanglingGrants(user, livePermissionIds);
-            DrivePermissionService.SyncOutcome outcome = service.syncGrants(user.getDiscordId(), user.getDriveAccess(), roleIds.get(), config);
-            saver.save(user);
-            if (!outcome.grantedFolders().isEmpty() || !outcome.revokedFolders().isEmpty()) {
-                changeListener.onChange(user.getDiscordId(), outcome.grantedFolders(), outcome.revokedFolders());
-            }
-            if (outcome.hasFailures()) {
-                failed++;
-            } else {
-                synced++;
+            switch (reconcileUser(user, lookup, service, config, workflow, livePermissionIds, saver, changeListener)) {
+                case SYNCED -> synced++;
+                case DEPARTED -> departed++;
+                case FAILED -> failed++;
+                case NOT_LINKED -> {
+                }
             }
         }
 
         return new Result(synced, departed, failed);
+    }
+
+    enum Change {
+        SYNCED,
+        DEPARTED,
+        FAILED,
+        NOT_LINKED
+    }
+
+    static Change reconcileUser(DiscordUser user, MemberLookup lookup, DrivePermissionService service, GoogleDriveConfig config,
+                                DriveLinkWorkflow workflow, Map<String, Set<String>> livePermissionIds, UserSaver saver,
+                                ChangeListener changeListener) {
+        if (user.getDriveAccess() == null) {
+            return Change.NOT_LINKED;
+        }
+
+        Optional<List<String>> roleIds;
+        try {
+            roleIds = lookup.roleIdsFor(user.getDiscordId());
+        } catch (RuntimeException exception) {
+            log.warn("Could not resolve member {} this sweep, skipping", user.getDiscordId(), exception);
+            return Change.FAILED;
+        }
+
+        if (roleIds.isEmpty()) {
+            log.info("Member {} no longer in guild; revoking and forgetting their Drive access", user.getDiscordId());
+            List<String> heldFolders = user.getDriveAccess().getGrants().stream().map(DriveGrant::folderId).toList();
+            workflow.revokeAndForget(user);
+            saver.save(user);
+            changeListener.onChange(user.getDiscordId(), List.of(), heldFolders);
+            return Change.DEPARTED;
+        }
+
+        dropDanglingGrants(user, livePermissionIds);
+        DrivePermissionService.SyncOutcome outcome = service.syncGrants(user.getDiscordId(), user.getDriveAccess(), roleIds.get(), config);
+        saver.save(user);
+        if (!outcome.grantedFolders().isEmpty() || !outcome.revokedFolders().isEmpty()) {
+            changeListener.onChange(user.getDiscordId(), outcome.grantedFolders(), outcome.revokedFolders());
+        }
+        return outcome.hasFailures() ? Change.FAILED : Change.SYNCED;
     }
 
     /**
@@ -158,78 +198,88 @@ public class DriveSyncSweep {
         });
     }
 
-    /** Production entry point: adapts the live guild + repository. */
+    /**
+     * Reconciles every stored member with Drive access. Each member is reconciled in their queue, so
+     * the sweep can't race the role listener changing the same grants.
+     */
     public Result run() {
-        if (!SWEEP_RUNNING.compareAndSet(false, true)) {
+        if (!running.compareAndSet(false, true)) {
             log.info("Drive reconcile sweep already in progress, skipping this trigger");
             return new Result(0, 0, 0);
         }
 
         try {
-            Optional<DrivePermissionService> service = SkyBlockNerdsBot.drivePermissionService();
-            if (service.isEmpty()) {
+            Optional<DrivePermissionService> service = drive.get();
+            GoogleDriveConfig config = this.config.get().getGoogleDriveConfig();
+            if (service.isEmpty() || !config.isEnabled()) {
                 return new Result(0, 0, 0);
             }
 
-            GoogleDriveConfig config = SkyBlockNerdsBot.config().getGoogleDriveConfig();
-            if (!config.isEnabled()) {
+            Optional<Guild> guild = guildScope.mainGuild(jda);
+            if (guild.isEmpty()) {
+                log.warn("Not reconciling Drive access; the bot isn't in the configured guild");
                 return new Result(0, 0, 0);
             }
 
-            DiscordUserRepository repository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-            Guild guild = DiscordUtils.getMainGuild();
+            Map<String, Set<String>> livePermissionIds = fetchLivePermissionIds(service.get(), config);
+            DriveLinkWorkflow workflow = new DriveLinkWorkflow(service.get(), config);
+            MemberLookup lookup = memberId -> roleIdsOf(guild.get(), memberId);
+            ChangeListener changes = (memberId, granted, revoked) -> DriveLogEmbeds.postAccessChange(logChannel, service.get(), memberId, granted, revoked);
+            log.info("Reconcile sweep starting over {} mapped folder(s)", mappedFolderIds(config).size());
 
-            MemberLookup lookup = discordId -> {
+            int synced = 0;
+            int departed = 0;
+            int failed = 0;
+            for (String memberId : users.findAllIds()) {
+                AtomicReference<Change> change = new AtomicReference<>(Change.NOT_LINKED);
                 try {
-                    return Optional.of(guild.retrieveMemberById(discordId).complete()
-                        .getRoles().stream().map(Role::getId).toList());
-                } catch (ErrorResponseException e) {
-                    // Only return empty if we can confirm the member is gone
-                    if (e.getErrorResponse() == ErrorResponse.UNKNOWN_MEMBER ||
-                        e.getErrorResponse() == ErrorResponse.UNKNOWN_USER) {
-                        return Optional.empty(); // member left the guild
+                    queue.run(memberId, "Drive sync", () -> users.findById(memberId).ifPresent(user ->
+                        change.set(reconcileUser(user, lookup, service.get(), config, workflow, livePermissionIds, this::save, changes)))).join();
+                } catch (CompletionException exception) {
+                    change.set(Change.FAILED);
+                }
+
+                switch (change.get()) {
+                    case SYNCED -> synced++;
+                    case DEPARTED -> departed++;
+                    case FAILED -> failed++;
+                    case NOT_LINKED -> {
                     }
-                    // For any other error, rethrow so it's caught by reconcileUsers and counted as failed
-                    throw e;
                 }
-            };
+            }
 
-            // Discover ids via getAllDocuments, but operate on the cache-first instances from findById so
-            // the sweep never clobbers a change another thread wrote to the cache after the bulk read.
-            List<String> allIds = repository.getAllDocuments().stream()
-                .map(DiscordUser::getDiscordId)
-                .toList();
-            List<DiscordUser> linkedUsers = allIds.stream()
-                .map(id -> repository.findById(id).toOptional().orElse(null))
-                .filter(user -> user != null && user.getDriveAccess() != null)
-                .toList();
-
-            Set<String> mappedFolders = mappedFolderIds(config);
-            log.info("Reconcile sweep starting: {} linked member(s), {} mapped folder(s)", linkedUsers.size(), mappedFolders.size());
-
-            // Wrap the saver with pacing so a large sweep doesn't hammer the API
-            UserSaver saver = user -> {
-                if (user.getDriveAccess() == null) {
-                    repository.cacheObject(user);
-                    // A $set save can't remove a field: the serializer omits nulls and $set leaves absent
-                    // fields alone, so a departed member's driveAccess would silently survive in Mongo.
-                    repository.unsetField(user.getDiscordId(), "driveAccess");
-                } else {
-                    repository.cacheAndSaveAsync(user);
-                }
-                try {
-                    Thread.sleep(PAUSE_BETWEEN_USERS_MS);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            };
-
-            Result result = reconcileUsers(linkedUsers, lookup, service.get(), config, saver,
-                (memberId, granted, revoked) -> DriveLogEmbeds.postAccessChange(service.get(), memberId, granted, revoked));
+            Result result = new Result(synced, departed, failed);
             log.info("Drive reconcile sweep finished: {}", result.summary());
             return result;
         } finally {
-            SWEEP_RUNNING.set(false);
+            running.set(false);
+        }
+    }
+
+    // Empty only when Discord says the member is gone; any other failure is thrown and counted as failed
+    private static Optional<List<String>> roleIdsOf(Guild guild, String memberId) {
+        try {
+            return Optional.of(guild.retrieveMemberById(memberId).complete().getRoles().stream().map(Role::getId).toList());
+        } catch (ErrorResponseException exception) {
+            if (exception.getErrorResponse() == ErrorResponse.UNKNOWN_MEMBER || exception.getErrorResponse() == ErrorResponse.UNKNOWN_USER) {
+                return Optional.empty();
+            }
+            throw exception;
+        }
+    }
+
+    // Paced, so a large sweep stays within the Drive API's quotas
+    private void save(DiscordUser user) {
+        if (user.getDriveAccess() == null) {
+            users.clearDriveAccess(user);
+        } else {
+            users.save(user).join();
+        }
+
+        try {
+            Thread.sleep(PAUSE_BETWEEN_USERS_MS);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
         }
     }
 }

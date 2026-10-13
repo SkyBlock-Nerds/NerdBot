@@ -11,7 +11,6 @@ import net.hypixel.nerdbot.app.channel.LogChannel;
 import net.hypixel.nerdbot.app.config.ConfigStore;
 import net.hypixel.nerdbot.app.config.NerdBotConfig;
 import net.hypixel.nerdbot.app.drive.DrivePermissionService;
-import net.hypixel.nerdbot.app.drive.DriveSyncSweep;
 import net.hypixel.nerdbot.app.generation.pack.update.PackUpdater;
 import net.hypixel.nerdbot.app.metrics.MetricsServer;
 import net.hypixel.nerdbot.app.metrics.PrometheusMetricsServer;
@@ -129,11 +128,6 @@ public interface BotModule {
     @Singleton
     static MessageCache messageCache() {
         return new MessageCache();
-    }
-
-    @Provides
-    static DriveSyncSweep driveSyncSweep() {
-        return new DriveSyncSweep();
     }
 
     /**

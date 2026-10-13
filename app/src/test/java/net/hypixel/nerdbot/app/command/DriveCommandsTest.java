@@ -51,7 +51,7 @@ class DriveCommandsTest {
     private final List<MessageEmbed> logged = new ArrayList<>();
     private Optional<DrivePermissionService> service = Optional.of(new DrivePermissionService(CIPHER, client));
     private DriveSyncSweep.Result sweepResult = new DriveSyncSweep.Result(3, 1, 0);
-    private final DriveCommands commands = new DriveCommands(() -> service, () -> config, users, logged::add, () -> new DriveSyncSweep() {
+    private final DriveCommands commands = new DriveCommands(() -> service, () -> config, users, logged::add, () -> new DriveSyncSweep(null, null, null, null, null, null, null) {
         @Override
         public Result run() {
             return sweepResult;

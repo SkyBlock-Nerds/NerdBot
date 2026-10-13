@@ -1,129 +1,66 @@
 package net.hypixel.nerdbot.app.feature;
 
 import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import lombok.extern.slf4j.Slf4j;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.exceptions.ErrorResponseException;
-import net.dv8tion.jda.api.exceptions.HierarchyException;
-import net.hypixel.nerdbot.app.SkyBlockNerdsBot;
+import net.dv8tion.jda.api.exceptions.PermissionException;
+import net.hypixel.nerdbot.app.config.NerdBotConfig;
+import net.hypixel.nerdbot.app.inject.BotState;
+import net.hypixel.nerdbot.app.listener.GuildScope;
+import net.hypixel.nerdbot.app.profile.MinecraftAccounts;
 import net.hypixel.nerdbot.app.storage.DiscordUserStore;
-import net.hypixel.nerdbot.app.storage.RepositoryDiscordUserStore;
-import net.hypixel.nerdbot.app.util.HttpUtils;
-import net.hypixel.nerdbot.discord.BotEnvironment;
+import net.hypixel.nerdbot.app.user.MemberQueue;
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
 import net.hypixel.nerdbot.discord.api.feature.SchedulableFeature;
-import net.hypixel.nerdbot.app.config.NerdBotConfig;
 import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
 import net.hypixel.nerdbot.marmalade.exception.HttpException;
 import net.hypixel.nerdbot.marmalade.functional.Result;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.DiscordUser;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.stats.MojangProfile;
-import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
-import net.hypixel.nerdbot.discord.util.DiscordUtils;
 
 import java.time.Duration;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
+/**
+ * Refreshes linked members' Minecraft names once their stored profile is older than
+ * {@code mojangUsernameCacheTTL} hours, saves them, and sets each member's nickname to their
+ * Minecraft name. One member failing doesn't stop the rest.
+ */
 @Slf4j
 public class ProfileUpdateFeature extends BotFeature implements SchedulableFeature {
 
+    // A cache TTL of zero would otherwise schedule the refresh to run constantly
+    private static final Duration MINIMUM_PERIOD = Duration.ofHours(1);
+
+    enum Outcome {
+        REFRESHED,
+        FAILED,
+        SKIPPED
+    }
+
+    private final DiscordUserStore users;
+    private final MemberQueue queue;
+    private final MinecraftAccounts accounts;
+    private final GuildScope guildScope;
+    private final JDA jda;
+    private final Provider<NerdBotConfig> config;
+    private final Provider<BotState> state;
+
     @Inject
-    public ProfileUpdateFeature() {
-    }
-
-    public static void updateNickname(DiscordUser discordUser) {
-        MojangProfile existingProfile = discordUser.getMojangProfile();
-        if (existingProfile == null) {
-            log.warn("Skipping nickname update for {} because no Mojang profile is stored", discordUser.getDiscordId());
-            return;
-        }
-
-        if (existingProfile.getUniqueId() == null) {
-            log.warn("Skipping nickname update for {} because stored Mojang profile is missing a UUID", discordUser.getDiscordId());
-            return;
-        }
-
-        Result<MojangProfile, HttpException> profileResult = HttpUtils.getMojangProfile(existingProfile.getUniqueId());
-        if (profileResult.isFailure()) {
-            log.warn("Failed to fetch Mojang profile for {} (UUID: {})", discordUser.getDiscordId(), existingProfile.getUniqueId());
-            return;
-        }
-
-        MojangProfile mojangProfile = profileResult.orElseGet(MojangProfile::new);
-
-        if (mojangProfile.getUsername() == null || mojangProfile.getUsername().isBlank()) {
-            log.warn("Skipping nickname update for {} (UUID: {}) because the Mojang username is missing",
-                discordUser.getDiscordId(),
-                mojangProfile.getUniqueId());
-            return;
-        }
-
-        discordUser.setMojangProfile(mojangProfile);
-        Guild guild = DiscordUtils.getMainGuild();
-        Member member;
-        try {
-            member = guild.retrieveMemberById(discordUser.getDiscordId()).complete();
-        } catch (ErrorResponseException exception) {
-            log.warn("Failed to retrieve guild member {} for nickname update", discordUser.getDiscordId(), exception);
-            return;
-        }
-
-        if (member == null) {
-            log.warn("Could not find guild member for {}; skipping nickname update", discordUser.getDiscordId());
-            return;
-        }
-
-        String desiredNickname = mojangProfile.getUsername();
-
-        if (needsNicknameUpdate(member.getEffectiveName(), desiredNickname)) {
-            try {
-                member.modifyNickname(desiredNickname).queue(
-                    success -> log.info("Updated nickname for {} to {}", discordUser.getDiscordId(), desiredNickname),
-                    throwable -> log.error("Failed to queue nickname update for {} to {}", discordUser.getDiscordId(), desiredNickname, throwable)
-                );
-            } catch (HierarchyException exception) {
-                log.warn("Unable to modify the nickname of {} ({}) to {} due to a hierarchy exception", member.getUser().getName(), member.getId(), mojangProfile.getUsername());
-            }
-        }
-    }
-
-    /**
-     * Select the users whose stored Mojang profile is assigned and stale enough to warrant a
-     * refresh.
-     *
-     * <p>Extracted from {@link #executeTask()} so the selection can be exercised against an
-     * in-memory {@link DiscordUserStore} without a live bot or database. The actual refresh
-     * ({@link #updateNickname(DiscordUser)}) still performs HTTP and JDA calls and is left to
-     * {@code executeTask()}.
-     *
-     * @param store         the user store to scan
-     * @param cacheTtlHours the Mojang username cache TTL in hours
-     * @return the users due for a profile update, in store iteration order
-     */
-    static List<DiscordUser> profilesRequiringUpdate(DiscordUserStore store, long cacheTtlHours) {
-        List<DiscordUser> due = new ArrayList<>();
-
-        for (DiscordUser discordUser : store.getAll()) {
-            if (discordUser.isProfileAssigned() && discordUser.getMojangProfile().requiresCacheUpdate(cacheTtlHours)) {
-                due.add(discordUser);
-            }
-        }
-
-        return due;
-    }
-
-    /**
-     * @param currentNickname the member's current effective name
-     * @param desiredUsername the Mojang username the nickname should reflect
-     * @return {@code true} if the current name does not already contain the desired username
-     * (case-insensitive), i.e. a nickname change is warranted
-     */
-    static boolean needsNicknameUpdate(String currentNickname, String desiredUsername) {
-        return !currentNickname.toLowerCase(Locale.ROOT).contains(desiredUsername.toLowerCase(Locale.ROOT));
+    public ProfileUpdateFeature(DiscordUserStore users, MemberQueue queue, MinecraftAccounts accounts, GuildScope guildScope, JDA jda,
+                                Provider<NerdBotConfig> config, Provider<BotState> state) {
+        this.users = users;
+        this.queue = queue;
+        this.accounts = accounts;
+        this.guildScope = guildScope;
+        this.jda = jda;
+        this.config = config;
+        this.state = state;
     }
 
     @Override
@@ -132,21 +69,97 @@ public class ProfileUpdateFeature extends BotFeature implements SchedulableFeatu
 
     @Override
     public void executeTask() {
-        if (BotEnvironment.getBot().isReadOnly()) {
-            log.info("Bot is in read-only mode, skipping profile update task!");
+        if (state.get().isReadOnly()) {
+            log.info("Not refreshing Minecraft profiles; the bot is in read-only mode");
+            return;
+        }
+        if (!config.get().isMojangForceNicknameUpdate()) {
+            log.info("Not refreshing Minecraft profiles; forced nickname updates are off");
             return;
         }
 
-        if (!SkyBlockNerdsBot.config().isMojangForceNicknameUpdate()) {
-            log.info("Forcefully updating nicknames is currently disabled!");
+        Optional<Guild> guild = guildScope.mainGuild(jda);
+        if (guild.isEmpty()) {
+            log.warn("Not refreshing Minecraft profiles; the bot isn't in the configured guild");
             return;
         }
 
-        DiscordUserRepository discordUserRepository = BotEnvironment.getBot().getDatabase().getRepositoryManager().getRepository(DiscordUserRepository.class);
-        DiscordUserStore store = new RepositoryDiscordUserStore(discordUserRepository);
-        long cacheTtlHours = SkyBlockNerdsBot.config().getMojangUsernameCacheTTL();
+        long ttlHours = config.get().getMojangUsernameCacheTTL();
+        int refreshed = 0;
+        int failed = 0;
+        for (String memberId : users.findAllIds()) {
+            Outcome outcome = refresh(memberId, ttlHours, guild.get());
+            if (outcome == Outcome.REFRESHED) {
+                refreshed++;
+            } else if (outcome == Outcome.FAILED) {
+                failed++;
+            }
+        }
+        log.info("Refreshed {} Minecraft profiles; {} couldn't be refreshed", refreshed, failed);
+    }
 
-        profilesRequiringUpdate(store, cacheTtlHours).forEach(ProfileUpdateFeature::updateNickname);
+    Outcome refresh(String memberId, long ttlHours, Guild guild) {
+        try {
+            Optional<DiscordUser> stored = users.findById(memberId);
+            if (stored.isEmpty() || !isDue(stored.get(), ttlHours)) {
+                return Outcome.SKIPPED;
+            }
+
+            MojangProfile current = stored.get().getMojangProfile();
+            Result<MojangProfile, HttpException> fetched = accounts.mojangProfile(current.getUniqueId().toString()).join();
+            Optional<MojangProfile> profile = fetched.toOptional().filter(found -> found.getUsername() != null && !found.getUsername().isBlank());
+            if (profile.isEmpty()) {
+                log.warn("Couldn't refresh the Minecraft profile of member {} ({})", memberId, current.getUniqueId());
+                return Outcome.FAILED;
+            }
+
+            queue.withRecord(memberId, "profile refresh", user -> {
+                user.setMojangProfile(profile.get());
+                users.save(user).join();
+            }).join();
+            try {
+                updateNickname(guild, memberId, profile.get().getUsername());
+            } catch (RuntimeException exception) {
+                log.warn("Refreshed the Minecraft profile of member {} but couldn't update their nickname", memberId, exception);
+            }
+            return Outcome.REFRESHED;
+        } catch (RuntimeException exception) {
+            log.error("Failed to refresh the Minecraft profile of member {}", memberId, exception);
+            return Outcome.FAILED;
+        }
+    }
+
+    static boolean isDue(DiscordUser user, long ttlHours) {
+        return user.isProfileAssigned() && user.getMojangProfile().requiresCacheUpdate(ttlHours);
+    }
+
+    private static void updateNickname(Guild guild, String memberId, String minecraftName) {
+        Member member;
+        try {
+            member = guild.getMemberById(memberId) != null ? guild.getMemberById(memberId) : guild.retrieveMemberById(memberId).complete();
+        } catch (ErrorResponseException exception) {
+            log.debug("Not renaming member {}; they're no longer in the guild", memberId);
+            return;
+        }
+
+        if (!needsNicknameUpdate(member.getEffectiveName(), minecraftName)) {
+            return;
+        }
+
+        try {
+            member.modifyNickname(minecraftName).queue(
+                done -> log.info("Renamed member {} to {}", memberId, minecraftName),
+                error -> log.warn("Failed to rename member {} to {}", memberId, minecraftName, error));
+        } catch (PermissionException exception) {
+            log.warn("Can't rename member {} to {}: {}", memberId, minecraftName, exception.getMessage());
+        }
+    }
+
+    /**
+     * @return whether the current name doesn't already contain the Minecraft name, ignoring case
+     */
+    static boolean needsNicknameUpdate(String currentNickname, String desiredUsername) {
+        return !currentNickname.toLowerCase(Locale.ROOT).contains(desiredUsername.toLowerCase(Locale.ROOT));
     }
 
     @Override
@@ -156,7 +169,8 @@ public class ProfileUpdateFeature extends BotFeature implements SchedulableFeatu
 
     @Override
     public long defaultPeriodMs(DiscordBotConfig config) {
-        return Duration.of(((NerdBotConfig) config).getMojangUsernameCacheTTL(), ChronoUnit.HOURS).toMillis();
+        Duration ttl = Duration.ofHours(((NerdBotConfig) config).getMojangUsernameCacheTTL());
+        return (ttl.compareTo(MINIMUM_PERIOD) < 0 ? MINIMUM_PERIOD : ttl).toMillis();
     }
 
     @Override

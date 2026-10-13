@@ -1,4 +1,4 @@
-package net.hypixel.nerdbot.app.command;
+package net.hypixel.nerdbot.app.export;
 
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
@@ -32,10 +32,10 @@ class ArchiveExportRowTest {
     }
 
     @Test
-    void quotesInContentAreEscapedForCsv() {
-        List<String> row = ArchiveExporter.buildRow(message("say \"hi\""), "42", "Some thread");
+    void contentIsKeptAsWrittenForTheTableToEscape() {
+        List<String> row = ArchiveExporter.buildRow(message("say \"hi\", then\nleave"), "42", "Some thread");
 
-        assertEquals("\"say \"\"hi\"\"\"", row.get(ArchiveExporter.CSV_HEADERS.indexOf("Message Content")));
+        assertEquals("say \"hi\", then\nleave", row.get(ArchiveExporter.CSV_HEADERS.indexOf("Message Content")));
     }
 
     private static Message message(String content) {

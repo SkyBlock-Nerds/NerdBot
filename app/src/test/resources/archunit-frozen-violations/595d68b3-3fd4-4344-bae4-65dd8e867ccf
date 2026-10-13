@@ -1,2 +1,0 @@
-Method <net.hypixel.nerdbot.app.command.ArchiveExporter.exportForumThreadsDetailed(net.dv8tion.jda.api.entities.channel.concrete.ForumChannel, java.util.function.Consumer)> calls method <net.dv8tion.jda.api.requests.RestAction.complete()> in (ArchiveExporter.java:132)
-Method <net.hypixel.nerdbot.app.command.ArchiveExporter.exportForumThreadsDetailed(net.dv8tion.jda.api.entities.channel.concrete.ForumChannel, java.util.function.Consumer)> calls method <net.dv8tion.jda.api.requests.RestAction.complete()> in (ArchiveExporter.java:143)
