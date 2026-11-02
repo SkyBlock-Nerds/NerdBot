@@ -164,7 +164,7 @@
                 <!-- Runs the *IT tests (real MongoDB in Docker) during verify; they skip without Docker -->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>3.6.0</version>
+                <version>3.6.1</version>
                 <executions>
                     <execution>
                         <goals>
