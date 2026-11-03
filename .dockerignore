@@ -1,0 +1,10 @@
+.github
+.idea
+.editorconfig
+.gitignore
+CONTRIBUTING.md
+example-config.json
+jitpack.yml
+mvnw
+mvnw.cmd
+README.md
