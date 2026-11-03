@@ -4,18 +4,22 @@ FROM maven:3-eclipse-temurin-27-alpine AS builder
 # Set the working directory
 WORKDIR /app
 
-# Copy the project files
+# Copy only the Maven metadata first so dependency resolution can be cached independently
 COPY pom.xml .
 COPY discord-framework/pom.xml discord-framework/pom.xml
-COPY discord-framework/src discord-framework/src
 COPY app/pom.xml app/pom.xml
-COPY app/src app/src
 COPY tooling/pom.xml tooling/pom.xml
+
+# Resolve dependencies before copying source files so repeated builds can reuse the cache
+RUN mvn -B -DskipTests dependency:go-offline -f pom.xml
+
+# Copy the application source and build the project
+COPY discord-framework/src discord-framework/src
+COPY app/src app/src
 COPY tooling/src tooling/src
 
-# Clean Maven cache and build the project with Maven
-RUN mvn clean install -U -f pom.xml \
-    && rm -f /app/target/original-*.jar
+RUN mvn -B -DskipTests clean package -f pom.xml \
+    && rm -f /app/app/target/original-*.jar
 
 # Use a minimal eclipse-temurin image for running the bot
 FROM eclipse-temurin:25-jdk-alpine
