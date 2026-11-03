@@ -18,7 +18,7 @@ COPY discord-framework/src discord-framework/src
 COPY app/src app/src
 COPY tooling/src tooling/src
 
-RUN mvn -B -DskipTests clean package -f pom.xml \
+RUN mvn -B clean package -f pom.xml \
     && rm -f /app/app/target/original-*.jar
 
 # Use a minimal eclipse-temurin image for running the bot
