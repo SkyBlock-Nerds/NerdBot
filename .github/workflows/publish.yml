@@ -103,7 +103,7 @@ jobs:
             BRANCH_NAME=${{ github.ref_name }}
             COMMIT_SHA=${{ github.sha }}
           cache-from: type=gha,scope=nerd-bot-${{ env.ENVIRONMENT_NAME }}
-          cache-to: type=gha,mode=max,scope=nerd-bot-${{ env.ENVIRONMENT_NAME }}
+          cache-to: type=gha,mode=max,scope=nerd-bot-${{ env.ENVIRONMENT_NAME }},ignore-error=true
 
   deploy:
     needs: publish
