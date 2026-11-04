@@ -31,7 +31,8 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.CopyOption;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -76,6 +77,11 @@ public abstract class AbstractDiscordBot implements DiscordBot {
     @FunctionalInterface
     public interface FeatureFactory {
         Optional<BotFeature> create(String className);
+    }
+
+    @FunctionalInterface
+    interface FileMover {
+        Path move(Path source, Path target, CopyOption... options) throws IOException;
     }
 
     protected AbstractDiscordBot() {
@@ -551,17 +557,31 @@ public abstract class AbstractDiscordBot implements DiscordBot {
 
     /**
      * Writes {@code newConfig} to the config file and makes it the live config. The file is written
-     * next to the old one and moved over it, so a crash part way through can't leave half a config.
+     * next to the old one and atomically moved over it, so a crash part way through can't leave half a config.
+     * If the config file is a Docker bind mount, it cannot be replaced by a rename, so the file is written in
+     * place instead.
      */
     public synchronized void saveConfig(@NotNull DiscordBotConfig newConfig) throws IOException {
+        saveConfig(newConfig, Files::move);
+    }
+
+    synchronized void saveConfig(@NotNull DiscordBotConfig newConfig, @NotNull FileMover mover) throws IOException {
         Path file = configFile().toAbsolutePath();
         Path temporary = file.resolveSibling(file.getFileName() + ".tmp");
-        Files.writeString(temporary, DataSerialization.PRETTY_GSON.toJson(newConfig), StandardCharsets.UTF_8);
+        String contents = DataSerialization.PRETTY_GSON.toJson(newConfig);
 
         try {
-            Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        } catch (AtomicMoveNotSupportedException exception) {
-            Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING);
+            Files.writeString(temporary, contents, StandardCharsets.UTF_8);
+
+            try {
+                mover.move(temporary, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            } catch (FileSystemException exception) {
+                String reason = Objects.toString(exception.getReason(), exception.getClass().getSimpleName());
+                log.warn("Could not atomically replace config file '{}': {}. Writing in place instead.", file, reason);
+                Files.writeString(file, contents, StandardCharsets.UTF_8);
+            }
+        } finally {
+            Files.deleteIfExists(temporary);
         }
 
         config = newConfig;
