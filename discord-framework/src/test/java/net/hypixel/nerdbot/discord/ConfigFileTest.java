@@ -2,6 +2,7 @@ package net.hypixel.nerdbot.discord;
 
 import net.hypixel.nerdbot.discord.api.feature.BotFeature;
 import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
+import net.hypixel.nerdbot.marmalade.json.DataSerialization;
 import net.hypixel.nerdbot.marmalade.storage.database.Database;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -73,6 +75,41 @@ class ConfigFileTest {
         bot.loadConfig();
 
         assertEquals("new", bot.getConfig().getGuildId());
+    }
+
+    @Test
+    void savingFallsBackToWritingInPlaceWhenAnAtomicMoveCannotReplaceTheFile() throws IOException {
+        String oldContents = "old contents ".repeat(1_000);
+        Files.writeString(file, oldContents);
+        DiscordBotConfig config = new DiscordBotConfig();
+        config.setGuildId("new");
+
+        bot.saveConfig(config, (source, target, options) -> {
+            throw new FileSystemException(source.toString(), target.toString(), "Resource busy");
+        });
+
+        assertSame(config, bot.getConfig());
+        assertEquals(DataSerialization.PRETTY_GSON.toJson(config), Files.readString(file));
+        assertTrue(Files.size(file) < oldContents.length(), "the in-place write truncates the old content");
+        assertFalse(Files.exists(folder.resolve("bot.config.json.tmp")));
+    }
+
+    @Test
+    void aFailedInPlaceFallbackLeavesTheLiveConfigAloneAndCleansUp() throws IOException {
+        DiscordBotConfig live = new DiscordBotConfig();
+        bot.saveConfig(live);
+        Path configDirectory = folder.resolve("config-directory");
+        Files.createDirectory(configDirectory);
+        System.setProperty("bot.config", configDirectory.toString());
+
+        DiscordBotConfig newConfig = new DiscordBotConfig();
+
+        assertThrows(IOException.class, () -> bot.saveConfig(newConfig, (source, target, options) -> {
+            throw new FileSystemException(source.toString(), target.toString(), "Resource busy");
+        }));
+
+        assertSame(live, bot.getConfig());
+        assertFalse(Files.exists(folder.resolve("config-directory.tmp")));
     }
 
     @Test
