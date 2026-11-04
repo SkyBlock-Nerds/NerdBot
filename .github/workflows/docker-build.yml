@@ -11,7 +11,6 @@ on:
     paths:
       - 'Dockerfile'
       - '.dockerignore'
-      - '.github/workflows/publish.yml'
       - '.github/workflows/docker-build.yml'
 
 concurrency:
