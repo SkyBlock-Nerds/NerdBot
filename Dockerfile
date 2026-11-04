@@ -11,7 +11,7 @@ COPY app/pom.xml app/pom.xml
 COPY tooling/pom.xml tooling/pom.xml
 
 # Resolve dependencies before copying source files so repeated builds can reuse the cache
-RUN mvn -B -DskipTests dependency:go-offline -f pom.xml
+RUN mvn -B -DskipTests dependency:go-offline -pl app -am -f pom.xml
 
 # Copy the application source and build the project
 COPY discord-framework/src discord-framework/src
