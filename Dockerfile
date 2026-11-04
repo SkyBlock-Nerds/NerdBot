@@ -16,9 +16,10 @@ RUN mvn -B -DskipTests dependency:go-offline -f pom.xml
 # Copy the application source and build the project
 COPY discord-framework/src discord-framework/src
 COPY app/src app/src
-COPY tooling/src tooling/src
 
-RUN mvn -B clean package -f pom.xml \
+# -U re-checks the MinecraftImageGenerator snapshot, which the cached dependency layer can otherwise hold back.
+# Tooling isn't part of the image, but the parent pom needs its pom.xml to load.
+RUN mvn -B -U -pl app -am clean package -f pom.xml \
     && rm -f /app/app/target/original-*.jar
 
 # Use a minimal eclipse-temurin image for running the bot
