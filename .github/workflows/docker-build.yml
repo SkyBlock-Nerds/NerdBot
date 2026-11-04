@@ -32,6 +32,9 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
+        with:
+          # BuildKit cuts step logs at 2 MiB by default, which hides the app tests and any failure in them.
+          driver-opts: env.BUILDKIT_STEP_LOG_MAX_SIZE=52428800
 
       - name: Build Docker image
         uses: docker/build-push-action@v7
