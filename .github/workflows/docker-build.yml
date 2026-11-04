@@ -1,0 +1,46 @@
+# Usage:
+# - Builds the Docker image on pull requests that change how it is built, so a broken Dockerfile fails
+#   on the PR instead of during a Publish run.
+# - Pushes nothing and deploys nothing. It needs no secrets and does not log in to GHCR.
+# - Runs uncached on purpose: a cache hit on the Maven layer would pass the check without building anything.
+
+name: Docker Build
+
+on:
+  pull_request:
+    paths:
+      - 'Dockerfile'
+      - '.dockerignore'
+      - '.github/workflows/publish.yml'
+      - '.github/workflows/docker-build.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+        with:
+          # BuildKit cuts step logs at 2 MiB by default, which hides the app tests and any failure in them.
+          driver-opts: env.BUILDKIT_STEP_LOG_MAX_SIZE=52428800
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: false
+          build-args: |
+            BRANCH_NAME=${{ github.ref_name }}
+            COMMIT_SHA=${{ github.sha }}
