@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -310,9 +311,10 @@ public class ExportCommands {
         String[] blacklistedChannels = config.getChannelConfig().getBlacklistedChannels();
         Set<String> blacklisted = blacklistedChannels == null ? Set.of() : Set.of(blacklistedChannels);
         long activeSince = nowMillis - TimeUnit.DAYS.toMillis(filter.days());
+        Clock activityClock = Clock.fixed(Instant.ofEpochMilli(nowMillis), Clock.systemDefaultZone().getZone());
 
         return all.stream()
-            .filter(user -> filter.everyone() || !isActive(user, blacklisted, activeSince, filter))
+            .filter(user -> filter.everyone() || !isActive(user, blacklisted, activeSince, filter, activityClock))
             .filter(user -> {
                 Member member = memberLookup.apply(user.getDiscordId());
                 if (member == null) {
@@ -328,11 +330,12 @@ public class ExportCommands {
             .toList();
     }
 
-    private static boolean isActive(DiscordUser user, Set<String> blacklisted, long activeSince, ActivityFilter filter) {
+    private static boolean isActive(DiscordUser user, Set<String> blacklisted, long activeSince, ActivityFilter filter, Clock activityClock) {
         LastActivity activity = user.getLastActivity();
         return activity.getChannelActivityHistory().stream()
             .filter(entry -> !blacklisted.contains(entry.getChannelId()))
-            .anyMatch(entry -> entry.getLastMessageTimestamp() > activeSince && activity.getTotalMessageCount(filter.days()) > filter.messages());
+            .anyMatch(entry -> entry.getLastMessageTimestamp() > activeSince
+                && activity.getTotalMessageCount(filter.days(), activityClock) > filter.messages());
     }
 
     /** The UUIDs of linked, non-bot members with any of the roles, or empty when there are none. */
