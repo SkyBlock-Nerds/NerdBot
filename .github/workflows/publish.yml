@@ -125,7 +125,6 @@ jobs:
           sudo docker pull ${{ env.REGISTRY }}/$(echo "${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
           sudo docker stop $(echo "${{ env.CONTAINER_NAME }}" | tr '[:upper:]' '[:lower:]') || true
           sudo docker rm $(echo "${{ env.CONTAINER_NAME }}" | tr '[:upper:]' '[:lower:]') || true
-          sudo docker rmi $(sudo docker images $(echo "${{ env.REGISTRY }}/${{ github.actor }}/${{ env.CONTAINER_NAME }}" | tr '[:upper:]' '[:lower:]') -q) -f || true
           sudo docker run -d --name $(echo "${{ env.CONTAINER_NAME }}" | tr '[:upper:]' '[:lower:]') \
             -p 127.0.0.1:${{ env.METRICS_PORT }}:${{ env.METRICS_PORT }} \
             ${{ env.DOCKER_NETWORK != '' && format('--network {0}', env.DOCKER_NETWORK) || '' }} \
@@ -142,6 +141,11 @@ jobs:
             -Ddrive.credentials.path=/app/secrets/drive-credentials.json -Ddrive.email.key=${{ secrets.DRIVE_EMAIL_KEY }}" \
             -e "SENTRY_DSN=${{ secrets.SENTRY_DSN }}" \
             ${{ env.REGISTRY }}/$(echo "${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
+          sudo docker image ls \
+            "${{ env.REGISTRY }}/$(echo "${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')" \
+            --filter dangling=true \
+            --quiet |
+            xargs -r sudo docker image rm
           EOF
 
       - name: Cleanup SSH keys
