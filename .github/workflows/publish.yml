@@ -7,7 +7,12 @@
 # - Config file on the vps. (should be named `{Environment}.config.json`)
 #   - Example: `production.config.json`
 #   - Environment default: production
-# - These secrets must be set up in the repository settings:
+# - A GitHub Environment per bot environment (Settings > Environments), named like the environment:
+#   PRODUCTION, DEV. The publish and deploy jobs run in it, so its rules (allowed branches, required
+#   reviewers) decide who can deploy. PRODUCTION only deploys from protected branches.
+# - These secrets must be set up as secrets of that Environment. A repository secret of the same name
+#   is used when the Environment has none, but any workflow on any branch can read repository
+#   secrets, so prefer the Environment:
 #   - SSH_PRIVATE_KEY: Private SSH key for accessing the vps
 #   - SSH_USER: The SSH username for the vps
 #   - SSH_HOST: The SSH host (IP or domain) of the vps
@@ -95,6 +100,8 @@ jobs:
     needs: validate
     name: Publish image
     runs-on: ubuntu-latest
+    # Running in the environment applies its rules before the image is replaced
+    environment: ${{ github.event.inputs.botEnvironmentType || 'PRODUCTION' }}
 
     steps:
       - name: Checkout code
@@ -131,6 +138,7 @@ jobs:
     needs: publish
     name: Deploy image
     runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.botEnvironmentType || 'PRODUCTION' }}
 
     steps:
       - name: Install SSH keys
