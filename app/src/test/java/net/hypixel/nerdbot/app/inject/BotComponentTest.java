@@ -68,6 +68,26 @@ class BotComponentTest {
         assertEquals(registered.size(), component.eventListeners().size());
     }
 
+    /**
+     * defaultMemberPermissions only sets who Discord shows a command to, and a server admin can
+     * change that; requiredPermissions is what the bot checks itself. A staff command needs both.
+     */
+    @Test
+    void everyStaffCommandChecksItsPermissionsItself() {
+        List<String> unchecked = commandClasses().stream()
+            .flatMap(type -> Arrays.stream(type.getDeclaredMethods()))
+            .filter(method -> method.isAnnotationPresent(SlashCommand.class))
+            .filter(method -> {
+                SlashCommand command = method.getAnnotation(SlashCommand.class);
+                return !Set.of(command.requiredPermissions()).containsAll(Set.of(command.defaultMemberPermissions()));
+            })
+            .map(method -> method.getDeclaringClass().getSimpleName() + "." + method.getName())
+            .sorted()
+            .toList();
+
+        assertEquals(List.of(), unchecked);
+    }
+
     @Test
     void everyFeatureCanBeBuilt() {
         Set<Class<?>> features = appClasses(type -> BotFeature.class.isAssignableFrom(type) && !Modifier.isAbstract(type.getModifiers()));
