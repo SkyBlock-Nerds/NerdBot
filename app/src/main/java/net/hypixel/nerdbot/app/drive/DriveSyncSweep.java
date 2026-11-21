@@ -53,10 +53,12 @@ public class DriveSyncSweep {
     private final GuildScope guildScope;
     private final JDA jda;
     private final LogChannel logChannel;
+    private final PendingRevocations pendingRevocations;
 
     @Inject
     public DriveSyncSweep(DiscordUserStore users, MemberQueue queue, Provider<Optional<DrivePermissionService>> drive, Provider<NerdBotConfig> config,
-                          GuildScope guildScope, JDA jda, LogChannel logChannel) {
+                          GuildScope guildScope, JDA jda, LogChannel logChannel, PendingRevocations pendingRevocations) {
+        this.pendingRevocations = pendingRevocations;
         this.users = users;
         this.queue = queue;
         this.drive = drive;
@@ -90,20 +92,20 @@ public class DriveSyncSweep {
 
     /** Backwards-compatible core without change notifications. */
     public static Result reconcileUsers(Collection<DiscordUser> users, MemberLookup lookup,
-                                        DrivePermissionService service, GoogleDriveConfig config, UserSaver saver) {
-        return reconcileUsers(users, lookup, service, config, saver, (memberId, granted, revoked) -> { });
+                                        DrivePermissionService service, GoogleDriveConfig config, PendingRevocations pending, UserSaver saver) {
+        return reconcileUsers(users, lookup, service, config, pending, saver, (memberId, granted, revoked) -> { });
     }
 
     /** JDA-free core, unit tested directly. */
     public static Result reconcileUsers(Collection<DiscordUser> users, MemberLookup lookup,
-                                        DrivePermissionService service, GoogleDriveConfig config, UserSaver saver,
+                                        DrivePermissionService service, GoogleDriveConfig config, PendingRevocations pending, UserSaver saver,
                                         ChangeListener changeListener) {
         int synced = 0;
         int departed = 0;
         int failed = 0;
 
         Map<String, Set<String>> livePermissionIds = fetchLivePermissionIds(service, config);
-        DriveLinkWorkflow workflow = new DriveLinkWorkflow(service, config);
+        DriveLinkWorkflow workflow = new DriveLinkWorkflow(service, config, pending);
 
         for (DiscordUser user : users) {
             switch (reconcileUser(user, lookup, service, config, workflow, livePermissionIds, saver, changeListener)) {
@@ -221,8 +223,10 @@ public class DriveSyncSweep {
                 return new Result(0, 0, 0);
             }
 
+            retryPendingRevocations(service.get(), pendingRevocations);
+
             Map<String, Set<String>> livePermissionIds = fetchLivePermissionIds(service.get(), config);
-            DriveLinkWorkflow workflow = new DriveLinkWorkflow(service.get(), config);
+            DriveLinkWorkflow workflow = new DriveLinkWorkflow(service.get(), config, pendingRevocations);
             MemberLookup lookup = memberId -> roleIdsOf(guild.get(), memberId);
             ChangeListener changes = (memberId, granted, revoked) -> DriveLogEmbeds.postAccessChange(logChannel, service.get(), memberId, granted, revoked);
             log.info("Reconcile sweep starting over {} mapped folder(s)", mappedFolderIds(config).size());
@@ -254,6 +258,33 @@ public class DriveSyncSweep {
         } finally {
             running.set(false);
         }
+    }
+
+    /**
+     * Tries again to revoke the permissions an earlier unlink, relink or departure couldn't. A
+     * failure here never stops the sweep; the entry simply stays for the next run.
+     *
+     * @return how many are still pending
+     */
+    static int retryPendingRevocations(DrivePermissionService service, PendingRevocations pending) {
+        int remaining = 0;
+        try {
+            for (PendingRevocations.Entry entry : pending.all()) {
+                if (service.revoke(entry.folderId(), entry.permissionId())) {
+                    pending.remove(entry);
+                    log.info("Revoked the queued Drive permission {} on folder {} for former member {}", entry.permissionId(), entry.folderId(), entry.memberId());
+                } else {
+                    remaining++;
+                }
+            }
+        } catch (RuntimeException exception) {
+            log.error("Couldn't work through the queued Drive revocations this sweep", exception);
+        }
+
+        if (remaining > 0) {
+            log.error("{} Drive permission(s) are still waiting to be revoked; check Drive if this persists", remaining);
+        }
+        return remaining;
     }
 
     // Empty only when Discord says the member is gone; any other failure is thrown and counted as failed

@@ -8,6 +8,7 @@ import net.hypixel.nerdbot.app.config.objects.DriveFolderMapping;
 import net.hypixel.nerdbot.app.drive.DriveLinkWorkflow;
 import net.hypixel.nerdbot.app.drive.DrivePermissionService;
 import net.hypixel.nerdbot.app.drive.FakeDrivePermissionClient;
+import net.hypixel.nerdbot.app.drive.FakePendingRevocations;
 import net.hypixel.nerdbot.app.testsupport.FakeDiscordUserStore;
 import net.hypixel.nerdbot.app.user.MemberQueue;
 import net.hypixel.nerdbot.marmalade.security.AesGcmCipher;
@@ -38,6 +39,7 @@ final class MemberListenerFixture {
     final DrivePermissionService driveService = new DrivePermissionService(CIPHER, driveClient);
     final List<MessageEmbed> logged = new ArrayList<>();
     final LogChannel logChannel = logged::add;
+    final FakePendingRevocations pendingRevocations = new FakePendingRevocations();
     Optional<DrivePermissionService> drive = Optional.of(driveService);
 
     MemberListenerFixture() {
@@ -55,7 +57,7 @@ final class MemberListenerFixture {
     DiscordUser linkedUser(String id, List<String> roleIds) {
         DiscordUser user = new DiscordUser(id);
         user.setRoleIds(roleIds);
-        new DriveLinkWorkflow(driveService, config.getGoogleDriveConfig()).link(user, id + "@example.com", roleIds, List.of(user));
+        new DriveLinkWorkflow(driveService, config.getGoogleDriveConfig(), pendingRevocations).link(user, id + "@example.com", roleIds, List.of(user));
         users.seed(user);
         return user;
     }

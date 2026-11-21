@@ -14,6 +14,7 @@ import net.hypixel.nerdbot.app.drive.DrivePermissionService.FailedFolder;
 import net.hypixel.nerdbot.app.drive.DrivePermissionService.SyncOutcome;
 import net.hypixel.nerdbot.app.drive.DriveSyncSweep;
 import net.hypixel.nerdbot.app.drive.FakeDrivePermissionClient;
+import net.hypixel.nerdbot.app.drive.FakePendingRevocations;
 import net.hypixel.nerdbot.app.testsupport.DiscordFakes;
 import net.hypixel.nerdbot.app.testsupport.FakeDiscordUserStore;
 import net.hypixel.nerdbot.discord.testsupport.CallRecorder;
@@ -51,12 +52,13 @@ class DriveCommandsTest {
     private final List<MessageEmbed> logged = new ArrayList<>();
     private Optional<DrivePermissionService> service = Optional.of(new DrivePermissionService(CIPHER, client));
     private DriveSyncSweep.Result sweepResult = new DriveSyncSweep.Result(3, 1, 0);
-    private final DriveCommands commands = new DriveCommands(() -> service, () -> config, users, logged::add, () -> new DriveSyncSweep(null, null, null, null, null, null, null) {
+    private final FakePendingRevocations pending = new FakePendingRevocations();
+    private final DriveCommands commands = new DriveCommands(() -> service, () -> config, users, logged::add, () -> new DriveSyncSweep(null, null, null, null, null, null, null, null) {
         @Override
         public Result run() {
             return sweepResult;
         }
-    });
+    }, pending);
 
     @BeforeEach
     void mapRoleToFolder() {
@@ -158,6 +160,18 @@ class DriveCommandsTest {
         assertEquals(List.of(MEMBER), users.clearedDriveAccessIds());
         assertEquals(1, logged.size());
         assertEquals("Unlinked. Your Drive access has been revoked and your email deleted.", DiscordFakes.lastEditText(recorder));
+    }
+
+    @Test
+    void unlinkingSaysSoWhenDriveDidNotConfirmTheRevoke() {
+        commands.submitEmail(modal(MEMBER, MEMBER, "user@example.com"));
+        client.failPermanently("fA", 403);
+
+        commands.unlink(slash(MEMBER));
+
+        assertNull(user.getDriveAccess());
+        assertEquals(DriveCommands.UNLINK_QUEUED_MESSAGE, DiscordFakes.lastEditText(recorder));
+        assertEquals(1, pending.all().size());
     }
 
     @Test
