@@ -22,6 +22,7 @@ import net.hypixel.nerdbot.discord.cache.ChannelCache;
 import net.hypixel.nerdbot.discord.cache.EmojiCache;
 import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
 import net.hypixel.nerdbot.discord.config.FeatureConfig;
+import net.hypixel.nerdbot.discord.util.Secrets;
 import net.hypixel.nerdbot.marmalade.json.DataSerialization;
 import net.hypixel.nerdbot.marmalade.json.JsonUtils;
 import net.hypixel.nerdbot.marmalade.storage.database.Database;
@@ -205,11 +206,8 @@ public abstract class AbstractDiscordBot implements DiscordBot {
 
     @NotNull
     private String getBotToken() {
-        String token = System.getProperty("bot.token");
-        if (token == null || token.isBlank()) {
-            throw new IllegalStateException("Missing bot token system property 'bot.token'");
-        }
-        return token;
+        return Secrets.find("bot.token")
+            .orElseThrow(() -> new IllegalStateException("Missing bot token: set the BOT_TOKEN environment variable"));
     }
 
     private void registerSlashCommands() {

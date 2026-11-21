@@ -14,6 +14,7 @@ import net.hypixel.nerdbot.marmalade.exception.HttpException;
 import net.hypixel.nerdbot.marmalade.json.HypixelPlayerResponse;
 import net.hypixel.nerdbot.marmalade.resilience.Retry;
 import net.hypixel.nerdbot.discord.BotEnvironment;
+import net.hypixel.nerdbot.discord.util.Secrets;
 import net.hypixel.nerdbot.marmalade.storage.database.model.user.stats.MojangProfile;
 import org.jetbrains.annotations.NotNull;
 
@@ -79,7 +80,7 @@ public class HttpUtils {
     }
 
     private static Optional<UUID> hypixelApiKey() {
-        return Optional.ofNullable(System.getProperty("hypixel.key")).map(UUIDUtils::toUUID);
+        return Secrets.find("hypixel.key").map(UUIDUtils::toUUID);
     }
 
     @NotNull
