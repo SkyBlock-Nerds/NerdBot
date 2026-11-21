@@ -12,6 +12,7 @@ import net.aerh.imagegenerator.tools.TextRequest;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /** Every handler maps its raw options through one of these functions; omitted options must become the library defaults. */
 class GeneratorRequestsTest {
@@ -57,6 +58,35 @@ class GeneratorRequestsTest {
         assertEquals(InventoryRequest.builder().rows(2).slotsPerRow(9).inventoryString("stone:1").hoveredItemString("h")
             .containerName("c").drawBorder(false).maxLineLength(20).animateGlint(true).packId(PACK).build(),
             GeneratorRequests.inventory(2, 9, "stone:1", "h", "c", false, 20, true, PACK));
+    }
+
+    @Test
+    void inventoryRejectsSizesThatWouldAllocateAHugeImage() {
+        assertThrows(IllegalArgumentException.class,
+            () -> GeneratorRequests.inventory(GeneratorRequests.MAX_INVENTORY_ROWS + 1, 9, "stone:1", null, null, null, null, false, null));
+        assertThrows(IllegalArgumentException.class,
+            () -> GeneratorRequests.inventory(2, GeneratorRequests.MAX_INVENTORY_SLOTS_PER_ROW + 1, "stone:1", null, null, null, null, false, null));
+        assertThrows(IllegalArgumentException.class,
+            () -> GeneratorRequests.inventory(0, 9, "stone:1", null, null, null, null, false, null));
+
+        InventoryRequest largest = GeneratorRequests.inventory(GeneratorRequests.MAX_INVENTORY_ROWS, GeneratorRequests.MAX_INVENTORY_SLOTS_PER_ROW,
+            "stone:1", null, null, null, null, false, null);
+        assertEquals(GeneratorRequests.MAX_INVENTORY_ROWS, largest.rows());
+    }
+
+    @Test
+    void paddingOutsideItsRangeIsRejectedEverywhereItIsAccepted() {
+        int tooMuch = GeneratorRequests.MAX_PADDING + 1;
+
+        assertThrows(IllegalArgumentException.class, () -> GeneratorRequests.text("hi", null, null, tooMuch, null, null, null, null));
+        assertThrows(IllegalArgumentException.class, () -> GeneratorRequests.text("hi", null, null, -1, null, null, null, null));
+        assertThrows(IllegalArgumentException.class, () -> GeneratorRequests.item("Name", "Lore", null, null, null, null, null, null, null,
+            null, tooMuch, null, null, null, null, null, null, null, null, null));
+        assertThrows(IllegalArgumentException.class, () -> GeneratorRequests.powerStone("Power", "Starter", 100, null, null, null, null,
+            null, null, tooMuch, null, null, null));
+
+        assertEquals(TextRequest.builder().text("hi").padding(GeneratorRequests.MAX_PADDING).build(),
+            GeneratorRequests.text("hi", null, null, GeneratorRequests.MAX_PADDING, null, null, null, null));
     }
 
     @Test

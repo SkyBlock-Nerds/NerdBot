@@ -16,7 +16,28 @@ import org.jetbrains.annotations.Nullable;
  */
 final class GeneratorRequests {
 
+    // The image is allocated from these numbers before any rendering limit applies, so an unbounded
+    // value lets one command take the whole heap. Discord enforces the same ranges on the options;
+    // the checks here hold even if a command is registered without them.
+    static final int MAX_INVENTORY_ROWS = 32;
+    static final int MAX_INVENTORY_SLOTS_PER_ROW = 32;
+    static final int MAX_PADDING = 255;
+
     private GeneratorRequests() {
+    }
+
+    private static int inRange(int value, int max, String name) {
+        if (value < 1 || value > max) {
+            throw new IllegalArgumentException(name + " must be between 1 and " + max + ".");
+        }
+        return value;
+    }
+
+    private static @Nullable Integer padding(@Nullable Integer padding) {
+        if (padding != null && (padding < 0 || padding > MAX_PADDING)) {
+            throw new IllegalArgumentException("padding must be between 0 and " + MAX_PADDING + ".");
+        }
+        return padding;
     }
 
     static DisplayRequest display(@Nullable String itemId, @Nullable String itemModel, @Nullable String data, @Nullable String color,
@@ -37,7 +58,7 @@ final class GeneratorRequests {
         return ItemRequest.builder()
             .itemName(itemName).itemLore(itemLore).type(type).rarity(rarity)
             .itemId(itemId).itemModel(itemModel).color(color).skinValue(skinValue).recipe(recipe)
-            .alpha(alpha).padding(padding).enchanted(enchanted).centered(centered).firstLinePadding(firstLinePadding)
+            .alpha(alpha).padding(padding(padding)).enchanted(enchanted).centered(centered).firstLinePadding(firstLinePadding)
             .maxLineLength(maxLineLength).tooltipSide(tooltipSide).renderBorder(renderBorder).durability(durability)
             .packId(packId).tooltipStyle(tooltipStyle)
             .build();
@@ -47,7 +68,7 @@ final class GeneratorRequests {
                             @Nullable Integer maxLineLength, @Nullable Boolean renderBorder, @Nullable PackId packId,
                             @Nullable String tooltipStyle) {
         return TextRequest.builder()
-            .text(text).centered(centered).alpha(alpha).padding(padding).maxLineLength(maxLineLength)
+            .text(text).centered(centered).alpha(alpha).padding(padding(padding)).maxLineLength(maxLineLength)
             .renderBorder(renderBorder).packId(packId).tooltipStyle(tooltipStyle)
             .build();
     }
@@ -56,7 +77,7 @@ final class GeneratorRequests {
                                       @Nullable String containerName, @Nullable Boolean drawBorder, @Nullable Integer maxLineLength,
                                       boolean animateGlint, @Nullable PackId packId) {
         return InventoryRequest.builder()
-            .rows(rows).slotsPerRow(slotsPerRow).inventoryString(inventoryString).hoveredItemString(hoveredItemString)
+            .rows(inRange(rows, MAX_INVENTORY_ROWS, "rows")).slotsPerRow(inRange(slotsPerRow, MAX_INVENTORY_SLOTS_PER_ROW, "slots_per_row")).inventoryString(inventoryString).hoveredItemString(hoveredItemString)
             .containerName(containerName).drawBorder(drawBorder).maxLineLength(maxLineLength).animateGlint(animateGlint)
             .packId(packId)
             .build();
@@ -73,7 +94,7 @@ final class GeneratorRequests {
         return PowerStoneRequest.builder()
             .powerName(powerName).powerStrength(powerStrength).magicalPower(magicalPower)
             .scalingStats(scalingStats).uniqueBonus(uniqueBonus).itemId(itemId).color(color).skinValue(skinValue)
-            .alpha(alpha).padding(padding).selected(selected).enchanted(enchanted).packId(packId)
+            .alpha(alpha).padding(padding(padding)).selected(selected).enchanted(enchanted).packId(packId)
             .build();
     }
 
