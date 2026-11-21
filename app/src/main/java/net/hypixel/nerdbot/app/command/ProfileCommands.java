@@ -9,6 +9,7 @@ import net.aerh.slashcommands.api.annotations.SlashComponentHandler;
 import net.aerh.slashcommands.api.annotations.SlashOption;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -297,6 +298,9 @@ public class ProfileCommands {
             }).thenApply(saved -> "Your default image generator message behavior has been set to " + (autohide ? "hidden" : "public")));
     }
 
+    /** What a member needs to accept, deny or kick from a verification request; the same as the staff /user commands. */
+    static final Permission STAFF_PERMISSION = Permission.BAN_MEMBERS;
+
     @SlashComponentHandler(id = "verification", patterns = {"verification-*"})
     public void handleVerificationButtons(ButtonInteractionEvent event) {
         handleVerification(event);
@@ -304,6 +308,10 @@ public class ProfileCommands {
 
     /** Button ids are verification-accept-ID, -deny-ID, -kick-ID-CLICKSLEFT and -kicknow-ID; older messages still use them. */
     CompletableFuture<Void> handleVerification(ButtonInteraction event) {
+        if (!CommandReplies.requirePermission(event, STAFF_PERMISSION)) {
+            return CompletableFuture.completedFuture(null);
+        }
+
         String[] parts = event.getComponentId().split("-");
         if (parts.length < 3) {
             event.deferEdit().queue();
