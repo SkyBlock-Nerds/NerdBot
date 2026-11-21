@@ -170,7 +170,7 @@ class GeneratorCommandsTest {
 
         commands.generateInventory(event(GEN_CHANNEL), 0, 9, "stone", null, null, null, null, null, null);
 
-        assertEquals("rows must be positive", DiscordFakes.lastEditText(recorder));
+        assertEquals("rows must be between 1 and 32.", DiscordFakes.lastEditText(recorder));
         assertEquals(List.of(), member.getGeneratorHistory().getCommandHistory());
     }
 
