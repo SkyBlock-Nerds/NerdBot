@@ -168,7 +168,7 @@ public class ArchiveExporter {
      * @throws IOException when no thread has a first message to export
      */
     public Export exportForumThreadsDetailed(ForumChannel forum, Consumer<String> progress) throws IOException {
-        CsvTable table = new CsvTable(DETAILED_HEADERS, ";");
+        CsvTable table = new CsvTable(DETAILED_HEADERS, ";").formulaColumns("Thread");
         EmojiConfig emojis = config.get().getEmojiConfig();
         List<ThreadChannel> threads = allThreads(forum);
         List<String> skipped = new ArrayList<>();

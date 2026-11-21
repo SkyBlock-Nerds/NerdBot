@@ -239,7 +239,7 @@ public class ExportCommands {
             .toList();
 
         CompletableFuture<ExportFile> file = CompletableFuture.allOf(rows.toArray(CompletableFuture[]::new)).thenApplyAsync(ignored -> {
-            CsvTable table = new CsvTable(USER_SUGGESTION_HEADERS, ";");
+            CsvTable table = new CsvTable(USER_SUGGESTION_HEADERS, ";").formulaColumns("Jump URL");
             rows.forEach(row -> table.addRow(row.join()));
             return ExportFile.of("export-user-suggestions-" + ownerId, "csv", clock.instant(), table.toCsv());
         }, backgroundWork);
@@ -388,7 +388,7 @@ public class ExportCommands {
 
     /** The greenlit suggestions from {@code suggestionsAfter} on, as CSV for Google Sheets; empty when there are none. */
     static Optional<String> greenlitCsv(List<GreenlitMessage> messages, long suggestionsAfter) {
-        CsvTable table = new CsvTable(List.of("Creation Date", "Tags", "Title"), ";");
+        CsvTable table = new CsvTable(List.of("Creation Date", "Tags", "Title"), ";").formulaColumns("Title");
 
         for (GreenlitMessage message : messages) {
             if (message.getSuggestionTimestamp() < suggestionsAfter) {
