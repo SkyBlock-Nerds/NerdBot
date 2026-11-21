@@ -271,7 +271,14 @@ public class SuggestionCommands {
         return Optional.empty();
     }
 
+    /** What a member needs to act on a review request; the same as /curate, which also greenlights. */
+    static final Permission REVIEW_PERMISSION = Permission.BAN_MEMBERS;
+
     void review(ButtonInteraction interaction) {
+        if (!CommandReplies.requirePermission(interaction, REVIEW_PERMISSION)) {
+            return;
+        }
+
         Optional<List<String>> parts = REVIEW.parse(interaction.getComponentId());
         if (parts.isEmpty()) {
             CommandReplies.replyPrivately(interaction, PanelId.OUTDATED);

@@ -1,6 +1,8 @@
 package net.hypixel.nerdbot.app.command.util;
 
 import lombok.extern.slf4j.Slf4j;
+import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.interactions.InteractionHook;
@@ -26,6 +28,8 @@ import java.util.function.Consumer;
 @Slf4j
 public final class CommandReplies {
 
+    public static final String NO_PERMISSION = "You don't have permission to use this.";
+
     private static final int MAX_EMBEDS = Message.MAX_EMBED_COUNT;
 
     private CommandReplies() {
@@ -39,6 +43,21 @@ public final class CommandReplies {
 
     public static void replyPrivately(IReplyCallback interaction, String message) {
         interaction.reply(message).setEphemeral(true).queue();
+    }
+
+    /**
+     * Whether the member who clicked may use a staff-only button, telling them privately when they
+     * may not. Discord applies a command's permissions to the command only, never to the buttons on
+     * the messages it posts, so anyone who can see such a message can click them.
+     */
+    public static boolean requirePermission(IReplyCallback interaction, Permission permission) {
+        Member member = interaction.getMember();
+        if (member != null && member.hasPermission(permission)) {
+            return true;
+        }
+
+        replyPrivately(interaction, NO_PERMISSION);
+        return false;
     }
 
     /**

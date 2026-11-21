@@ -14,6 +14,7 @@ import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonInteraction;
 import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
+import net.hypixel.nerdbot.app.command.util.CommandReplies;
 import net.hypixel.nerdbot.app.command.util.PanelId;
 import net.hypixel.nerdbot.app.command.util.SuggestionListings;
 import net.hypixel.nerdbot.app.config.NerdBotConfig;
@@ -263,6 +264,16 @@ class SuggestionCommandsTest {
         }
 
         @Test
+        void someoneWithoutThePermissionCannotReview() {
+            commands.review(button("accept", false));
+            commands.review(button("lock", false));
+
+            assertEquals(CommandReplies.NO_PERMISSION, recorder.last("reply").arg(0));
+            assertFalse(recorder.called("deferEdit"));
+            assertFalse(recorder.called("sendMessage"));
+        }
+
+        @Test
         void denyingTellsTheThreadAndMarksTheRequest() {
             commands.review(button("deny"));
 
@@ -342,15 +353,21 @@ class SuggestionCommandsTest {
 
         @Test
         void aMalformedButtonIdIsOutdated() {
-            commands.review(recorder.fake(ButtonInteraction.class, Map.of("getComponentId", "suggestion-review-completed")));
+            commands.review(recorder.fake(ButtonInteraction.class, Map.of("getComponentId", "suggestion-review-completed",
+                "getMember", Fakes.of(Member.class, Map.of("hasPermission", true)))));
 
             assertEquals(PanelId.OUTDATED, recorder.last("reply").arg(0));
         }
 
         private ButtonInteraction button(String action) {
+            return button(action, true);
+        }
+
+        private ButtonInteraction button(String action, boolean staff) {
             return recorder.fake(ButtonInteraction.class, Map.of(
                 "getComponentId", "suggestion-review-" + action + "-" + THREAD,
-                "getUser", DiscordFakes.user("1")));
+                "getUser", DiscordFakes.user("1"),
+                "getMember", Fakes.of(Member.class, Map.of("hasPermission", staff))));
         }
 
         private String lastFollowUp() {

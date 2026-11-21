@@ -31,6 +31,7 @@ import net.hypixel.nerdbot.app.testsupport.MapBadgeCatalog;
 import net.hypixel.nerdbot.app.testsupport.MutableClock;
 import net.hypixel.nerdbot.app.user.BirthdayService;
 import net.hypixel.nerdbot.discord.testsupport.CallRecorder;
+import net.hypixel.nerdbot.app.command.util.CommandReplies;
 import net.hypixel.nerdbot.discord.testsupport.Fakes;
 import net.hypixel.nerdbot.marmalade.exception.HttpException;
 import net.hypixel.nerdbot.marmalade.functional.Result;
@@ -434,6 +435,21 @@ class ProfileCommandsTest {
     }
 
     @Test
+    void someoneWithoutThePermissionCannotKickOrAccept() {
+        seedMember();
+        pending.submit(MEMBER, profile());
+
+        commands.handleVerification(button("verification-kicknow-100", false)).join();
+        commands.handleVerification(button("verification-accept-100", false)).join();
+        commands.handleVerification(button("verification-deny-100", false)).join();
+
+        assertEquals(List.of(), kicked);
+        assertEquals(CommandReplies.NO_PERMISSION, recorder.last("reply").arg(0));
+        assertFalse(recorder.called("editComponents"));
+        assertTrue(pending.accept(MEMBER).isPresent());
+    }
+
+    @Test
     void aButtonWithoutAMemberIsIgnored() {
         commands.handleVerification(button("verification-done")).join();
 
@@ -469,8 +485,13 @@ class ProfileCommandsTest {
     }
 
     private ButtonInteraction button(String componentId) {
+        return button(componentId, true);
+    }
+
+    private ButtonInteraction button(String componentId, boolean staff) {
         return recorder.fake(ButtonInteraction.class, Map.of("getComponentId", componentId, "getGuild", guild,
-            "getUser", DiscordFakes.user("7"), "getHook", recorder.fake(InteractionHook.class, Map.of("isExpired", false))));
+            "getUser", DiscordFakes.user("7"), "getMember", Fakes.of(Member.class, Map.of("hasPermission", staff)),
+            "getHook", recorder.fake(InteractionHook.class, Map.of("isExpired", false))));
     }
 
     private static User user() {
