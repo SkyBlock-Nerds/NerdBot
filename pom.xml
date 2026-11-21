@@ -26,6 +26,40 @@
                 <groupId>com.github.Aerhhh</groupId>
                 <artifactId>MinecraftImageGenerator</artifactId>
                 <version>${imagegenerator.version}</version>
+                <exclusions>
+                    <!-- The generator's own build tooling. The bot uses none of it, and it brings in about 30 libraries (HTTP clients, XML and RSS parsers) -->
+                    <exclusion>
+                        <groupId>com.github.Aerhhh.MinecraftImageGenerator</groupId>
+                        <artifactId>imagegenerator-tooling</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <!-- Transitive versions with published security advisories, raised to the first fixed release. Drop an entry once the library that brings it in catches up -->
+            <!-- via JDA -->
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>2.18.11</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- via emoji-java -->
+            <dependency>
+                <groupId>org.json</groupId>
+                <artifactId>json</artifactId>
+                <version>20260719</version>
+            </dependency>
+            <!-- via latex2unicode -->
+            <dependency>
+                <groupId>org.scala-lang</groupId>
+                <artifactId>scala-library</artifactId>
+                <version>2.13.18</version>
+            </dependency>
+            <!-- via MinecraftImageGenerator's text library -->
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-api</artifactId>
+                <version>2.25.5</version>
             </dependency>
             <!-- natty pulls in slf4j-api 1.7, which can't find logback 1.6 and silently drops every log line -->
             <dependency>
