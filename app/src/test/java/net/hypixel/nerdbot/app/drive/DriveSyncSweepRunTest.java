@@ -40,8 +40,10 @@ class DriveSyncSweepRunTest {
     private Optional<DrivePermissionService> drive = Optional.of(service);
     private List<Guild> guilds;
 
+    private final FakePendingRevocations pending = new FakePendingRevocations();
+
     private final DriveSyncSweep sweep = new DriveSyncSweep(users, new MemberQueue(users, Runnable::run), () -> drive, () -> config,
-        new GuildScope(() -> config), Fakes.of(JDA.class, Map.of("getGuilds", (CallRecorder.Answer) args -> guilds)), logged::add);
+        new GuildScope(() -> config), Fakes.of(JDA.class, Map.of("getGuilds", (CallRecorder.Answer) args -> guilds)), logged::add, pending);
 
     @BeforeEach
     void setUp() {
@@ -61,9 +63,24 @@ class DriveSyncSweepRunTest {
 
     private DiscordUser linkedUser(String id) {
         DiscordUser user = new DiscordUser(id);
-        new DriveLinkWorkflow(service, config.getGoogleDriveConfig()).link(user, id + "@example.com", List.of(), List.of(user));
+        new DriveLinkWorkflow(service, config.getGoogleDriveConfig(), pending).link(user, id + "@example.com", List.of(), List.of(user));
         users.seed(user);
         return user;
+    }
+
+    @Test
+    void theSweepRevokesWhatAnEarlierDepartureCouldNot() {
+        DiscordUser user = new DiscordUser("9");
+        new DriveLinkWorkflow(service, config.getGoogleDriveConfig(), pending).link(user, "9@example.com", List.of("111"), List.of(user));
+        users.seed(user);
+        DriveLinkWorkflow.queueWithoutRevoking(user, pending);
+        assertEquals(1, pending.all().size());
+        users.delete("9").join();
+
+        sweep.run();
+
+        assertEquals(List.of(), pending.all());
+        assertTrue(client.folders.get("fA").isEmpty());
     }
 
     @Test

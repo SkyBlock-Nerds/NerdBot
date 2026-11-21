@@ -252,6 +252,21 @@ public class DrivePermissionService {
         }
     }
 
+    /**
+     * Revokes one permission by id, for retrying a revoke that failed earlier.
+     *
+     * @return whether the permission is gone now
+     */
+    public boolean revoke(String folderId, String permissionId) {
+        try {
+            revokeOne(folderId, permissionId);
+            return true;
+        } catch (DriveApiException e) {
+            log.warn("Still could not revoke Drive permission {} on folder {}", permissionId, folderId, e);
+            return false;
+        }
+    }
+
     /** Shared revoke-with-retry call; callers differ only in what they log and how they track the failure. */
     private void revokeOne(String folderId, String permissionId) throws DriveApiException {
         withRetry(() -> {

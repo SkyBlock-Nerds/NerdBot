@@ -11,6 +11,7 @@ import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.hypixel.nerdbot.app.channel.LogChannel;
 import net.hypixel.nerdbot.app.config.NerdBotConfig;
 import net.hypixel.nerdbot.app.drive.DriveLinkWorkflow;
+import net.hypixel.nerdbot.app.drive.PendingRevocations;
 import net.hypixel.nerdbot.app.drive.DriveLogEmbeds;
 import net.hypixel.nerdbot.app.drive.DrivePermissionService;
 import net.hypixel.nerdbot.app.storage.DiscordUserStore;
@@ -35,10 +36,13 @@ public class MemberLifecycleListener {
     private final Provider<NerdBotConfig> config;
     private final Provider<Optional<DrivePermissionService>> drive;
     private final LogChannel logChannel;
+    private final PendingRevocations pendingRevocations;
 
     @Inject
     public MemberLifecycleListener(GuildScope guildScope, MemberQueue queue, DiscordUserStore users, Provider<NerdBotConfig> config,
-                                   Provider<Optional<DrivePermissionService>> drive, LogChannel logChannel) {
+                                   Provider<Optional<DrivePermissionService>> drive, LogChannel logChannel,
+                                   PendingRevocations pendingRevocations) {
+        this.pendingRevocations = pendingRevocations;
         this.guildScope = guildScope;
         this.queue = queue;
         this.users = users;
@@ -90,13 +94,20 @@ public class MemberLifecycleListener {
 
     private void revokeDriveAccess(DiscordUser user) {
         Optional<DrivePermissionService> service = drive.get();
-        if (user.getDriveAccess() == null || service.isEmpty() || !config.get().getGoogleDriveConfig().isEnabled()) {
+        if (user.getDriveAccess() == null) {
+            return;
+        }
+
+        if (service.isEmpty() || !config.get().getGoogleDriveConfig().isEnabled()) {
+            // The record is about to be deleted, and it is the only place the permission ids are kept
+            DriveLinkWorkflow.queueWithoutRevoking(user, pendingRevocations);
+            log.warn("Drive is off or not configured, so departing member {}'s grants are queued to be revoked once it is back", user.getDiscordId());
             return;
         }
 
         List<String> heldFolders = user.getDriveAccess().getGrants().stream().map(DriveGrant::folderId).toList();
-        new DriveLinkWorkflow(service.get(), config.get().getGoogleDriveConfig()).revokeAndForget(user);
-        log.info("Revoked Drive access for departing member {}", user.getDiscordId());
+        boolean revoked = new DriveLinkWorkflow(service.get(), config.get().getGoogleDriveConfig(), pendingRevocations).revokeAndForget(user);
+        log.info(revoked ? "Revoked Drive access for departing member {}" : "Departing member {} still has Drive grants queued to be revoked", user.getDiscordId());
         DriveLogEmbeds.postAccessChange(logChannel, service.get(), user.getDiscordId(), List.of(), heldFolders);
     }
 }

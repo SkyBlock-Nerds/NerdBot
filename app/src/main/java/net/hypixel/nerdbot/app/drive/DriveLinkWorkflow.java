@@ -18,6 +18,15 @@ public class DriveLinkWorkflow {
 
     private final DrivePermissionService service;
     private final GoogleDriveConfig config;
+    private final PendingRevocations pending;
+
+    /** What {@link #unlink} did. */
+    public enum Unlinked {
+        NOT_LINKED,
+        REVOKED,
+        /** The email is forgotten, but Drive refused at least one revoke; it is queued to be retried. */
+        REVOKE_QUEUED
+    }
 
     public enum Status {
         LINKED,
@@ -28,9 +37,10 @@ public class DriveLinkWorkflow {
     public record LinkResult(Status status, DrivePermissionService.SyncOutcome outcome) {
     }
 
-    public DriveLinkWorkflow(DrivePermissionService service, GoogleDriveConfig config) {
+    public DriveLinkWorkflow(DrivePermissionService service, GoogleDriveConfig config, PendingRevocations pending) {
         this.service = service;
         this.config = config;
+        this.pending = pending;
     }
 
     /**
@@ -57,7 +67,8 @@ public class DriveLinkWorkflow {
             int existingGrantCount = user.getDriveAccess().getGrants().size();
             log.info("Member {} is relinking their Drive email; revoking {} existing grant(s) first", user.getDiscordId(), existingGrantCount);
             if (!service.revokeAll(user.getDiscordId(), user.getDriveAccess())) {
-                log.error("Partial revoke while relinking {}, continuing; reconcile cannot heal the old address, check Drive manually", user.getDiscordId());
+                queueRemaining(user);
+                log.error("Partial revoke while relinking {}, continuing; the old address's remaining grants are queued to be retried", user.getDiscordId());
             }
         }
 
@@ -71,30 +82,49 @@ public class DriveLinkWorkflow {
     /**
      * User-initiated unlink: revoke everything and erase the stored email.
      *
-     * @return false when the member had nothing linked
      */
-    public boolean unlink(DiscordUser user) {
+    public Unlinked unlink(DiscordUser user) {
         if (user.getDriveAccess() == null) {
-            return false;
+            return Unlinked.NOT_LINKED;
         }
-        revokeAndForget(user);
+        boolean revoked = revokeAndForget(user);
         log.info("Member {} unlinked their Drive email", user.getDiscordId());
-        return true;
+        return revoked ? Unlinked.REVOKED : Unlinked.REVOKE_QUEUED;
     }
 
     /**
      * Leave/kick/ban path (spec §5): revoke with retries, then delete state
-     * regardless; a failed revoke is logged loudly because nothing can heal it
-     * once the permission ids are gone.
+     * regardless. Grants that couldn't be revoked go to {@link PendingRevocations},
+     * since the permission ids are about to be gone from the member's record.
+     *
+     * @return whether every grant was revoked now
      */
-    public void revokeAndForget(DiscordUser user) {
+    public boolean revokeAndForget(DiscordUser user) {
         if (user.getDriveAccess() == null) {
-            return;
+            return true;
         }
-        if (!service.revokeAll(user.getDiscordId(), user.getDriveAccess())) {
-            log.error("Could not revoke every Drive permission for departing member {}; REMAINING GRANTS MUST BE REMOVED MANUALLY IN DRIVE", user.getDiscordId());
+        boolean revoked = service.revokeAll(user.getDiscordId(), user.getDriveAccess());
+        if (!revoked) {
+            queueRemaining(user);
+            log.error("Could not revoke every Drive permission for member {}; the remaining grants are queued to be retried", user.getDiscordId());
         }
         user.setDriveAccess(null);
         log.info("Cleared Drive link state for {}", user.getDiscordId());
+        return revoked;
+    }
+
+    /**
+     * Records every grant the member still holds as one to revoke later, for when the revoke can't
+     * even be attempted because the Drive integration is switched off or not configured.
+     */
+    public static void queueWithoutRevoking(DiscordUser user, PendingRevocations pending) {
+        if (user.getDriveAccess() != null && !user.getDriveAccess().getGrants().isEmpty()) {
+            pending.add(user.getDiscordId(), user.getDriveAccess().getGrants());
+        }
+    }
+
+    // revokeAll leaves the grants it couldn't revoke on the access object
+    private void queueRemaining(DiscordUser user) {
+        pending.add(user.getDiscordId(), user.getDriveAccess().getGrants());
     }
 }

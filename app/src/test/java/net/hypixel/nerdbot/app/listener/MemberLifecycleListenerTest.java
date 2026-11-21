@@ -18,7 +18,7 @@ class MemberLifecycleListenerTest {
 
     private final MemberListenerFixture fixture = new MemberListenerFixture();
     private final MemberLifecycleListener listener = new MemberLifecycleListener(fixture.guildScope, fixture.queue, fixture.users,
-        () -> fixture.config, () -> fixture.drive, fixture.logChannel);
+        () -> fixture.config, () -> fixture.drive, fixture.logChannel, fixture.pendingRevocations);
 
     @Test
     void joiningCreatesAndSavesARecordWithTheMembersRoles() {
@@ -73,6 +73,19 @@ class MemberLifecycleListenerTest {
 
         assertEquals(1, fixture.driveClient.folders.get(DRIVE_FOLDER).size());
         assertEquals(List.of("1"), fixture.users.deletedIds());
+        // The record is gone, so the grant is remembered here until Drive is back on
+        assertEquals(1, fixture.pendingRevocations.all().size());
+    }
+
+    @Test
+    void aRevokeThatFailsOnLeavingIsQueued() {
+        fixture.linkedUser("1", List.of(DRIVE_ROLE));
+        fixture.driveClient.failPermanently(DRIVE_FOLDER, 403);
+
+        listener.leave("1").join();
+
+        assertEquals(List.of("1"), fixture.users.deletedIds());
+        assertEquals(1, fixture.pendingRevocations.all().size());
     }
 
     @Test
@@ -83,6 +96,7 @@ class MemberLifecycleListenerTest {
         listener.leave("1").join();
 
         assertEquals(List.of("1"), fixture.users.deletedIds());
+        assertEquals(1, fixture.pendingRevocations.all().size());
     }
 
     @Test

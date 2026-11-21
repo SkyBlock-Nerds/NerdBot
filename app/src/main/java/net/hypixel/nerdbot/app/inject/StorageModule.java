@@ -4,6 +4,8 @@ import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
 import com.mongodb.client.MongoCollection;
+import net.hypixel.nerdbot.app.drive.MongoPendingRevocations;
+import net.hypixel.nerdbot.app.drive.PendingRevocations;
 import net.hypixel.nerdbot.app.nomination.MongoSweepLog;
 import net.hypixel.nerdbot.app.nomination.SweepLog;
 import net.hypixel.nerdbot.app.punishment.PunishmentStore;
@@ -65,6 +67,9 @@ public interface StorageModule {
 
     @Binds
     SweepLog sweepLog(MongoSweepLog log);
+
+    @Binds
+    PendingRevocations pendingRevocations(MongoPendingRevocations revocations);
 
     @Provides
     static ReminderRepository reminderRepository(Database database) {

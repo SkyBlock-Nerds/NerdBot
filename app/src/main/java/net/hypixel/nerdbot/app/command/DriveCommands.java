@@ -22,6 +22,7 @@ import net.hypixel.nerdbot.app.command.util.CommandReplies;
 import net.hypixel.nerdbot.app.command.util.PanelId;
 import net.hypixel.nerdbot.app.config.NerdBotConfig;
 import net.hypixel.nerdbot.app.drive.DriveLinkWorkflow;
+import net.hypixel.nerdbot.app.drive.PendingRevocations;
 import net.hypixel.nerdbot.app.drive.DriveLogEmbeds;
 import net.hypixel.nerdbot.app.drive.DrivePermissionService;
 import net.hypixel.nerdbot.app.drive.DriveSyncSweep;
@@ -47,15 +48,21 @@ public class DriveCommands {
     static final String NOT_CONFIGURED_MESSAGE = "Drive access syncing is not configured on this server.";
     static final String NOT_YOUR_MODAL = "This modal belongs to someone else!";
 
+    static final String UNLINKED_MESSAGE = "Unlinked. Your Drive access has been revoked and your email deleted.";
+    static final String UNLINK_QUEUED_MESSAGE = "Unlinked and your email deleted, but Google Drive didn't confirm removing all of your access. I'll keep retrying; ask a moderator if you still have access in an hour.";
+
     private final Provider<Optional<DrivePermissionService>> driveService;
     private final Provider<NerdBotConfig> config;
     private final DiscordUserStore users;
     private final LogChannel logChannel;
     private final Provider<DriveSyncSweep> syncSweep;
+    private final PendingRevocations pendingRevocations;
 
     @Inject
     public DriveCommands(Provider<Optional<DrivePermissionService>> driveService, Provider<NerdBotConfig> config,
-                         DiscordUserStore users, LogChannel logChannel, Provider<DriveSyncSweep> syncSweep) {
+                         DiscordUserStore users, LogChannel logChannel, Provider<DriveSyncSweep> syncSweep,
+                         PendingRevocations pendingRevocations) {
+        this.pendingRevocations = pendingRevocations;
         this.driveService = driveService;
         this.config = config;
         this.users = users;
@@ -154,14 +161,15 @@ public class DriveCommands {
             ? List.of()
             : user.getDriveAccess().getGrants().stream().map(DriveGrant::folderId).toList();
 
-        if (!workflow(service.get()).unlink(user)) {
+        DriveLinkWorkflow.Unlinked unlinked = workflow(service.get()).unlink(user);
+        if (unlinked == DriveLinkWorkflow.Unlinked.NOT_LINKED) {
             hook.editOriginal("You don't have a linked email.").queue();
             return;
         }
 
         users.clearDriveAccess(user);
         DriveLogEmbeds.postAccessChange(logChannel, service.get(), user.getDiscordId(), List.of(), heldFolders);
-        hook.editOriginal("Unlinked. Your Drive access has been revoked and your email deleted.").queue();
+        hook.editOriginal(unlinked == DriveLinkWorkflow.Unlinked.REVOKED ? UNLINKED_MESSAGE : UNLINK_QUEUED_MESSAGE).queue();
     }
 
     void showStatus(IReplyCallback interaction) {
@@ -219,6 +227,6 @@ public class DriveCommands {
     }
 
     private DriveLinkWorkflow workflow(DrivePermissionService service) {
-        return new DriveLinkWorkflow(service, config.get().getGoogleDriveConfig());
+        return new DriveLinkWorkflow(service, config.get().getGoogleDriveConfig(), pendingRevocations);
     }
 }

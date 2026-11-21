@@ -35,8 +35,13 @@ public class FakeDrivePermissionClient implements DrivePermissionClient {
         transientFailuresRemaining.put(folderId, times);
     }
 
-    public void failPermanently(String folderId, int status) {
-        permanentFailureStatus.put(folderId, status);
+    /** A null status stops the folder failing. */
+    public void failPermanently(String folderId, Integer status) {
+        if (status == null) {
+            permanentFailureStatus.remove(folderId);
+        } else {
+            permanentFailureStatus.put(folderId, status);
+        }
     }
 
     private void maybeFail(String folderId) throws DriveApiException {

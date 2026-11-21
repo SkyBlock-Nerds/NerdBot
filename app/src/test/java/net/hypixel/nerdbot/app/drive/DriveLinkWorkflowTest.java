@@ -24,6 +24,7 @@ class DriveLinkWorkflowTest {
     private DrivePermissionService service;
     private GoogleDriveConfig config;
     private DriveLinkWorkflow workflow;
+    private final FakePendingRevocations pending = new FakePendingRevocations();
 
     @BeforeEach
     void setUp() {
@@ -36,7 +37,7 @@ class DriveLinkWorkflowTest {
         mapping.setFolderIds(List.of("fA"));
         mapping.setAccessLevel("READER");
         config.setFolderMappings(List.of(mapping));
-        workflow = new DriveLinkWorkflow(service, config);
+        workflow = new DriveLinkWorkflow(service, config, pending);
     }
 
     @Test
@@ -100,7 +101,8 @@ class DriveLinkWorkflowTest {
         DiscordUser user = new DiscordUser("42");
         workflow.link(user, "user@example.com", List.of("111"), List.of(user));
 
-        assertTrue(workflow.unlink(user));
+        assertEquals(DriveLinkWorkflow.Unlinked.REVOKED, workflow.unlink(user));
+        assertEquals(List.of(), pending.all());
 
         assertNull(user.getDriveAccess());
         assertTrue(client.folders.get("fA").isEmpty());
@@ -108,7 +110,7 @@ class DriveLinkWorkflowTest {
 
     @Test
     void unlinkWhenNotLinkedReturnsFalse() {
-        assertFalse(workflow.unlink(new DiscordUser("42")));
+        assertEquals(DriveLinkWorkflow.Unlinked.NOT_LINKED, workflow.unlink(new DiscordUser("42")));
     }
 
     @Test
@@ -117,8 +119,44 @@ class DriveLinkWorkflowTest {
         workflow.link(user, "user@example.com", List.of("111"), List.of(user));
         client.failPermanently("fA", 403);
 
-        workflow.revokeAndForget(user);
+        assertFalse(workflow.revokeAndForget(user));
 
         assertNull(user.getDriveAccess());
+    }
+
+    @Test
+    void aRevokeThatFailsIsQueuedSoItIsNotLost() {
+        DiscordUser user = new DiscordUser("42");
+        workflow.link(user, "user@example.com", List.of("111"), List.of(user));
+        String permissionId = user.getDriveAccess().getGrants().getFirst().permissionId();
+        client.failPermanently("fA", 403);
+
+        assertEquals(DriveLinkWorkflow.Unlinked.REVOKE_QUEUED, workflow.unlink(user));
+
+        assertEquals(List.of(new PendingRevocations.Entry("42", "fA", permissionId)), pending.all());
+    }
+
+    @Test
+    void relinkingQueuesTheOldAddressesGrantWhenItsRevokeFails() {
+        DiscordUser user = new DiscordUser("42");
+        workflow.link(user, "old@example.com", List.of("111"), List.of(user));
+        String oldPermissionId = user.getDriveAccess().getGrants().getFirst().permissionId();
+        client.failPermanently("fA", 403);
+
+        workflow.link(user, "new@example.com", List.of("111"), List.of(user));
+
+        assertEquals(List.of(new PendingRevocations.Entry("42", "fA", oldPermissionId)), pending.all());
+    }
+
+    @Test
+    void queueingWithoutRevokingRecordsEveryGrantAndLeavesDriveAlone() {
+        DiscordUser user = new DiscordUser("42");
+        workflow.link(user, "user@example.com", List.of("111"), List.of(user));
+
+        DriveLinkWorkflow.queueWithoutRevoking(user, pending);
+        DriveLinkWorkflow.queueWithoutRevoking(new DiscordUser("43"), pending);
+
+        assertEquals(1, pending.all().size());
+        assertEquals(1, client.folders.get("fA").size());
     }
 }
