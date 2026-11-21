@@ -37,6 +37,18 @@ class SecretsTest {
         assertEquals(Optional.empty(), find(Map.of(), Map.of()));
     }
 
+    @Test
+    void aSecretIsReadFromTheRunningJvm() {
+        String name = "nerdbot.test.secret.that.is.not.in.the.environment";
+        System.setProperty(name, "from-property");
+        try {
+            assertEquals(Optional.of("from-property"), Secrets.find(name));
+        } finally {
+            System.clearProperty(name);
+        }
+        assertEquals(Optional.empty(), Secrets.find(name));
+    }
+
     private static Optional<String> find(Map<String, String> environment, Map<String, String> properties) {
         return Secrets.find("bot.token", environment::get, properties::get);
     }
