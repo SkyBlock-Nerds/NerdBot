@@ -60,7 +60,7 @@ public class UserCommands {
         this.backgroundWork = backgroundWork;
     }
 
-    @SlashCommand(name = "user", subcommand = "link", description = "Link a Mojang Profile to a member's account.", guildOnly = true, defaultMemberPermissions = {"BAN_MEMBERS"})
+    @SlashCommand(name = "user", subcommand = "link", description = "Link a Mojang Profile to a member's account.", guildOnly = true, defaultMemberPermissions = {"BAN_MEMBERS"}, requiredPermissions = {"BAN_MEMBERS"})
     public void linkProfile(
         SlashCommandInteractionEvent event,
         @SlashOption(description = "Member to link to.") Member member,
@@ -101,7 +101,7 @@ public class UserCommands {
             });
     }
 
-    @SlashCommand(name = "user", subcommand = "missing", description = "List any user with no assigned Mojang Profile.", guildOnly = true, defaultMemberPermissions = {"BAN_MEMBERS"})
+    @SlashCommand(name = "user", subcommand = "missing", description = "List any user with no assigned Mojang Profile.", guildOnly = true, defaultMemberPermissions = {"BAN_MEMBERS"}, requiredPermissions = {"BAN_MEMBERS"})
     public void userMissingProfile(SlashCommandInteractionEvent event) {
         listMissing(event);
     }
@@ -153,7 +153,7 @@ public class UserCommands {
         return joined.toString();
     }
 
-    @SlashCommand(name = "user", subcommand = "info", description = "View information about a user", guildOnly = true, defaultMemberPermissions = {"BAN_MEMBERS"})
+    @SlashCommand(name = "user", subcommand = "info", description = "View information about a user", guildOnly = true, defaultMemberPermissions = {"BAN_MEMBERS"}, requiredPermissions = {"BAN_MEMBERS"})
     public void userInfo(SlashCommandInteractionEvent event, @SlashOption(description = "The user to search") Member member) {
         showInfo(event, member);
     }
@@ -176,7 +176,7 @@ public class UserCommands {
         });
     }
 
-    @SlashCommand(name = "user", subcommand = "badges", description = "View the badges of a user", guildOnly = true, defaultMemberPermissions = {"BAN_MEMBERS"})
+    @SlashCommand(name = "user", subcommand = "badges", description = "View the badges of a user", guildOnly = true, defaultMemberPermissions = {"BAN_MEMBERS"}, requiredPermissions = {"BAN_MEMBERS"})
     public void viewUserBadges(SlashCommandInteractionEvent event, @SlashOption(description = "The user to search") Member member) {
         showBadges(event, member);
     }
@@ -186,7 +186,7 @@ public class UserCommands {
         withRecord(hook, member, user -> hook.editOriginalEmbeds(embeds.badges(member, user, event.getUser().getId().equals(member.getId()))).queue());
     }
 
-    @SlashCommand(name = "user", group = "migrate", subcommand = "names", description = "Attempts to migrate any user with no assigned Mojang Profile using their display name.", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"})
+    @SlashCommand(name = "user", group = "migrate", subcommand = "names", description = "Attempts to migrate any user with no assigned Mojang Profile using their display name.", guildOnly = true, defaultMemberPermissions = {"ADMINISTRATOR"}, requiredPermissions = {"ADMINISTRATOR"})
     public void migrateUsernames(SlashCommandInteractionEvent event) {
         migrateNames(event);
     }
