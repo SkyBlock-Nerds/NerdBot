@@ -212,4 +212,13 @@ class DrivePermissionServiceTest {
         assertFalse(DrivePermissionService.isValidEmail("two@at@signs.com"));
         assertFalse(DrivePermissionService.isValidEmail(""));
     }
+
+    @Test
+    void theServiceStaysOffWhenDisabledOrMissingItsCredentials() {
+        GoogleDriveConfig config = new GoogleDriveConfig();
+        assertTrue(DrivePermissionService.fromSystemProperties(config).isEmpty());
+
+        config.setEnabled(true);
+        assertTrue(DrivePermissionService.fromSystemProperties(config).isEmpty());
+    }
 }

@@ -3,6 +3,7 @@ package net.hypixel.nerdbot.app.drive;
 import lombok.extern.slf4j.Slf4j;
 import net.hypixel.nerdbot.app.config.GoogleDriveConfig;
 import net.hypixel.nerdbot.app.config.objects.DriveFolderMapping;
+import net.hypixel.nerdbot.discord.util.Secrets;
 import net.hypixel.nerdbot.marmalade.google.GoogleTokenProvider;
 import net.hypixel.nerdbot.marmalade.google.ServiceAccountKey;
 import net.hypixel.nerdbot.marmalade.google.drive.DriveAccessLevel;
@@ -62,7 +63,8 @@ public class DrivePermissionService {
     }
 
     /**
-     * Builds the service from JVM system properties, or empty when the feature
+     * Builds the service from the credentials path system property and the email key secret
+     * (see {@link Secrets}), or empty when the feature
      * is disabled or incompletely configured; callers treat empty as "feature
      * off" and stay inert.
      */
@@ -73,11 +75,11 @@ public class DrivePermissionService {
         }
 
         String credentialsPath = System.getProperty(CREDENTIALS_PATH_PROPERTY);
-        String emailKey = System.getProperty(EMAIL_KEY_PROPERTY);
+        String emailKey = Secrets.find(EMAIL_KEY_PROPERTY).orElse(null);
 
         if (credentialsPath == null || emailKey == null) {
-            log.warn("Google Drive sync enabled in config but missing {} or {} system property; feature stays off",
-                CREDENTIALS_PATH_PROPERTY, EMAIL_KEY_PROPERTY);
+            log.warn("Google Drive sync enabled in config but missing the {} system property or the {} environment variable; feature stays off",
+                CREDENTIALS_PATH_PROPERTY, Secrets.environmentName(EMAIL_KEY_PROPERTY));
             return Optional.empty();
         }
 

@@ -11,8 +11,8 @@ import java.util.List;
 /**
  * Google Drive folder-permission sync. Disabled by default; even when enabled,
  * the subsystem stays inert unless the JVM was started with the
- * drive.credentials.path and drive.email.key system properties (secrets never
- * live in this file).
+ * drive.credentials.path system property and the DRIVE_EMAIL_KEY environment
+ * variable (secrets never live in this file).
  */
 @Getter
 @Setter

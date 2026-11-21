@@ -14,8 +14,8 @@
 #   - WORK_DIR: The directory on the vps where the app is/will be deployed
 #   - BOT_TOKEN_{environment}: Discord bot token per environment
 #     - Example: BOT_TOKEN_PRODUCTION, BOT_TOKEN_DEV
-#   - MONGO_URI: Environment variable for the bot
-#   - HYPIXEL_KEY: Environment variable for the bot
+#   - MONGO_URI: MongoDB connection string for the bot
+#   - HYPIXEL_KEY: Hypixel API key for the bot
 #   - SENTRY_DSN: Sentry DSN for error reporting (optional, Sentry disabled if empty)
 #   - CONFIG_FOLDER_PATH: Path to the config file folder on the vps
 #   - PACKS_FOLDER_PATH: Path to the resource packs folder on the vps (optional; defaults to CONFIG_FOLDER_PATH/packs)
@@ -146,6 +146,32 @@ jobs:
             ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
           fi
 
+      # The bot's secrets reach the container as environment variables, read from a file only its
+      # owner can open. They are sent over the SSH connection's input, so they never appear on a
+      # command line on the vps. Docker reads each line as NAME=value with no quoting, so a value
+      # may hold any character except a line break.
+      - name: Send secrets
+        env:
+          BOT_TOKEN: ${{ secrets[format('BOT_TOKEN_{0}', env.ENVIRONMENT_NAME)] }}
+          DB_MONGODB_URI: ${{ secrets.MONGO_URI }}
+          HYPIXEL_KEY: ${{ secrets.HYPIXEL_KEY }}
+          DRIVE_EMAIL_KEY: ${{ secrets.DRIVE_EMAIL_KEY }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+        run: |
+          env_file=""
+          for name in BOT_TOKEN DB_MONGODB_URI HYPIXEL_KEY DRIVE_EMAIL_KEY SENTRY_DSN; do
+            value="${!name}"
+            if [[ "$value" == *$'\n'* ]]; then
+              echo "::error::The secret behind $name holds a line break"
+              exit 1
+            fi
+            if [ -n "$value" ]; then
+              env_file+="$name=$value"$'\n'
+            fi
+          done
+          printf '%s' "$env_file" | ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "cd ${{ secrets.WORK_DIR }} && umask 077 && cat > .$(echo "${{ env.CONTAINER_NAME }}" | tr '[:upper:]' '[:lower:]').env"
+
       - name: Deploy
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
@@ -161,15 +187,13 @@ jobs:
             -v ${{ secrets.PACKS_FOLDER_PATH != '' && secrets.PACKS_FOLDER_PATH || format('{0}/packs', secrets.CONFIG_FOLDER_PATH) }}:/app/packs:ro \
             -v ${{ secrets.PACK_CACHE_FOLDER_PATH != '' && secrets.PACK_CACHE_FOLDER_PATH || format('{0}/pack-cache/{1}', secrets.CONFIG_FOLDER_PATH, env.ENVIRONMENT_NAME) }}:/app/data/packs \
             -v ${{ secrets.DRIVE_CREDENTIALS_FOLDER_PATH != '' && secrets.DRIVE_CREDENTIALS_FOLDER_PATH || secrets.CONFIG_FOLDER_PATH }}/drive-credentials.json:/app/secrets/drive-credentials.json:ro \
-            -e "JAVA_OPTS=-Dbot.token=${{ secrets[format('BOT_TOKEN_{0}', env.ENVIRONMENT_NAME)] }} \
-            -Ddb.mongodb.uri=${{ secrets.MONGO_URI }} \
-            -Dbot.environment=${{ env.ENVIRONMENT_NAME }} \
+            --env-file .$(echo "${{ env.CONTAINER_NAME }}" | tr '[:upper:]' '[:lower:]').env \
+            -e "JAVA_OPTS=-Dbot.environment=${{ env.ENVIRONMENT_NAME }} \
             -Dbot.config=/app/$(echo "${{ env.ENVIRONMENT_NAME }}" | tr '[:upper:]' '[:lower:]').config.json \
-            -Dhypixel.key=${{ secrets.HYPIXEL_KEY }} \
             -Dmetrics.port=${{ env.METRICS_PORT }} \
-            -Ddrive.credentials.path=/app/secrets/drive-credentials.json -Ddrive.email.key=${{ secrets.DRIVE_EMAIL_KEY }}" \
-            -e "SENTRY_DSN=${{ secrets.SENTRY_DSN }}" \
+            -Ddrive.credentials.path=/app/secrets/drive-credentials.json" \
             ${{ env.REGISTRY }}/$(echo "${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
+          rm -f .$(echo "${{ env.CONTAINER_NAME }}" | tr '[:upper:]' '[:lower:]').env
           sudo docker image ls \
             "${{ env.REGISTRY }}/$(echo "${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')" \
             --filter dangling=true \

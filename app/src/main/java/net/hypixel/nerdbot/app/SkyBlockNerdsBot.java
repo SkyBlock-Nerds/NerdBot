@@ -33,6 +33,7 @@ import net.hypixel.nerdbot.discord.api.feature.BotFeature;
 import net.hypixel.nerdbot.discord.config.DiscordBotConfig;
 import net.hypixel.nerdbot.discord.util.DiscordBotEnvironment;
 import net.hypixel.nerdbot.discord.util.DiscordUtils;
+import net.hypixel.nerdbot.discord.util.Secrets;
 import net.hypixel.nerdbot.marmalade.storage.database.Database;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 import org.jetbrains.annotations.NotNull;
@@ -133,7 +134,7 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot implements BotState {
 
     @Override
     protected @NotNull Database createDatabase() {
-        String mongoUri = System.getProperty("db.mongodb.uri", "mongodb://localhost:27017/");
+        String mongoUri = Secrets.find("db.mongodb.uri").orElse("mongodb://localhost:27017/");
         return new Database(mongoUri, StorageModule.DATABASE_NAME);
     }
 

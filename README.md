@@ -108,10 +108,11 @@ anything.
 
 ## Secrets
 
-Two JVM system properties, passed the same way as `bot.token`:
+A JVM system property and an environment variable:
 
-- `drive.credentials.path`: path to the Google service account's JSON key file.
-- `drive.email.key`: a base64-encoded 32-byte AES key used to encrypt linked emails at rest. Generate one with:
+- `drive.credentials.path` (system property): path to the Google service account's JSON key file.
+- `DRIVE_EMAIL_KEY` (environment variable, passed the same way as `BOT_TOKEN`): a base64-encoded 32-byte AES key
+  used to encrypt linked emails at rest. Generate one with:
 
   ```bash
   openssl rand -base64 32
@@ -164,7 +165,7 @@ The `googleDriveConfig` top-level block in the config file controls the feature 
 
 Production deploys run through the [Publish workflow](.github/workflows/publish.yml): set the `DRIVE_CREDENTIALS_FOLDER_PATH`
 and `DRIVE_EMAIL_KEY` repo secrets, drop `drive-credentials.json` (the service account key, renamed, `chmod 600`) into
-the configured folder on the vps, and the workflow mounts it and passes both `-Ddrive.*` flags automatically. Both
+the configured folder on the vps, and the workflow mounts it and passes the path and the key automatically. Both
 secrets are optional; leave them unset and the feature stays off. See the secrets list at the top of the workflow
 file for details.
 
@@ -178,11 +179,13 @@ directory is up to you; these examples use `/opt/nerdbot/` (ours), holding `prod
 docker run \
   -v /opt/nerdbot/production.config.json:/app/production.config.json \
   -v /opt/nerdbot/drive-credentials.json:/app/secrets/drive-credentials.json:ro \
-  -e JAVA_OPTS="-Dbot.token=<your-bot-token> -Ddb.mongodb.uri=<your-mongodb-uri> ... -Ddrive.credentials.path=/app/secrets/drive-credentials.json -Ddrive.email.key=<your-base64-key>" \
+  --env-file /opt/nerdbot/nerd-bot.env \
+  -e JAVA_OPTS="... -Ddrive.credentials.path=/app/secrets/drive-credentials.json" \
   nerd-bot
 ```
 
-(`...` stands in for whatever other flags you already pass in `JAVA_OPTS`, just append the two Drive ones.)
+(`...` stands in for whatever other flags you already pass in `JAVA_OPTS`. `nerd-bot.env` is the `chmod 600` file
+holding your `BOT_TOKEN=` and `DB_MONGODB_URI=` lines; add `DRIVE_EMAIL_KEY=<your-base64-key>` to it.)
 
 Equivalent `docker-compose`:
 
@@ -192,9 +195,10 @@ services:
     volumes:
       - /opt/nerdbot/production.config.json:/app/production.config.json
       - /opt/nerdbot/drive-credentials.json:/app/secrets/drive-credentials.json:ro
+    env_file:
+      - /opt/nerdbot/nerd-bot.env
     environment:
       JAVA_OPTS: >-
-        -Dbot.token=<your-bot-token> -Ddb.mongodb.uri=<your-mongodb-uri> ...
+        ...
         -Ddrive.credentials.path=/app/secrets/drive-credentials.json
-        -Ddrive.email.key=<your-base64-key>
 ```
