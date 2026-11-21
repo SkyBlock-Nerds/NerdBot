@@ -8,6 +8,7 @@ import net.aerh.slashcommands.SlashCommandManagerBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.hooks.AnnotatedEventManager;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
@@ -214,8 +215,20 @@ public abstract class AbstractDiscordBot implements DiscordBot {
     private void registerSlashCommands() {
         SlashCommandManagerBuilder builder = SlashCommandManager.builder().withJDA(jda);
         if (addCommandSources(builder, createSlashCommands(), getSlashCommandBasePackage())) {
-            builder.build();
+            // The library listens to JDA directly; put the gate in front of it instead
+            SlashCommandManager manager = builder.build();
+            jda.removeEventListener(manager);
+            jda.addEventListener(new GuildInteractionGate(manager, this::servesGuild));
         }
+    }
+
+    /**
+     * Whether commands, buttons, menus, modals and autocomplete from {@code guild} are handled.
+     * Every guild by default. A bot whose config and data belong to one guild should accept only
+     * that guild, because command permissions are checked against the guild a command is run in.
+     */
+    protected boolean servesGuild(@NotNull Guild guild) {
+        return true;
     }
 
     /**

@@ -7,6 +7,7 @@ import net.aerh.imagegenerator.pack.PackRepository;
 import net.aerh.imagegenerator.tools.pack.ResourcePackService;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Guild;
 import net.hypixel.nerdbot.app.badge.BadgeManager;
 import net.hypixel.nerdbot.app.config.AlphaProjectConfigUpdater;
 import net.hypixel.nerdbot.app.config.GeneratorConfig;
@@ -35,6 +36,7 @@ import net.hypixel.nerdbot.discord.util.DiscordUtils;
 import net.hypixel.nerdbot.marmalade.storage.database.Database;
 import net.hypixel.nerdbot.marmalade.storage.database.repository.DiscordUserRepository;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.time.Clock;
@@ -167,6 +169,16 @@ public class SkyBlockNerdsBot extends AbstractDiscordBot implements BotState {
         }
         features.addAll(alwaysOn);
         return features;
+    }
+
+    /** Only the configured guild: the config and database are that guild's, whoever runs a command elsewhere. */
+    @Override
+    protected boolean servesGuild(@NotNull Guild guild) {
+        return isMainGuild(guild.getId(), getConfig().getGuildId());
+    }
+
+    static boolean isMainGuild(String guildId, @Nullable String configuredGuildId) {
+        return configuredGuildId != null && !configuredGuildId.isBlank() && configuredGuildId.equals(guildId);
     }
 
     @Override
